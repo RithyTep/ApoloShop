@@ -49,7 +49,8 @@ docs/
 │   └── export.md          # Data export
 ├── features/              # Feature documentation
 │   ├── _TEMPLATE.md       # Template for new features
-│   └── shop-frontend.md   # Shop frontend feature
+│   ├── shop-frontend.md   # Shop frontend feature
+│   └── developer-docs.md  # Git workflow & docs system
 ├── guides/
 │   ├── getting-started.md # Setup instructions
 │   ├── conventions.md     # Code standards
@@ -66,6 +67,7 @@ docs/
 | Feature | Status | Documentation |
 |---------|--------|---------------|
 | Shop Frontend | Complete | [shop-frontend.md](./features/shop-frontend.md) |
+| Developer Docs | Complete | [developer-docs.md](./features/developer-docs.md) |
 
 > See `GIT_WORKFLOW.md` for feature documentation requirements.
 
