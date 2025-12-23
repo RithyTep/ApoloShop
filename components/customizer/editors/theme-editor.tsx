@@ -27,6 +27,50 @@ export function ThemeEditor({ theme, onChange }: ThemeEditorProps) {
 
   return (
     <div className="space-y-6">
+      {/* Branding */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Branding</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-sm">Shop Name</Label>
+            <Input
+              value={theme.shopName || ""}
+              onChange={(e) => update({ shopName: e.target.value })}
+              placeholder="My Shop"
+            />
+          </div>
+
+          <Separator />
+
+          <div className="space-y-2">
+            <Label className="text-sm">Logo URL</Label>
+            <Input
+              value={theme.logoUrl || ""}
+              onChange={(e) => update({ logoUrl: e.target.value })}
+              placeholder="https://example.com/logo.png"
+            />
+            <p className="text-xs text-muted-foreground">
+              Enter a URL to your logo image (PNG, SVG recommended)
+            </p>
+            {theme.logoUrl && (
+              <div className="mt-2 p-3 bg-muted rounded flex items-center gap-3">
+                <img
+                  src={theme.logoUrl}
+                  alt="Logo preview"
+                  className="h-10 w-auto object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none"
+                  }}
+                />
+                <span className="text-sm text-muted-foreground">Logo Preview</span>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Color Presets</CardTitle>

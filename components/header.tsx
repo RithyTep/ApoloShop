@@ -10,6 +10,9 @@ interface HeaderProps {
   onLanguageChange: (lang: "EN" | "KH") => void
   currency: "USD" | "KHR"
   onCurrencyChange: (curr: "USD" | "KHR") => void
+  shopName?: string
+  logoUrl?: string
+  primaryColor?: string
 }
 
 export function Header({
@@ -19,6 +22,9 @@ export function Header({
   onLanguageChange,
   currency,
   onCurrencyChange,
+  shopName = "Simple Shop",
+  logoUrl,
+  primaryColor,
 }: HeaderProps) {
   return (
     <header className="fixed top-0 left-0 right-0 bg-background border-b border-border z-40 shadow-sm">
@@ -26,10 +32,19 @@ export function Header({
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-sm flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">S</span>
-            </div>
-            <span className="font-bold text-xl text-foreground hidden sm:inline">Simple Shop</span>
+            {logoUrl ? (
+              <img src={logoUrl} alt={shopName} className="h-8 w-auto object-contain" />
+            ) : (
+              <div
+                className="w-8 h-8 rounded-sm flex items-center justify-center"
+                style={{ backgroundColor: primaryColor || "var(--primary)" }}
+              >
+                <span className="text-white font-bold text-lg">
+                  {shopName.charAt(0).toUpperCase()}
+                </span>
+              </div>
+            )}
+            <span className="font-bold text-xl text-foreground hidden sm:inline">{shopName}</span>
           </div>
 
           {/* Center - Dropdowns */}

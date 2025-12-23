@@ -842,6 +842,8 @@ export interface ShopSection {
 }
 
 export interface ShopTheme {
+  shopName: string;
+  logoUrl: string;
   primaryColor: string;
   accentColor: string;
   backgroundColor: string;

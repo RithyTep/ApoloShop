@@ -75,6 +75,9 @@ export function ShopApp() {
         onLanguageChange={setLanguage}
         currency={currency}
         onCurrencyChange={setCurrency}
+        shopName={config?.theme?.shopName}
+        logoUrl={config?.theme?.logoUrl}
+        primaryColor={config?.theme?.primaryColor}
       />
 
       {currentPage === "shop" ? (

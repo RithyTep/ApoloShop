@@ -531,13 +531,21 @@ export function CustomizerPage() {
                 <div className="bg-background border-b p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div
-                        className="w-8 h-8 rounded flex items-center justify-center text-white font-bold"
-                        style={{ backgroundColor: config.theme.primaryColor }}
-                      >
-                        S
-                      </div>
-                      <span className="font-bold">Simple Shop</span>
+                      {config.theme.logoUrl ? (
+                        <img
+                          src={config.theme.logoUrl}
+                          alt={config.theme.shopName || "Logo"}
+                          className="h-8 w-auto object-contain"
+                        />
+                      ) : (
+                        <div
+                          className="w-8 h-8 rounded flex items-center justify-center text-white font-bold"
+                          style={{ backgroundColor: config.theme.primaryColor }}
+                        >
+                          {(config.theme.shopName || "S").charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="font-bold">{config.theme.shopName || "My Shop"}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <span>EN</span>

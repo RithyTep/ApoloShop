@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma"
 // Default customization config
 const getDefaultConfig = () => ({
   theme: {
+    shopName: "My Shop",
+    logoUrl: "",
     primaryColor: "oklch(0.72 0.16 356)",
     accentColor: "oklch(0.72 0.16 356)",
     backgroundColor: "oklch(1 0 0)",
