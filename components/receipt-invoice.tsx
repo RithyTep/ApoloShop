@@ -61,17 +61,17 @@ export function ReceiptInvoice({
       <div
         ref={receiptRef}
         id="receipt-print"
-        className="bg-white p-8 border-4 border-gray-900 text-center font-mono text-sm"
+        className="bg-white p-8 border-4 border-foreground text-center font-mono text-sm"
         style={{ width: "374px" }}
       >
         {/* Header */}
         <div className="mb-4">
           <p className="text-lg font-bold">☕ SHOP CMS</p>
           <p className="text-xs">Cambodian Coffee Café</p>
-          <p className="text-xs text-gray-600">Phnom Penh, Cambodia</p>
+          <p className="text-xs text-muted-foreground">Phnom Penh, Cambodia</p>
         </div>
 
-        <Separator className="my-2 border-gray-900" />
+        <Separator className="my-2 border-foreground" />
 
         {/* Order Info */}
         <div className="text-left text-xs space-y-1 mb-4">
@@ -85,7 +85,7 @@ export function ReceiptInvoice({
           </p>
         </div>
 
-        <Separator className="my-2 border-gray-900" />
+        <Separator className="my-2 border-foreground" />
 
         {/* Customer Info */}
         <div className="text-left text-xs space-y-1 mb-4">
@@ -99,7 +99,7 @@ export function ReceiptInvoice({
           </p>
         </div>
 
-        <Separator className="my-2 border-gray-900" />
+        <Separator className="my-2 border-foreground" />
 
         {/* Items Table */}
         <div className="text-left text-xs mb-4">
@@ -113,14 +113,14 @@ export function ReceiptInvoice({
                 <span>{item.name}</span>
                 <span>${(item.price * item.quantity).toFixed(2)}</span>
               </div>
-              <div className="text-gray-600 text-xs">
+              <div className="text-muted-foreground text-xs">
                 {item.quantity}x ${item.price.toFixed(2)}
               </div>
             </div>
           ))}
         </div>
 
-        <Separator className="my-2 border-gray-900" />
+        <Separator className="my-2 border-foreground" />
 
         {/* Totals */}
         <div className="text-left text-xs space-y-1 mb-4">
@@ -129,7 +129,7 @@ export function ReceiptInvoice({
             <span>${subtotal.toFixed(2)}</span>
           </div>
           {discount > 0 && (
-            <div className="flex justify-between text-green-600">
+            <div className="flex justify-between text-success">
               <span>{t.receipt.discount}:</span>
               <span>-${discount.toFixed(2)}</span>
             </div>
@@ -140,7 +140,7 @@ export function ReceiptInvoice({
           </div>
         </div>
 
-        <Separator className="my-2 border-gray-900" />
+        <Separator className="my-2 border-foreground" />
 
         {/* Payment Info */}
         <div className="text-left text-xs mb-4">
@@ -156,19 +156,19 @@ export function ReceiptInvoice({
 
         {/* QR Code Placeholder */}
         <div className="my-4 flex justify-center">
-          <div className="w-24 h-24 border-2 border-gray-900 flex items-center justify-center text-xs">QR Code</div>
+          <div className="w-24 h-24 border-2 border-foreground flex items-center justify-center text-xs">QR Code</div>
         </div>
 
         {/* Footer */}
-        <Separator className="my-2 border-gray-900" />
+        <Separator className="my-2 border-foreground" />
         <p className="text-xs font-bold">{t.receipt.thankyou}</p>
-        <p className="text-xs text-gray-600 mt-2">• • •</p>
+        <p className="text-xs text-muted-foreground mt-2">• • •</p>
       </div>
 
       {/* Print Button */}
       <Button
         onClick={handlePrint}
-        className="w-full bg-pink-600 hover:bg-pink-700 text-white"
+        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
         aria-label="Print receipt"
       >
         <Printer className="w-4 h-4 mr-2" aria-hidden="true" />

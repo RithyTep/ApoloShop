@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { useSettings, useUpdateSettings } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
 
@@ -186,15 +188,18 @@ export function SettingsPage() {
         <div className="space-y-4">
           <div>
             <Label htmlFor="defaultCurrency">Default Currency</Label>
-            <select
-              id="defaultCurrency"
+            <Select
               value={currencySettings.defaultCurrency}
-              onChange={(e) => setCurrencySettings({ ...currencySettings, defaultCurrency: e.target.value })}
-              className="w-full px-3 py-2 border border-border bg-background rounded mt-1"
+              onValueChange={(value) => setCurrencySettings({ ...currencySettings, defaultCurrency: value })}
             >
-              <option value="USD">USD</option>
-              <option value="KHR">KHR</option>
-            </select>
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="USD">USD</SelectItem>
+                <SelectItem value="KHR">KHR</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label htmlFor="exchangeRate">USD to KHR Rate</Label>
@@ -207,24 +212,22 @@ export function SettingsPage() {
             />
           </div>
           <div className="flex gap-6">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
+            <div className="flex items-center gap-2">
+              <Switch
+                id="enableKhr"
                 checked={currencySettings.enableKhr}
-                onChange={(e) => setCurrencySettings({ ...currencySettings, enableKhr: e.target.checked })}
-                className="w-4 h-4"
+                onCheckedChange={(checked) => setCurrencySettings({ ...currencySettings, enableKhr: checked })}
               />
-              <span className="text-sm text-foreground">Enable KHR</span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
+              <Label htmlFor="enableKhr" className="text-sm">Enable KHR</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="enableUsd"
                 checked={currencySettings.enableUsd}
-                onChange={(e) => setCurrencySettings({ ...currencySettings, enableUsd: e.target.checked })}
-                className="w-4 h-4"
+                onCheckedChange={(checked) => setCurrencySettings({ ...currencySettings, enableUsd: checked })}
               />
-              <span className="text-sm text-foreground">Enable USD</span>
-            </label>
+              <Label htmlFor="enableUsd" className="text-sm">Enable USD</Label>
+            </div>
           </div>
           <Button
             onClick={handleSaveCurrency}

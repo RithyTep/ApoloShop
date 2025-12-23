@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { Plus, Pencil, Trash, Shield } from "lucide-react"
 import { useUsers, useRoles, useCreateUser, useUpdateUser, useDeleteUser, User, Role } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
@@ -268,25 +270,23 @@ export function UsersPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="roleId">Role</Label>
-              <select
-                id="roleId"
-                value={formData.roleId}
-                onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
-                className="w-full px-3 py-2 border border-border bg-background rounded text-sm"
-              >
-                {roles.map((role) => (
-                  <option key={role.id} value={role.id}>{role.name}</option>
-                ))}
-              </select>
+              <Select value={formData.roleId} onValueChange={(value) => setFormData({ ...formData, roleId: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             {editingUser && (
               <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
+                <Switch
                   id="isActive"
                   checked={formData.isActive}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  className="w-4 h-4"
+                  onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
                 />
                 <Label htmlFor="isActive">Active</Label>
               </div>

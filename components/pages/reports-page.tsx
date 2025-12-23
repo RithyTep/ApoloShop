@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Download, TrendingUp, TrendingDown, DollarSign, ShoppingCart, Users, Package } from "lucide-react"
 import { useDashboardStats } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
@@ -114,16 +115,17 @@ export function ReportsPage() {
           <p className="text-muted-foreground mt-2">Analyze sales, products, and business metrics</p>
         </div>
         <div className="flex gap-4">
-          <select
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value)}
-            className="px-3 py-2 border border-border bg-background rounded text-sm"
-          >
-            <option value="7d">Last 7 Days</option>
-            <option value="30d">Last 30 Days</option>
-            <option value="90d">Last 90 Days</option>
-            <option value="365d">Last Year</option>
-          </select>
+          <Select value={dateRange} onValueChange={setDateRange}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7d">Last 7 Days</SelectItem>
+              <SelectItem value="30d">Last 30 Days</SelectItem>
+              <SelectItem value="90d">Last 90 Days</SelectItem>
+              <SelectItem value="365d">Last Year</SelectItem>
+            </SelectContent>
+          </Select>
           <Button onClick={handleExport} className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
             <Download size={16} /> Export Report
           </Button>
@@ -146,7 +148,7 @@ export function ReportsPage() {
                   : card.value.toLocaleString()}
               </p>
               {card.change !== undefined && (
-                <div className={`flex items-center gap-1 mt-2 text-xs ${card.change >= 0 ? "text-green-500" : "text-destructive"}`}>
+                <div className={`flex items-center gap-1 mt-2 text-xs ${card.change >= 0 ? "text-success" : "text-destructive"}`}>
                   {card.change >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                   <span>{card.change >= 0 ? "+" : ""}{card.change}% vs previous period</span>
                 </div>
@@ -256,10 +258,10 @@ export function ReportsPage() {
             </div>
             <div className="flex justify-between items-center p-4 bg-muted/30 rounded">
               <div className="flex items-center gap-3">
-                <ShoppingCart className="h-5 w-5 text-yellow-500" />
+                <ShoppingCart className="h-5 w-5 text-warning" />
                 <span className="text-foreground">Pending Orders</span>
               </div>
-              <span className="font-bold text-yellow-500">{kpis?.pendingOrders || 0}</span>
+              <span className="font-bold text-warning">{kpis?.pendingOrders || 0}</span>
             </div>
             <div className="flex justify-between items-center p-4 bg-muted/30 rounded">
               <div className="flex items-center gap-3">
@@ -270,10 +272,10 @@ export function ReportsPage() {
             </div>
             <div className="flex justify-between items-center p-4 bg-muted/30 rounded">
               <div className="flex items-center gap-3">
-                <TrendingUp className="h-5 w-5 text-green-500" />
+                <TrendingUp className="h-5 w-5 text-success" />
                 <span className="text-foreground">Today&apos;s Orders</span>
               </div>
-              <span className="font-bold text-green-500">{kpis?.todayOrders || 0}</span>
+              <span className="font-bold text-success">{kpis?.todayOrders || 0}</span>
             </div>
           </div>
         </Card>

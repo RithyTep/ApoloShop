@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Switch } from "@/components/ui/switch"
 import { useSettings, useUpdateSettings } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
 
@@ -149,16 +150,14 @@ export function PaymentsPage() {
                     </p>
                   </div>
                 </div>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
+                <div className="flex items-center gap-2">
+                  <Switch
                     checked={method.enabled}
-                    onChange={() => handleToggle(method.id)}
-                    className="w-4 h-4"
+                    onCheckedChange={() => handleToggle(method.id)}
                     disabled={updateMutation.isPending}
                   />
                   <span className="text-sm text-foreground">Enabled</span>
-                </label>
+                </div>
               </div>
               {hasConfig && (
                 <div className="mt-4 p-4 bg-muted/30 rounded border border-border">

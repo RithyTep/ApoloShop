@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Download, Eye, ChevronRight } from "lucide-react"
 import { useOrders, useUpdateOrderStatus, Order, OrderStatus, OrderChannel } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
@@ -121,26 +122,28 @@ export function OrdersPage() {
             onChange={(e) => setSearch(e.target.value)}
             className="border-border"
           />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as OrderStatus | "")}
-            className="px-3 py-2 border border-border bg-background rounded text-sm"
-          >
-            <option value="">All Status</option>
-            {statusOptions.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-          <select
-            value={channelFilter}
-            onChange={(e) => setChannelFilter(e.target.value as OrderChannel | "")}
-            className="px-3 py-2 border border-border bg-background rounded text-sm"
-          >
-            <option value="">All Channels</option>
-            {channelOptions.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+          <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v as OrderStatus)}>
+            <SelectTrigger>
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              {statusOptions.map((s) => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={channelFilter || "all"} onValueChange={(v) => setChannelFilter(v === "all" ? "" : v as OrderChannel)}>
+            <SelectTrigger>
+              <SelectValue placeholder="All Channels" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Channels</SelectItem>
+              {channelOptions.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <div className="text-sm text-muted-foreground flex items-center">
             {orders.length} orders found
           </div>
@@ -181,20 +184,16 @@ export function OrdersPage() {
                             {order.status}
                           </Badge>
                           {nextStatuses.length > 0 && (
-                            <select
-                              className="text-xs px-1 py-0.5 border rounded bg-background"
-                              value=""
-                              onChange={(e) => {
-                                if (e.target.value) {
-                                  handleStatusChange(order.id, order.status, e.target.value as OrderStatus)
-                                }
-                              }}
-                            >
-                              <option value="">→</option>
-                              {nextStatuses.map((s) => (
-                                <option key={s} value={s}>{s}</option>
-                              ))}
-                            </select>
+                            <Select onValueChange={(v) => handleStatusChange(order.id, order.status, v as OrderStatus)}>
+                              <SelectTrigger className="h-6 w-16 text-xs">
+                                <SelectValue placeholder="→" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {nextStatuses.map((s) => (
+                                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           )}
                         </div>
                       </TableCell>

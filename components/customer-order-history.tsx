@@ -79,22 +79,22 @@ export function CustomerOrderHistory({ language = "en" }: CustomerOrderHistoryPr
               </thead>
               <tbody>
                 {customers.map((customer) => (
-                  <tr key={customer.id} className="border-b hover:bg-pink-50">
+                  <tr key={customer.id} className="border-b hover:bg-primary/5">
                     <td className="p-2">
                       <div>
                         <p className="font-semibold">{customer.name}</p>
-                        <p className="text-gray-600">{customer.phone}</p>
+                        <p className="text-muted-foreground">{customer.phone}</p>
                       </div>
                     </td>
                     <td className="text-right p-2">{customer.orderCount}</td>
                     <td className="text-right p-2">${customer.totalSpent.toFixed(2)}</td>
-                    <td className="p-2 text-gray-600">{customer.lastOrderDate}</td>
+                    <td className="p-2 text-muted-foreground">{customer.lastOrderDate}</td>
                     <td className="p-2">
                       <div className="flex gap-1">
                         {customer.tags.map((tag) => (
                           <Badge
                             key={tag}
-                            className={tag === "vip" ? "bg-purple-100 text-purple-800" : "bg-amber-100 text-amber-800"}
+                            className={tag === "vip" ? "bg-accent/10 text-accent" : "bg-warning/10 text-warning"}
                           >
                             {tag === "vip" ? t.customerHistory.vip : t.customerHistory.frequentBuyer}
                           </Badge>
@@ -130,18 +130,18 @@ export function CustomerOrderHistory({ language = "en" }: CustomerOrderHistoryPr
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-gray-600">{t.customerHistory.orderCount}</p>
-                <p className="text-2xl font-bold text-pink-600">{selectedCustomer.orderCount}</p>
+                <p className="text-sm text-muted-foreground">{t.customerHistory.orderCount}</p>
+                <p className="text-2xl font-bold text-primary">{selectedCustomer.orderCount}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">{t.customerHistory.totalSpent}</p>
-                <p className="text-2xl font-bold text-pink-600">${selectedCustomer.totalSpent.toFixed(2)}</p>
+                <p className="text-sm text-muted-foreground">{t.customerHistory.totalSpent}</p>
+                <p className="text-2xl font-bold text-primary">${selectedCustomer.totalSpent.toFixed(2)}</p>
               </div>
             </div>
 
-            <div className="bg-gray-50 p-3 rounded">
+            <div className="bg-muted p-3 rounded">
               <p className="text-sm font-semibold mb-2">{t.customerHistory.notes}</p>
-              <p className="text-sm text-gray-700 whitespace-pre-wrap">{selectedCustomer.notes}</p>
+              <p className="text-sm text-foreground whitespace-pre-wrap">{selectedCustomer.notes}</p>
             </div>
 
             <div>
@@ -156,7 +156,7 @@ export function CustomerOrderHistory({ language = "en" }: CustomerOrderHistoryPr
               />
               <Button
                 onClick={() => handleAddNote(selectedCustomer.id)}
-                className="mt-2 w-full bg-pink-500 hover:bg-pink-600 text-white"
+                className="mt-2 w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 aria-label="Add note to customer record"
               >
                 {t.customerHistory.addNote}

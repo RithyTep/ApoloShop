@@ -22,11 +22,11 @@ export function OrderStatusNotification({ language = "en" }: OrderStatusNotifica
   const t = translations[language]
 
   const statusColors: Record<OrderStatusType, string> = {
-    new: "bg-blue-100 text-blue-800",
-    confirmed: "bg-amber-100 text-amber-800",
-    preparing: "bg-purple-100 text-purple-800",
-    completed: "bg-green-100 text-green-800",
-    cancelled: "bg-red-100 text-red-800",
+    new: "bg-info/10 text-info",
+    confirmed: "bg-warning/10 text-warning",
+    preparing: "bg-accent/10 text-accent",
+    completed: "bg-success/10 text-success",
+    cancelled: "bg-destructive/10 text-destructive",
   }
 
   const statusOrder: OrderStatusType[] = ["new", "confirmed", "preparing", "completed"]
@@ -57,8 +57,8 @@ export function OrderStatusNotification({ language = "en" }: OrderStatusNotifica
                   onClick={() => handleStatusChange(status)}
                   className={`w-12 h-12 border-2 flex items-center justify-center font-bold text-sm cursor-pointer transition-all ${
                     currentStatus === status || statusOrder.indexOf(currentStatus) >= index
-                      ? `border-pink-500 ${statusColors[status]}`
-                      : "border-gray-300 bg-gray-100 text-gray-500"
+                      ? `border-primary ${statusColors[status]}`
+                      : "border-border bg-muted text-muted-foreground"
                   }`}
                   type="button"
                   aria-label={`Status: ${t.orderStatus[status]}`}
@@ -68,7 +68,7 @@ export function OrderStatusNotification({ language = "en" }: OrderStatusNotifica
                 {index < statusOrder.length - 1 && (
                   <div
                     className={`h-1 w-8 mx-1 ${
-                      statusOrder.indexOf(currentStatus) > index ? "bg-pink-500" : "bg-gray-300"
+                      statusOrder.indexOf(currentStatus) > index ? "bg-primary" : "bg-border"
                     }`}
                     aria-hidden="true"
                   />
@@ -88,8 +88,8 @@ export function OrderStatusNotification({ language = "en" }: OrderStatusNotifica
         <Separator />
 
         {/* Current Status Display */}
-        <div className="bg-pink-50 p-4 border border-pink-200">
-          <p className="text-sm text-gray-600 mb-2">Current Status</p>
+        <div className="bg-primary/5 p-4 border border-primary/20">
+          <p className="text-sm text-muted-foreground mb-2">Current Status</p>
           <Badge className={`${statusColors[currentStatus]} text-lg px-4 py-2`}>{t.orderStatus[currentStatus]}</Badge>
         </div>
 
@@ -111,7 +111,7 @@ export function OrderStatusNotification({ language = "en" }: OrderStatusNotifica
         <div className="flex gap-3">
           <Button
             onClick={handleSendUpdate}
-            className="flex-1 bg-pink-600 hover:bg-pink-700 text-white"
+            className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
             aria-label="Send via Telegram"
           >
             <MessageCircle className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -119,7 +119,7 @@ export function OrderStatusNotification({ language = "en" }: OrderStatusNotifica
           </Button>
           <Button
             onClick={handleSendUpdate}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+            className="flex-1 bg-info hover:bg-info/90 text-info-foreground"
             aria-label="Send via Facebook Messenger"
           >
             <Mail className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -128,13 +128,13 @@ export function OrderStatusNotification({ language = "en" }: OrderStatusNotifica
         </div>
 
         {messageSent && (
-          <div className="bg-green-100 text-green-800 p-3 flex items-center gap-2 text-sm" role="status">
+          <div className="bg-success/10 text-success p-3 flex items-center gap-2 text-sm" role="status">
             <Check className="w-4 h-4" aria-hidden="true" />
             {t.orderNotification.updateSent}
           </div>
         )}
 
-        <Button onClick={handleSendUpdate} className="w-full bg-pink-500 hover:bg-pink-600 text-white">
+        <Button onClick={handleSendUpdate} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
           {t.orderNotification.sendUpdate}
         </Button>
       </CardContent>

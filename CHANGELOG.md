@@ -17,10 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Promotions management
 - CMS content management
 - User and role management
+- Semantic CSS variables for status colors (--success, --warning, --info)
 
 ### Changed
 - Updated ProductGrid to use React Query hooks
 - Improved checkout flow with loading states
+- Replaced all native `<select>` elements with shadcn/ui Select component (8 files)
+- Replaced all native checkboxes with shadcn/ui Switch component (6 files)
+- Replaced hardcoded Tailwind colors with semantic CSS variables (11 files)
+- Unified UI styling across all admin pages for consistency
 
 ### Fixed
 - Fixed icon import in checkout page

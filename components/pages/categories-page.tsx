@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { Switch } from "@/components/ui/switch"
 import { Plus, Pencil, Trash, GripVertical } from "lucide-react"
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, Category } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
@@ -137,15 +138,13 @@ export function CategoriesPage() {
               <div className="text-sm text-muted-foreground">
                 {cat._count?.products || 0} products
               </div>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
+              <div className="flex items-center gap-2">
+                <Switch
                   checked={cat.isActive}
-                  onChange={() => handleToggleActive(cat)}
-                  className="w-4 h-4"
+                  onCheckedChange={() => handleToggleActive(cat)}
                 />
                 <span className="text-sm text-foreground">Enabled</span>
-              </label>
+              </div>
               <div className="flex gap-2">
                 <Button
                   variant="outline"
@@ -206,12 +205,10 @@ export function CategoriesPage() {
               />
             </div>
             <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
+              <Switch
                 id="isActive"
                 checked={formData.isActive}
-                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                className="rounded border-border"
+                onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
               />
               <Label htmlFor="isActive">Active</Label>
             </div>

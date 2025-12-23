@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Minus } from "lucide-react"
 import { useInventory, useUpdateInventory, InventoryItem } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
@@ -112,7 +113,7 @@ export function InventoryPage() {
         </Card>
         <Card className="p-4">
           <p className="text-sm text-muted-foreground">Low Stock</p>
-          <p className="text-2xl font-bold text-yellow-500">{lowStockCount}</p>
+          <p className="text-2xl font-bold text-warning">{lowStockCount}</p>
         </Card>
         <Card className="p-4">
           <p className="text-sm text-muted-foreground">Out of Stock</p>
@@ -129,16 +130,17 @@ export function InventoryPage() {
             onChange={(e) => setSearch(e.target.value)}
             className="border-border"
           />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-border bg-background rounded text-sm"
-          >
-            <option value="">All Status</option>
-            <option value="Good">Good</option>
-            <option value="Low">Low</option>
-            <option value="Out of Stock">Out of Stock</option>
-          </select>
+          <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v)}>
+            <SelectTrigger>
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="Good">Good</SelectItem>
+              <SelectItem value="Low">Low</SelectItem>
+              <SelectItem value="Out of Stock">Out of Stock</SelectItem>
+            </SelectContent>
+          </Select>
           <div className="text-sm text-muted-foreground flex items-center">
             {inventory.length} items
           </div>

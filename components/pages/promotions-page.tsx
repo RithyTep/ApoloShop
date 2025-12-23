@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { Plus, Pencil, Trash } from "lucide-react"
 import { usePromotions, useCreatePromotion, useUpdatePromotion, useDeletePromotion, Promotion } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
@@ -180,15 +182,16 @@ export function PromotionsPage() {
       {/* Filter */}
       <Card className="p-4">
         <div className="flex gap-4 items-center">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-border bg-background rounded text-sm"
-          >
-            <option value="">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive/Expired</option>
-          </select>
+          <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive/Expired</SelectItem>
+            </SelectContent>
+          </Select>
           <div className="text-sm text-muted-foreground">
             {promotions.length} promotions
           </div>
@@ -282,16 +285,19 @@ export function PromotionsPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="type">Type</Label>
-                <select
-                  id="type"
+                <Select
                   value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value as typeof promoTypes[number] })}
-                  className="w-full px-3 py-2 border border-border bg-background rounded text-sm"
+                  onValueChange={(value) => setFormData({ ...formData, type: value as typeof promoTypes[number] })}
                 >
-                  {promoTypes.map((t) => (
-                    <option key={t} value={t}>{t.replace("_", " ")}</option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {promoTypes.map((t) => (
+                      <SelectItem key={t} value={t}>{t.replace("_", " ")}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -349,15 +355,14 @@ export function PromotionsPage() {
                 />
               </div>
               <div className="flex items-end pb-2">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="isActive"
                     checked={formData.isActive}
-                    onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                    className="w-4 h-4"
+                    onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
                   />
-                  <span className="text-sm text-foreground">Active</span>
-                </label>
+                  <Label htmlFor="isActive" className="text-sm">Active</Label>
+                </div>
               </div>
             </div>
           </div>

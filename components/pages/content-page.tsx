@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
 import { Plus, Pencil, Trash, Eye } from "lucide-react"
 import { useCMSContent, useCreateCMSContent, useUpdateCMSContent, useDeleteCMSContent, CMSContent, CMSContentType } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
@@ -177,16 +179,17 @@ export function ContentPage() {
       {/* Filter */}
       <Card className="p-4">
         <div className="flex gap-4 items-center">
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value as CMSContentType | "")}
-            className="px-3 py-2 border border-border bg-background rounded text-sm"
-          >
-            <option value="">All Types</option>
-            {contentTypes.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
+          <Select value={typeFilter || "all"} onValueChange={(v) => setTypeFilter(v === "all" ? "" : v as CMSContentType)}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="All Types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              {contentTypes.map((t) => (
+                <SelectItem key={t} value={t}>{t}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <div className="text-sm text-muted-foreground">
             {contents.length} items
           </div>
@@ -278,29 +281,29 @@ export function ContentPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="type">Type</Label>
-                <select
-                  id="type"
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value as CMSContentType })}
-                  className="w-full px-3 py-2 border border-border bg-background rounded text-sm"
-                >
-                  {contentTypes.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
+                <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value as CMSContentType })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {contentTypes.map((t) => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
-                <select
-                  id="status"
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as typeof statusOptions[number] })}
-                  className="w-full px-3 py-2 border border-border bg-background rounded text-sm"
-                >
-                  {statusOptions.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
+                <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value as typeof statusOptions[number] })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map((s) => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -339,21 +342,21 @@ export function ContentPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="contentEn">Content (English)</Label>
-              <textarea
+              <Textarea
                 id="contentEn"
                 value={formData.contentEn}
                 onChange={(e) => setFormData({ ...formData, contentEn: e.target.value })}
-                className="w-full min-h-[100px] px-3 py-2 border border-border bg-background rounded text-sm"
+                className="min-h-[100px]"
                 placeholder="Enter content in English..."
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="contentKh">Content (Khmer)</Label>
-              <textarea
+              <Textarea
                 id="contentKh"
                 value={formData.contentKh}
                 onChange={(e) => setFormData({ ...formData, contentKh: e.target.value })}
-                className="w-full min-h-[100px] px-3 py-2 border border-border bg-background rounded text-sm"
+                className="min-h-[100px]"
                 placeholder="Enter content in Khmer..."
               />
             </div>
@@ -371,11 +374,11 @@ export function ContentPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="metaDescription">Meta Description</Label>
-                  <textarea
+                  <Textarea
                     id="metaDescription"
                     value={formData.metaDescription}
                     onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
-                    className="w-full min-h-[60px] px-3 py-2 border border-border bg-background rounded text-sm"
+                    className="min-h-[60px]"
                     placeholder="SEO description for search engines..."
                   />
                 </div>

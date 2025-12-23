@@ -69,8 +69,8 @@ export function CheckoutPage({ cart, currency, language, onBackToShop, onOrderCo
     return (
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center py-16">
-          <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-6">
-            <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
+          <div className="mx-auto w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mb-6">
+            <CheckCircle className="w-10 h-10 text-success" />
           </div>
           <h1 className="text-3xl font-bold text-foreground mb-4">
             {language === "EN" ? "Order Placed Successfully!" : "បញ្ជាទិញបានជោគជ័យ!"}

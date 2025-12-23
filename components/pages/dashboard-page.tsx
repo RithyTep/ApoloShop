@@ -120,7 +120,7 @@ export function DashboardPage() {
             <Card key={index} className="p-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-medium text-muted-foreground">{kpi.label}</h3>
-                <Icon className={`h-4 w-4 ${kpi.isUrgent ? "text-destructive" : kpi.isWarning ? "text-yellow-500" : "text-muted-foreground"}`} />
+                <Icon className={`h-4 w-4 ${kpi.isUrgent ? "text-destructive" : kpi.isWarning ? "text-warning" : "text-muted-foreground"}`} />
               </div>
               <p className="text-2xl font-bold text-foreground mt-2">
                 {kpi.format === "currency" ? formatCurrency(kpi.value) : kpi.value}
@@ -129,12 +129,12 @@ export function DashboardPage() {
                 <p className="text-sm text-muted-foreground">{formatKhr(kpi.khrValue)}</p>
               )}
               {kpi.change !== undefined && (
-                <div className={`flex items-center gap-1 mt-2 text-xs ${kpi.change >= 0 ? "text-green-500" : "text-destructive"}`}>
+                <div className={`flex items-center gap-1 mt-2 text-xs ${kpi.change >= 0 ? "text-success" : "text-destructive"}`}>
                   {kpi.change >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                   <span>{kpi.change >= 0 ? "+" : ""}{kpi.change}% from yesterday</span>
                 </div>
               )}
-              {kpi.isWarning && <p className="text-xs text-yellow-500 mt-2">Need action</p>}
+              {kpi.isWarning && <p className="text-xs text-warning mt-2">Need action</p>}
               {kpi.isUrgent && <p className="text-xs text-destructive mt-2">Urgent</p>}
             </Card>
           )

@@ -78,39 +78,39 @@ export function KitchenOrderScreen({ language = "en" }: KitchenOrderScreenProps)
   const getStatusColor = (status: string) => {
     switch (status) {
       case "new":
-        return "bg-red-100 text-red-800 text-lg font-bold"
+        return "bg-destructive/10 text-destructive text-lg font-bold"
       case "preparing":
-        return "bg-amber-100 text-amber-800 text-lg font-bold"
+        return "bg-warning/10 text-warning text-lg font-bold"
       case "completed":
-        return "bg-green-100 text-green-800 text-lg font-bold"
+        return "bg-success/10 text-success text-lg font-bold"
       default:
         return ""
     }
   }
 
   return (
-    <div className="w-full bg-gray-900 min-h-screen p-4">
+    <div className="w-full bg-background dark min-h-screen p-4">
       <div className="mb-6">
-        <h1 className="text-white text-3xl font-bold mb-2">{t.kitchenScreen.title}</h1>
-        <p className="text-gray-400">
+        <h1 className="text-foreground text-3xl font-bold mb-2">{t.kitchenScreen.title}</h1>
+        <p className="text-muted-foreground">
           {pendingOrders.length} {t.kitchenScreen.pending}
         </p>
       </div>
 
       {pendingOrders.length === 0 ? (
-        <div className="flex items-center justify-center min-h-96 bg-gray-800 text-white text-2xl font-semibold rounded">
+        <div className="flex items-center justify-center min-h-96 bg-card text-foreground text-2xl font-semibold rounded">
           {t.kitchenScreen.noOrders}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {pendingOrders.map((order) => (
-            <Card key={order.id} className="bg-gray-800 border-2 border-gray-700 p-4 flex flex-col">
+            <Card key={order.id} className="bg-card border-2 border-border p-4 flex flex-col">
               <CardContent className="flex-1 flex flex-col p-0">
                 {/* Order Header */}
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <p className="text-white text-2xl font-bold">{order.id}</p>
-                    <p className="text-gray-400 text-sm">{getTimeElapsed(order.createdAt)} ago</p>
+                    <p className="text-foreground text-2xl font-bold">{order.id}</p>
+                    <p className="text-muted-foreground text-sm">{getTimeElapsed(order.createdAt)} ago</p>
                   </div>
                   <Badge className={`${getStatusColor(order.status)} px-4 py-2`}>
                     {order.status === "new" ? "NEW" : order.status === "preparing" ? "PREPARING" : "DONE"}
@@ -118,15 +118,15 @@ export function KitchenOrderScreen({ language = "en" }: KitchenOrderScreenProps)
                 </div>
 
                 {/* Items */}
-                <div className="flex-1 mb-4 bg-gray-700 p-3 rounded">
-                  <p className="text-white font-bold mb-3 text-lg">Items:</p>
+                <div className="flex-1 mb-4 bg-muted p-3 rounded">
+                  <p className="text-foreground font-bold mb-3 text-lg">Items:</p>
                   <div className="space-y-2">
                     {order.items.map((item) => (
-                      <div key={item.id} className="text-white">
+                      <div key={item.id} className="text-foreground">
                         <p className="text-xl font-bold">
                           {item.quantity}x {item.name}
                         </p>
-                        {item.notes && <p className="text-yellow-300 text-sm mt-1">✦ {item.notes}</p>}
+                        {item.notes && <p className="text-warning text-sm mt-1">✦ {item.notes}</p>}
                       </div>
                     ))}
                   </div>
@@ -137,7 +137,7 @@ export function KitchenOrderScreen({ language = "en" }: KitchenOrderScreenProps)
                   {order.status === "new" && (
                     <Button
                       onClick={() => handleStartPrep(order.id)}
-                      className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 text-lg"
+                      className="flex-1 bg-warning hover:bg-warning/90 text-warning-foreground font-bold py-3 text-lg"
                       aria-label={`Start preparing order ${order.id}`}
                     >
                       {t.kitchenScreen.startPrep}
@@ -146,7 +146,7 @@ export function KitchenOrderScreen({ language = "en" }: KitchenOrderScreenProps)
                   {order.status === "preparing" && (
                     <Button
                       onClick={() => handleComplete(order.id)}
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 text-lg"
+                      className="flex-1 bg-success hover:bg-success/90 text-success-foreground font-bold py-3 text-lg"
                       aria-label={`Mark order ${order.id} as complete`}
                     >
                       {t.kitchenScreen.markComplete}

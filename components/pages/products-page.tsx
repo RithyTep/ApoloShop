@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { Plus, Pencil, Trash } from "lucide-react"
 import { useProducts, useCategories, useCreateProduct, useUpdateProduct, useDeleteProduct, Product, Category } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
@@ -23,7 +25,7 @@ export function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null)
 
-  const { data: productsData, isLoading } = useProducts(categoryFilter || undefined)
+  const { data: productsData, isLoading } = useProducts(categoryFilter && categoryFilter !== "all" ? categoryFilter : undefined)
   const { data: categoriesData } = useCategories()
   const createMutation = useCreateProduct()
   const updateMutation = useUpdateProduct()
@@ -38,7 +40,7 @@ export function ProductsPage() {
       p.nameEn.toLowerCase().includes(search.toLowerCase()) ||
       p.nameKh.toLowerCase().includes(search.toLowerCase()) ||
       p.sku.toLowerCase().includes(search.toLowerCase())
-    const matchesStatus = !statusFilter ||
+    const matchesStatus = !statusFilter || statusFilter === "all" ||
       (statusFilter === "active" && p.isActive) ||
       (statusFilter === "inactive" && !p.isActive)
     return matchesSearch && matchesStatus
@@ -169,25 +171,27 @@ export function ProductsPage() {
             onChange={(e) => setSearch(e.target.value)}
             className="border-border"
           />
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-3 py-2 border border-border bg-background rounded text-sm"
-          >
-            <option value="">All Categories</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>{cat.nameEn}</option>
-            ))}
-          </select>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-border bg-background rounded text-sm"
-          >
-            <option value="">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>{cat.nameEn}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </Card>
 
@@ -312,17 +316,16 @@ export function ProductsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="categoryId">Category</Label>
-                <select
-                  id="categoryId"
-                  value={formData.categoryId}
-                  onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                  className="w-full px-3 py-2 border border-border bg-background rounded text-sm"
-                >
-                  <option value="">Select category</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>{cat.nameEn}</option>
-                  ))}
-                </select>
+                <Select value={formData.categoryId} onValueChange={(value) => setFormData({ ...formData, categoryId: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>{cat.nameEn}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="sku">SKU</Label>
@@ -343,12 +346,10 @@ export function ProductsPage() {
               />
             </div>
             <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
+              <Switch
                 id="isActive"
                 checked={formData.isActive}
-                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                className="rounded border-border"
+                onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
               />
               <Label htmlFor="isActive">Active</Label>
             </div>

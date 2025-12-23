@@ -36,11 +36,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 to-accent/10">
       <Card className="w-full max-w-md mx-4">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 w-16 h-16 bg-pink-600 rounded-full flex items-center justify-center">
-            <span className="text-white text-2xl font-bold">A</span>
+          <div className="mx-auto mb-4 w-16 h-16 bg-primary rounded-full flex items-center justify-center">
+            <span className="text-primary-foreground text-2xl font-bold">A</span>
           </div>
           <CardTitle className="text-2xl">ApoloShop Admin</CardTitle>
           <CardDescription>Sign in to access your dashboard</CardDescription>
@@ -71,14 +71,14 @@ export default function LoginPage() {
             </div>
             <Button
               type="submit"
-              className="w-full bg-pink-600 hover:bg-pink-700"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               disabled={loginMutation.isPending}
             >
               {loginMutation.isPending ? "Signing in..." : "Sign In"}
             </Button>
           </form>
 
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg text-sm text-gray-600">
+          <div className="mt-6 p-4 bg-muted rounded-lg text-sm text-muted-foreground">
             <p className="font-medium mb-2">Demo Credentials:</p>
             <p>Email: admin@apolodev.com</p>
             <p>Password: admin123</p>
