@@ -7,6 +7,27 @@ A modern e-commerce platform built for small Cambodian businesses (coffee shops,
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.1-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com)
 [![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com)
 
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><strong>Promotions</strong><br><img src="screenshort/screenshort-2.png" alt="Promotions"></td>
+    <td width="50%"><strong>Shop Homepage</strong><br><img src="screenshort/screenshort-1.png" alt="Shop Homepage"></td>
+  </tr>
+  <tr>
+    <td><strong>Product Detail</strong><br><img src="screenshort/screenshort-3.png" alt="Product Detail"></td>
+    <td><strong>Footer</strong><br><img src="screenshort/screenshort-4.png" alt="Footer"></td>
+  </tr>
+  <tr>
+    <td><strong>Admin Orders</strong><br><img src="screenshort/screenshort-5.png" alt="Orders Management"></td>
+    <td><strong>Shop Customizer</strong><br><img src="screenshort/screenshort-6.png" alt="Shop Customizer"></td>
+  </tr>
+  <tr>
+    <td><strong>Customizer Preview</strong><br><img src="screenshort/screenshort-7.png" alt="Customizer Preview"></td>
+    <td><strong>PostgreSQL Database</strong><br><img src="screenshort/screenshort-8.png" alt="PostgreSQL Database"></td>
+  </tr>
+</table>
+
 ## Features
 
 ### Shop Frontend
@@ -30,6 +51,16 @@ A modern e-commerce platform built for small Cambodian businesses (coffee shops,
 - **Users** - User and role management with permissions
 - **Reports** - Sales and inventory reports with **CSV/Excel export**
 - **Settings** - Shop info, currency, and social links configuration
+- **Shop Customizer** - Visual page builder with drag & drop sections
+
+### Shop Customizer (White Label)
+- **Hero Banner** - Customizable hero with image/video, title, CTA button
+- **Promotion Cards** - Grid layout with badge support
+- **Product Sections** - Configurable product display (featured, by category)
+- **Footer** - Multi-column footer with social links
+- **Theme Editor** - Primary color, accent color, border radius presets
+- **Live Preview** - Desktop, tablet, and mobile preview modes
+- **Drag & Drop** - Reorder sections with drag and drop
 
 ### Kitchen Display System (KDS)
 - Real-time order queue
@@ -141,6 +172,7 @@ apoloshop/
 | `/api/users` | GET, POST, PUT, DELETE | User management |
 | `/api/roles` | GET | Role listing |
 | `/api/settings` | GET, PUT | Shop settings |
+| `/api/customizer` | GET, PUT | Shop customization config |
 | `/api/dashboard` | GET | Dashboard statistics |
 | `/api/auth/*` | POST | Authentication |
 

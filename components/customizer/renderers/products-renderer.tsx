@@ -13,6 +13,7 @@ interface ProductsRendererProps {
   currency: "USD" | "KHR"
   onAddToCart?: (id: string, name: string, price: number, image: string) => void
   isPreview?: boolean
+  previewMode?: "desktop" | "tablet" | "mobile"
 }
 
 export function ProductsRenderer({
@@ -21,6 +22,7 @@ export function ProductsRenderer({
   currency,
   onAddToCart,
   isPreview,
+  previewMode,
 }: ProductsRendererProps) {
   const { data: productsData, isLoading } = useProducts(
     config.displayType === "category" ? config.categoryId : undefined
@@ -33,10 +35,27 @@ export function ProductsRenderer({
 
   const title = language === "EN" ? config.titleEn : config.titleKh
 
-  const gridCols = {
-    2: "grid-cols-2",
-    3: "grid-cols-2 md:grid-cols-3",
-    4: "grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
+  // Responsive grid based on preview mode or viewport
+  const getGridCols = () => {
+    const desktopCols: Record<number, string> = {
+      2: "grid-cols-2",
+      3: "grid-cols-3",
+      4: "grid-cols-4",
+    }
+
+    if (isPreview && previewMode) {
+      // In preview, use fixed columns based on device
+      if (previewMode === "mobile") return "grid-cols-2"
+      if (previewMode === "tablet") return config.columns >= 3 ? "grid-cols-3" : "grid-cols-2"
+      return desktopCols[Math.min(config.columns, 4)] || "grid-cols-4"
+    }
+    // Normal responsive behavior
+    const gridCols: Record<number, string> = {
+      2: "grid-cols-2",
+      3: "grid-cols-2 md:grid-cols-3",
+      4: "grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
+    }
+    return gridCols[config.columns] || "grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
   }
 
   if (isLoading) {
@@ -44,7 +63,7 @@ export function ProductsRenderer({
       <section className="py-12 px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
           <Skeleton className="h-8 w-48 mb-8" />
-          <div className={cn("grid gap-4 md:gap-6", gridCols[config.columns])}>
+          <div className={cn("grid gap-4 md:gap-6", getGridCols())}>
             {Array.from({ length: config.maxProducts }).map((_, i) => (
               <div key={i} className="bg-card border border-border">
                 <Skeleton className="aspect-square" />
@@ -80,7 +99,7 @@ export function ProductsRenderer({
           </h2>
         )}
 
-        <div className={cn("grid gap-4 md:gap-6", gridCols[config.columns])}>
+        <div className={cn("grid gap-4 md:gap-6", getGridCols())}>
           {products.map((product) => {
             const inStock = (product.inventory?.quantity || 0) > 0
 

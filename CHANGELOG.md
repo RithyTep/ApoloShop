@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Shop Customizer (White Label)** - Visual page builder for shop frontend
+  - Hero banner section with image/video support
+  - Promotion cards section with grid layout
+  - Product sections (featured, by category)
+  - Footer with multi-column layout and social links
+  - Theme editor with color presets
+  - Drag & drop section reordering
+  - Live preview (desktop/tablet/mobile)
 - Shop frontend with real data integration
 - Checkout page with order creation API
 - Product grid with category filtering

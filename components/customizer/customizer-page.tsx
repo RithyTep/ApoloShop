@@ -385,8 +385,8 @@ export function CustomizerPage() {
       <div className="flex-1 flex overflow-hidden">
         {/* Left Panel - Editor */}
         <div className="w-[400px] border-r flex flex-col bg-background overflow-hidden">
-          <Tabs defaultValue="sections" className="flex-1 flex flex-col">
-            <TabsList className="m-4 mb-0">
+          <Tabs defaultValue="sections" className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            <TabsList className="m-4 mb-0 shrink-0">
               <TabsTrigger value="sections" className="flex items-center gap-2">
                 <Layers size={14} />
                 Sections
@@ -397,9 +397,9 @@ export function CustomizerPage() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="sections" className="flex-1 overflow-hidden flex flex-col m-0">
+            <TabsContent value="sections" className="flex-1 overflow-hidden flex flex-col m-0 min-h-0">
               {/* Section List */}
-              <div className="p-4 border-b">
+              <div className="p-4 border-b shrink-0 max-h-[280px] overflow-auto">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-medium text-sm">Page Sections</h3>
                   <Dialog open={addSectionOpen} onOpenChange={setAddSectionOpen}>
@@ -463,7 +463,7 @@ export function CustomizerPage() {
               </div>
 
               {/* Section Editor */}
-              <div className="flex-1 overflow-auto p-4">
+              <div className="flex-1 overflow-auto p-4 min-h-0">
                 {selectedSection ? (
                   <Card>
                     <CardHeader className="pb-3">
@@ -567,6 +567,8 @@ export function CustomizerPage() {
                         <PromotionsRenderer
                           config={section.config as PromotionsConfig}
                           language="EN"
+                          isPreview
+                          previewMode={previewDevice}
                         />
                       )}
                       {section.type === "products" && (
@@ -574,6 +576,8 @@ export function CustomizerPage() {
                           config={section.config as ProductsConfig}
                           language="EN"
                           currency="USD"
+                          isPreview
+                          previewMode={previewDevice}
                         />
                       )}
                       {section.type === "footer" && (
