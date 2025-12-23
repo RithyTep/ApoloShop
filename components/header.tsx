@@ -1,6 +1,7 @@
 "use client"
 
-import { ShoppingCart } from "lucide-react"
+import { ShoppingCart, Globe, DollarSign } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface HeaderProps {
   cartCount: number
@@ -28,103 +29,65 @@ export function Header({
             <div className="w-8 h-8 bg-primary rounded-sm flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-lg">S</span>
             </div>
-            <span className="font-bold text-xl text-foreground">Simple Shop</span>
+            <span className="font-bold text-xl text-foreground hidden sm:inline">Simple Shop</span>
           </div>
 
-          {/* Center - Toggles */}
-          <div className="hidden sm:flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-muted px-3 py-2">
-              <button
-                onClick={() => onLanguageChange("EN")}
-                className={`text-sm font-medium transition-colors ${
-                  language === "EN" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                EN
-              </button>
-              <span className="text-muted-foreground">/</span>
-              <button
-                onClick={() => onLanguageChange("KH")}
-                className={`text-sm font-medium transition-colors ${
-                  language === "KH" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                ខ
-              </button>
-            </div>
+          {/* Center - Dropdowns */}
+          <div className="flex items-center gap-2 sm:gap-4">
+            {/* Language Dropdown */}
+            <Select value={language} onValueChange={(value) => onLanguageChange(value as "EN" | "KH")}>
+              <SelectTrigger className="w-[100px] sm:w-[130px] h-9">
+                <Globe className="h-4 w-4 mr-1 sm:mr-2 text-muted-foreground" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="EN">
+                  <span className="flex items-center gap-2">
+                    <span>🇺🇸</span>
+                    <span>English</span>
+                  </span>
+                </SelectItem>
+                <SelectItem value="KH">
+                  <span className="flex items-center gap-2">
+                    <span>🇰🇭</span>
+                    <span>ខ្មែរ</span>
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
 
-            <div className="flex items-center gap-2 bg-muted px-3 py-2">
-              <button
-                onClick={() => onCurrencyChange("USD")}
-                className={`text-sm font-medium transition-colors ${
-                  currency === "USD" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                USD
-              </button>
-              <span className="text-muted-foreground">/</span>
-              <button
-                onClick={() => onCurrencyChange("KHR")}
-                className={`text-sm font-medium transition-colors ${
-                  currency === "KHR" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                KHR
-              </button>
-            </div>
+            {/* Currency Dropdown */}
+            <Select value={currency} onValueChange={(value) => onCurrencyChange(value as "USD" | "KHR")}>
+              <SelectTrigger className="w-[90px] sm:w-[120px] h-9">
+                <DollarSign className="h-4 w-4 mr-1 sm:mr-2 text-muted-foreground" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="USD">
+                  <span className="flex items-center gap-2">
+                    <span>$</span>
+                    <span>USD</span>
+                  </span>
+                </SelectItem>
+                <SelectItem value="KHR">
+                  <span className="flex items-center gap-2">
+                    <span>៛</span>
+                    <span>KHR</span>
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Cart Icon */}
-          <button onClick={onCartClick} className="relative p-2 hover:bg-muted transition-colors">
+          <button onClick={onCartClick} className="relative p-2 hover:bg-muted transition-colors rounded">
             <ShoppingCart size={24} className="text-foreground" />
             {cartCount > 0 && (
-              <span className="absolute top-1 right-1 bg-primary text-primary-foreground text-xs font-bold w-5 h-5 flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
                 {cartCount}
               </span>
             )}
           </button>
-        </div>
-
-        {/* Mobile toggles */}
-        <div className="sm:hidden flex items-center gap-2 mt-3 justify-center">
-          <div className="flex items-center gap-1 bg-muted px-2 py-1 text-xs">
-            <button
-              onClick={() => onLanguageChange("EN")}
-              className={`px-1 font-medium transition-colors ${
-                language === "EN" ? "text-foreground" : "text-muted-foreground"
-              }`}
-            >
-              EN
-            </button>
-            <span className="text-muted-foreground">/</span>
-            <button
-              onClick={() => onLanguageChange("KH")}
-              className={`px-1 font-medium transition-colors ${
-                language === "KH" ? "text-foreground" : "text-muted-foreground"
-              }`}
-            >
-              ខ
-            </button>
-          </div>
-          <div className="flex items-center gap-1 bg-muted px-2 py-1 text-xs">
-            <button
-              onClick={() => onCurrencyChange("USD")}
-              className={`px-1 font-medium transition-colors ${
-                currency === "USD" ? "text-foreground" : "text-muted-foreground"
-              }`}
-            >
-              $
-            </button>
-            <span className="text-muted-foreground">/</span>
-            <button
-              onClick={() => onCurrencyChange("KHR")}
-              className={`px-1 font-medium transition-colors ${
-                currency === "KHR" ? "text-foreground" : "text-muted-foreground"
-              }`}
-            >
-              ៛
-            </button>
-          </div>
         </div>
       </div>
     </header>
