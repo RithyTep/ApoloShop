@@ -161,13 +161,18 @@ describe('Auth API', () => {
 
   describe('GET /api/auth/session', () => {
     it('should return session for valid token', async () => {
+      const { verifyToken } = await import('@/lib/jwt')
+      vi.mocked(verifyToken).mockReturnValue({ userId: 'user-1' })
+
       const session = {
         id: 'session-1',
+        token: 'mock-token',
         user: {
           id: 'user-1',
           email: 'admin@apolodev.com',
           name: 'Admin',
-          role: { name: 'admin' },
+          isActive: true,
+          role: { name: 'admin', permissions: {} },
         },
         expiresAt: new Date(Date.now() + 86400000), // 1 day from now
       }

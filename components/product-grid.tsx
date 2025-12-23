@@ -105,7 +105,7 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
 
                   {/* Price */}
                   <p className="text-lg sm:text-xl font-bold text-primary mb-3">
-                    {currency === "USD" ? `$${product.priceUsd.toFixed(2)}` : `${product.priceKhr.toLocaleString()}៛`}
+                    {currency === "USD" ? `$${Number(product.priceUsd).toFixed(2)}` : `${Number(product.priceKhr).toLocaleString()}៛`}
                   </p>
 
                   {/* Stock Badge */}

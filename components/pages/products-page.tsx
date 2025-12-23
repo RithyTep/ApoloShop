@@ -212,7 +212,7 @@ export function ProductsPage() {
                   <TableRow key={product.id} className="border-b border-border hover:bg-muted/50">
                     <TableCell className="text-foreground font-medium">{product.nameEn}</TableCell>
                     <TableCell className="text-foreground">{product.nameKh}</TableCell>
-                    <TableCell className="text-foreground">${product.priceUsd.toFixed(2)}</TableCell>
+                    <TableCell className="text-foreground">${Number(product.priceUsd).toFixed(2)}</TableCell>
                     <TableCell>
                       <Badge
                         variant={

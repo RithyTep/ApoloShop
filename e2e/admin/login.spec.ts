@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test'
 
+// Run tests serially to avoid auth state conflicts
+test.describe.configure({ mode: 'serial' })
+
 test.describe('Admin Login', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/admin/login')
@@ -14,13 +17,13 @@ test.describe('Admin Login', () => {
   test('should show error for invalid credentials', async ({ page }) => {
     await page.fill('input[type="email"], input[name="email"]', 'invalid@test.com')
     await page.fill('input[type="password"], input[name="password"]', 'wrongpassword')
-    await page.click('button[type="submit"], button:has-text("Login")')
+    await page.click('button[type="submit"], button:has-text("Login"), button:has-text("Sign In")')
 
     // Wait for error message
     await page.waitForTimeout(1000)
 
     // Should show error (stay on login page or show error message)
-    const errorMessage = page.locator('text=/invalid|error|incorrect/i')
+    const errorMessage = page.locator('text=/invalid|error|incorrect/i').first()
     const stillOnLogin = page.url().includes('/login')
 
     expect(await errorMessage.isVisible() || stillOnLogin).toBeTruthy()

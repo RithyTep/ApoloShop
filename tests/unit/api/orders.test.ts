@@ -20,6 +20,7 @@ vi.mock('@/lib/prisma', () => ({
     },
     inventory: {
       update: vi.fn(),
+      updateMany: vi.fn(),
     },
     $transaction: vi.fn(),
   },
@@ -69,24 +70,26 @@ describe('Orders API', () => {
   describe('POST /api/orders', () => {
     it('should create an order with existing customer', async () => {
       const customer = { id: 'cust-1', name: 'John', phone: '+855123456789' }
-      const product = { id: 'prod-1', priceUsd: 5, priceKhr: 20000, inventory: { quantity: 10 } }
       const newOrder = {
         id: 'order-1',
         orderNumber: 'ORD-20251223-001',
         status: 'NEW',
         totalUsd: 10,
         totalKhr: 40000,
+        customer,
+        items: [],
       }
 
       vi.mocked(prisma.customer.findUnique).mockResolvedValue(customer as never)
-      vi.mocked(prisma.product.findUnique).mockResolvedValue(product as never)
-      vi.mocked(prisma.$transaction).mockResolvedValue(newOrder as never)
+      vi.mocked(prisma.order.create).mockResolvedValue(newOrder as never)
+      vi.mocked(prisma.inventory.updateMany).mockResolvedValue({ count: 1 })
 
       const request = new NextRequest('http://localhost:3000/api/orders', {
         method: 'POST',
         body: JSON.stringify({
+          customerName: 'John',
           customerPhone: '+855123456789',
-          items: [{ productId: 'prod-1', quantity: 2 }],
+          items: [{ productId: 'prod-1', quantity: 2, priceUsd: 5, priceKhr: 20000 }],
           channel: 'WEBSITE',
           currency: 'USD',
         }),
@@ -98,21 +101,22 @@ describe('Orders API', () => {
     })
 
     it('should create customer if not exists', async () => {
-      const product = { id: 'prod-1', priceUsd: 5, priceKhr: 20000, inventory: { quantity: 10 } }
       const newCustomer = { id: 'cust-new', name: 'New Customer', phone: '+855999888777' }
-      const newOrder = { id: 'order-1', orderNumber: 'ORD-001' }
+      const newOrder = { id: 'order-1', orderNumber: 'ORD-001', customer: newCustomer, items: [] }
 
       vi.mocked(prisma.customer.findUnique).mockResolvedValue(null)
       vi.mocked(prisma.customer.create).mockResolvedValue(newCustomer as never)
-      vi.mocked(prisma.product.findUnique).mockResolvedValue(product as never)
-      vi.mocked(prisma.$transaction).mockResolvedValue(newOrder as never)
+      vi.mocked(prisma.order.create).mockResolvedValue(newOrder as never)
+      vi.mocked(prisma.inventory.updateMany).mockResolvedValue({ count: 1 })
 
       const request = new NextRequest('http://localhost:3000/api/orders', {
         method: 'POST',
         body: JSON.stringify({
           customerName: 'New Customer',
           customerPhone: '+855999888777',
-          items: [{ productId: 'prod-1', quantity: 1 }],
+          items: [{ productId: 'prod-1', quantity: 1, priceUsd: 5, priceKhr: 20000 }],
+          channel: 'WEBSITE',
+          currency: 'USD',
         }),
       })
 

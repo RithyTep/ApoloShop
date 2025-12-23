@@ -38,18 +38,19 @@ tests/
 ├── setup.ts                    # Vitest global setup
 ├── unit/
 │   └── api/
-│       ├── products.test.ts    # Products API tests
-│       ├── orders.test.ts      # Orders API tests
-│       └── auth.test.ts        # Auth API tests
+│       ├── products.test.ts    # Products API tests (11 tests)
+│       ├── orders.test.ts      # Orders API tests (13 tests)
+│       └── auth.test.ts        # Auth API tests (8 tests)
 ├── components/
-│   ├── product-grid.test.tsx   # ProductGrid tests
+│   ├── product-grid.test.tsx   # ProductGrid tests (8 tests)
 │   └── checkout-page.test.tsx  # Checkout tests
 e2e/
 ├── shop.spec.ts                # Shop browsing E2E
 ├── checkout.spec.ts            # Checkout flow E2E
 └── admin/
-    ├── login.spec.ts           # Admin login E2E
-    └── products.spec.ts        # Product management E2E
+    ├── all-pages.spec.ts       # All admin pages E2E (13 tests)
+    ├── login.spec.ts           # Admin login E2E (9 tests)
+    └── products.spec.ts        # Product management E2E (3 tests)
 ```
 
 ---
