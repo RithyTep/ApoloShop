@@ -284,7 +284,7 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
 
       {/* Product Detail Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl p-0 overflow-hidden">
+        <DialogContent className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-2xl w-[95vw] p-0 overflow-hidden">
           {selectedProduct && (() => {
             const inStock = (selectedProduct.inventory?.quantity || 0) > 0
             return (
