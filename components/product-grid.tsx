@@ -28,21 +28,53 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
   const products = productsData?.products?.filter((p) => p.isActive) || []
   const categories = categoriesData?.categories?.filter((c) => c.isActive) || []
 
-  // Prefetch all categories on mount for instant switching
+  // Preload images utility
+  const preloadImages = (imageUrls: string[]) => {
+    imageUrls.forEach((url) => {
+      if (url && url !== "/placeholder.svg") {
+        const img = new Image()
+        img.src = url
+      }
+    })
+  }
+
+  // Preload current view's images immediately
+  useEffect(() => {
+    if (products.length > 0) {
+      const imageUrls = products.map((p) => p.imageUrl).filter(Boolean) as string[]
+      preloadImages(imageUrls)
+    }
+  }, [products])
+
+  // Prefetch all categories and their images on mount for instant switching
   useEffect(() => {
     if (categories.length > 0) {
-      // Prefetch "All" products
+      // Prefetch "All" products and preload images
       queryClient.prefetchQuery({
         queryKey: ["products", undefined],
-        queryFn: () => fetch("/api/products").then((res) => res.json()),
+        queryFn: async () => {
+          const res = await fetch("/api/products")
+          const data = await res.json()
+          // Preload images after fetching
+          const imageUrls = data.products?.map((p: Product) => p.imageUrl).filter(Boolean) || []
+          preloadImages(imageUrls)
+          return data
+        },
         staleTime: 5 * 60 * 1000, // 5 minutes
       })
 
-      // Prefetch each category
+      // Prefetch each category and preload images
       categories.forEach((cat) => {
         queryClient.prefetchQuery({
           queryKey: ["products", cat.id],
-          queryFn: () => fetch(`/api/products?categoryId=${cat.id}`).then((res) => res.json()),
+          queryFn: async () => {
+            const res = await fetch(`/api/products?categoryId=${cat.id}`)
+            const data = await res.json()
+            // Preload images after fetching
+            const imageUrls = data.products?.map((p: Product) => p.imageUrl).filter(Boolean) || []
+            preloadImages(imageUrls)
+            return data
+          },
           staleTime: 5 * 60 * 1000, // 5 minutes
         })
       })
@@ -163,7 +195,7 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
                       src={product.imageUrl || "/placeholder.svg"}
                       alt={product.nameEn}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
+                      loading={index < 8 ? "eager" : "lazy"}
                     />
                   </Link>
 
