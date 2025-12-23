@@ -17,7 +17,11 @@ export default function Page() {
       {/* Header */}
       <div className="bg-white border-b p-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-pink-600">Shop CMS - Advanced Features</h1>
-        <Button onClick={() => setLanguage(language === "en" ? "kh" : "en")} variant="outline">
+        <Button
+          onClick={() => setLanguage(language === "en" ? "kh" : "en")}
+          variant="outline"
+          aria-label={language === "en" ? "Switch to Khmer" : "Switch to English"}
+        >
           {language === "en" ? "ខ្មែរ" : "English"}
         </Button>
       </div>

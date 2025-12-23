@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { translations, type Language } from "@/lib/i18n"
@@ -105,51 +105,55 @@ export function KitchenOrderScreen({ language = "en" }: KitchenOrderScreenProps)
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {pendingOrders.map((order) => (
             <Card key={order.id} className="bg-gray-800 border-2 border-gray-700 p-4 flex flex-col">
-              {/* Order Header */}
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-white text-2xl font-bold">{order.id}</p>
-                  <p className="text-gray-400 text-sm">{getTimeElapsed(order.createdAt)} ago</p>
+              <CardContent className="flex-1 flex flex-col p-0">
+                {/* Order Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-white text-2xl font-bold">{order.id}</p>
+                    <p className="text-gray-400 text-sm">{getTimeElapsed(order.createdAt)} ago</p>
+                  </div>
+                  <Badge className={`${getStatusColor(order.status)} px-4 py-2`}>
+                    {order.status === "new" ? "NEW" : order.status === "preparing" ? "PREPARING" : "DONE"}
+                  </Badge>
                 </div>
-                <Badge className={`${getStatusColor(order.status)} px-4 py-2`}>
-                  {order.status === "new" ? "NEW" : order.status === "preparing" ? "PREPARING" : "DONE"}
-                </Badge>
-              </div>
 
-              {/* Items */}
-              <div className="flex-1 mb-4 bg-gray-700 p-3 rounded">
-                <p className="text-white font-bold mb-3 text-lg">Items:</p>
-                <div className="space-y-2">
-                  {order.items.map((item) => (
-                    <div key={item.id} className="text-white">
-                      <p className="text-xl font-bold">
-                        {item.quantity}x {item.name}
-                      </p>
-                      {item.notes && <p className="text-yellow-300 text-sm mt-1">✦ {item.notes}</p>}
-                    </div>
-                  ))}
+                {/* Items */}
+                <div className="flex-1 mb-4 bg-gray-700 p-3 rounded">
+                  <p className="text-white font-bold mb-3 text-lg">Items:</p>
+                  <div className="space-y-2">
+                    {order.items.map((item) => (
+                      <div key={item.id} className="text-white">
+                        <p className="text-xl font-bold">
+                          {item.quantity}x {item.name}
+                        </p>
+                        {item.notes && <p className="text-yellow-300 text-sm mt-1">✦ {item.notes}</p>}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-2">
-                {order.status === "new" && (
-                  <Button
-                    onClick={() => handleStartPrep(order.id)}
-                    className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 text-lg"
-                  >
-                    {t.kitchenScreen.startPrep}
-                  </Button>
-                )}
-                {order.status === "preparing" && (
-                  <Button
-                    onClick={() => handleComplete(order.id)}
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 text-lg"
-                  >
-                    {t.kitchenScreen.markComplete}
-                  </Button>
-                )}
-              </div>
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                  {order.status === "new" && (
+                    <Button
+                      onClick={() => handleStartPrep(order.id)}
+                      className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 text-lg"
+                      aria-label={`Start preparing order ${order.id}`}
+                    >
+                      {t.kitchenScreen.startPrep}
+                    </Button>
+                  )}
+                  {order.status === "preparing" && (
+                    <Button
+                      onClick={() => handleComplete(order.id)}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 text-lg"
+                      aria-label={`Mark order ${order.id} as complete`}
+                    >
+                      {t.kitchenScreen.markComplete}
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
             </Card>
           ))}
         </div>

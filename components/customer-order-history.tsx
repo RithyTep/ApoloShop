@@ -102,7 +102,12 @@ export function CustomerOrderHistory({ language = "en" }: CustomerOrderHistoryPr
                       </div>
                     </td>
                     <td className="p-2">
-                      <Button size="sm" variant="outline" onClick={() => setSelectedCustomer(customer)}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSelectedCustomer(customer)}
+                        aria-label={`View details for ${customer.name}`}
+                      >
                         View
                       </Button>
                     </td>
@@ -140,7 +145,11 @@ export function CustomerOrderHistory({ language = "en" }: CustomerOrderHistoryPr
             </div>
 
             <div>
+              <label htmlFor="customer-note" className="text-sm font-semibold mb-2 block">
+                {t.customerHistory.addNote}
+              </label>
               <Textarea
+                id="customer-note"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder={t.customerHistory.addNote}
@@ -148,12 +157,18 @@ export function CustomerOrderHistory({ language = "en" }: CustomerOrderHistoryPr
               <Button
                 onClick={() => handleAddNote(selectedCustomer.id)}
                 className="mt-2 w-full bg-pink-500 hover:bg-pink-600 text-white"
+                aria-label="Add note to customer record"
               >
                 {t.customerHistory.addNote}
               </Button>
             </div>
 
-            <Button variant="outline" onClick={() => setSelectedCustomer(null)} className="w-full">
+            <Button
+              variant="outline"
+              onClick={() => setSelectedCustomer(null)}
+              className="w-full"
+              aria-label="Close customer details"
+            >
               Close
             </Button>
           </CardContent>

@@ -60,6 +60,8 @@ export function OrderStatusNotification({ language = "en" }: OrderStatusNotifica
                       ? `border-pink-500 ${statusColors[status]}`
                       : "border-gray-300 bg-gray-100 text-gray-500"
                   }`}
+                  type="button"
+                  aria-label={`Status: ${t.orderStatus[status]}`}
                 >
                   {index + 1}
                 </button>
@@ -68,6 +70,7 @@ export function OrderStatusNotification({ language = "en" }: OrderStatusNotifica
                     className={`h-1 w-8 mx-1 ${
                       statusOrder.indexOf(currentStatus) > index ? "bg-pink-500" : "bg-gray-300"
                     }`}
+                    aria-hidden="true"
                   />
                 )}
               </div>
@@ -92,8 +95,11 @@ export function OrderStatusNotification({ language = "en" }: OrderStatusNotifica
 
         {/* Custom Message */}
         <div>
-          <label className="text-sm font-semibold mb-2 block">{t.orderNotification.messagePlaceholder}</label>
+          <label htmlFor="custom-message" className="text-sm font-semibold mb-2 block">
+            {t.orderNotification.messagePlaceholder}
+          </label>
           <Textarea
+            id="custom-message"
             value={customMessage}
             onChange={(e) => setCustomMessage(e.target.value)}
             placeholder={t.orderNotification.messagePlaceholder}
@@ -103,19 +109,27 @@ export function OrderStatusNotification({ language = "en" }: OrderStatusNotifica
 
         {/* Send Update Buttons */}
         <div className="flex gap-3">
-          <Button onClick={handleSendUpdate} className="flex-1 bg-pink-600 hover:bg-pink-700 text-white">
-            <MessageCircle className="w-4 h-4 mr-2" />
+          <Button
+            onClick={handleSendUpdate}
+            className="flex-1 bg-pink-600 hover:bg-pink-700 text-white"
+            aria-label="Send via Telegram"
+          >
+            <MessageCircle className="w-4 h-4 mr-2" aria-hidden="true" />
             {t.orderNotification.telegramBtn}
           </Button>
-          <Button onClick={handleSendUpdate} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
-            <Envelope className="w-4 h-4 mr-2" />
+          <Button
+            onClick={handleSendUpdate}
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+            aria-label="Send via Facebook Messenger"
+          >
+            <Envelope className="w-4 h-4 mr-2" aria-hidden="true" />
             {t.orderNotification.messengerBtn}
           </Button>
         </div>
 
         {messageSent && (
-          <div className="bg-green-100 text-green-800 p-3 flex items-center gap-2 text-sm">
-            <Check className="w-4 h-4" />
+          <div className="bg-green-100 text-green-800 p-3 flex items-center gap-2 text-sm" role="status">
+            <Check className="w-4 h-4" aria-hidden="true" />
             {t.orderNotification.updateSent}
           </div>
         )}

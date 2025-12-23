@@ -60,6 +60,7 @@ export function ReceiptInvoice({
       {/* Receipt Paper */}
       <div
         ref={receiptRef}
+        id="receipt-print"
         className="bg-white p-8 border-4 border-gray-900 text-center font-mono text-sm"
         style={{ width: "374px" }}
       >
@@ -165,8 +166,12 @@ export function ReceiptInvoice({
       </div>
 
       {/* Print Button */}
-      <Button onClick={handlePrint} className="w-full bg-pink-600 hover:bg-pink-700 text-white">
-        <Printer className="w-4 h-4 mr-2" />
+      <Button
+        onClick={handlePrint}
+        className="w-full bg-pink-600 hover:bg-pink-700 text-white"
+        aria-label="Print receipt"
+      >
+        <Printer className="w-4 h-4 mr-2" aria-hidden="true" />
         {t.receipt.print}
       </Button>
     </div>
