@@ -339,3 +339,20 @@ model Setting {
   @@map("settings")
   @@schema("apolo")
 }
+
+// ============================================
+// SHOP CUSTOMIZATION (White Label)
+// ============================================
+
+model ShopCustomization {
+  id        String   @id @default(cuid())
+  version   Int      @default(1)
+  isActive  Boolean  @default(true) @map("is_active")
+  config    Json     // Full customization config (theme, sections, etc.)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@map("shop_customization")
+  @@schema("apolo")
+}

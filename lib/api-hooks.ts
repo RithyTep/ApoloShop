@@ -752,3 +752,129 @@ export function useDeleteRole() {
     },
   });
 }
+
+// ============================================
+// SHOP CUSTOMIZATION (White Label)
+// ============================================
+
+export type SectionType = "hero" | "promotions" | "products" | "footer";
+
+export interface HeroConfig {
+  mediaType: "image" | "video";
+  mediaUrl: string;
+  overlayOpacity: number;
+  overlayColor: string;
+  titleEn: string;
+  titleKh: string;
+  subtitleEn: string;
+  subtitleKh: string;
+  ctaTextEn: string;
+  ctaTextKh: string;
+  ctaLink: string;
+  ctaStyle: "primary" | "outline" | "ghost";
+  textAlignment: "left" | "center" | "right";
+  height: "small" | "medium" | "large" | "full";
+}
+
+export interface PromotionCard {
+  id: string;
+  imageUrl: string;
+  titleEn: string;
+  titleKh: string;
+  descriptionEn: string;
+  descriptionKh: string;
+  link: string;
+  badge?: string;
+}
+
+export interface PromotionsConfig {
+  titleEn: string;
+  titleKh: string;
+  layout: "grid" | "carousel";
+  columns: 2 | 3 | 4;
+  cards: PromotionCard[];
+}
+
+export interface ProductsConfig {
+  titleEn: string;
+  titleKh: string;
+  displayType: "featured" | "new_arrivals" | "bestsellers" | "category";
+  categoryId?: string;
+  productIds?: string[];
+  layout: "grid" | "carousel";
+  columns: 2 | 3 | 4;
+  maxProducts: number;
+  showPrice: boolean;
+  showStock: boolean;
+  showAddToCart: boolean;
+}
+
+export interface FooterColumn {
+  id: string;
+  titleEn: string;
+  titleKh: string;
+  type: "links" | "contact" | "social" | "text";
+  links?: { textEn: string; textKh: string; url: string }[];
+  content?: { en: string; kh: string };
+}
+
+export interface FooterConfig {
+  backgroundColor: string;
+  textColor: string;
+  columns: FooterColumn[];
+  copyrightEn: string;
+  copyrightKh: string;
+  showSocialIcons: boolean;
+  socialLinks: {
+    facebook?: string;
+    instagram?: string;
+    telegram?: string;
+    tiktok?: string;
+  };
+}
+
+export interface ShopSection {
+  id: string;
+  type: SectionType;
+  enabled: boolean;
+  order: number;
+  config: HeroConfig | PromotionsConfig | ProductsConfig | FooterConfig;
+}
+
+export interface ShopTheme {
+  primaryColor: string;
+  accentColor: string;
+  backgroundColor: string;
+  textColor: string;
+  borderRadius: number;
+}
+
+export interface ShopCustomizationConfig {
+  theme: ShopTheme;
+  sections: ShopSection[];
+}
+
+export function useShopCustomization() {
+  return useQuery({
+    queryKey: ["shop-customization"],
+    queryFn: () =>
+      fetchAPI<{ config: ShopCustomizationConfig; version: number; updatedAt?: string }>(
+        "/api/customizer"
+      ),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useUpdateShopCustomization() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { config: ShopCustomizationConfig }) =>
+      fetchAPI<{ success: boolean; version: number; updatedAt: string }>("/api/customizer", {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shop-customization"] });
+    },
+  });
+}

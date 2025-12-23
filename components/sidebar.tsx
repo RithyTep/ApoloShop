@@ -15,6 +15,7 @@ import {
   ShoppingCart,
   Menu,
   X,
+  Palette,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -31,6 +32,7 @@ type NavItem =
   | "users"
   | "reports"
   | "settings"
+  | "customizer"
 
 interface SidebarProps {
   activeNav: NavItem
@@ -47,6 +49,7 @@ const navItems = [
   { id: "payments", label: "Payments", icon: CreditCard },
   { id: "promotions", label: "Promotions", icon: Tag },
   { id: "content", label: "Content", icon: FileText },
+  { id: "customizer", label: "Shop Customizer", icon: Palette },
   { id: "users", label: "Users & Roles", icon: User },
   { id: "reports", label: "Reports", icon: BarChart3 },
   { id: "settings", label: "Settings", icon: Settings },

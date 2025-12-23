@@ -14,6 +14,7 @@ import { ContentPage } from "./pages/content-page"
 import { UsersPage } from "./pages/users-page"
 import { ReportsPage } from "./pages/reports-page"
 import { SettingsPage } from "./pages/settings-page"
+import { CustomizerPage } from "./customizer/customizer-page"
 
 type NavItem =
   | "dashboard"
@@ -28,6 +29,7 @@ type NavItem =
   | "users"
   | "reports"
   | "settings"
+  | "customizer"
 
 export function AdminDashboard() {
   const [activeNav, setActiveNav] = useState<NavItem>("dashboard")
@@ -58,6 +60,8 @@ export function AdminDashboard() {
         return <ReportsPage />
       case "settings":
         return <SettingsPage />
+      case "customizer":
+        return <CustomizerPage />
       default:
         return <DashboardPage />
     }
