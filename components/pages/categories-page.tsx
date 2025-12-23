@@ -2,7 +2,7 @@
 
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, GripVertical } from "phosphor-react"
+import { Plus, GripVertical } from "lucide-react"
 
 const categories = [
   { id: 1, name: "Coffee", nameKh: "កាហ្វេ", enabled: true },

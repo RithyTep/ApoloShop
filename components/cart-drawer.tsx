@@ -1,6 +1,6 @@
 "use client"
 
-import { X, Trash } from "phosphor-react"
+import { X, Trash } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { CartItem } from "./shop-app"
 import { Separator } from "@/components/ui/separator"

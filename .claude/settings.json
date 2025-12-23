@@ -14,13 +14,6 @@
   },
   "permissions": {
     "allow": [
-      "Bash(git *)",
-      "Bash(bun *)",
-      "Read(**)",
-      "Write(PROJECT.md)",
-      "Write(CLAUDE.md)",
-      "Write(.claude/**)",
-      "Write(scripts/**)"
     ]
   },
   "contextFiles": [

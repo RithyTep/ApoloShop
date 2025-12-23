@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Plus } from "phosphor-react"
+import { Plus } from "lucide-react"
 
 const users = [
   { id: 1, name: "Admin User", email: "admin@shop.com", role: "Admin", permissions: "All" },

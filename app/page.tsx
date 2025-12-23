@@ -1,57 +1,68 @@
 "use client"
 
-import { useState } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { OrderStatusNotification } from "@/components/order-status-notification"
-import { CustomerOrderHistory } from "@/components/customer-order-history"
-import { KitchenOrderScreen } from "@/components/kitchen-order-screen"
-import { ReceiptInvoice } from "@/components/receipt-invoice"
-import type { Language } from "@/lib/i18n"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ShoppingBag, Settings, Coffee } from "lucide-react"
 
 export default function Page() {
-  const [language, setLanguage] = useState<Language>("en")
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b p-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-pink-600">Shop CMS - Advanced Features</h1>
-        <Button
-          onClick={() => setLanguage(language === "en" ? "kh" : "en")}
-          variant="outline"
-          aria-label={language === "en" ? "Switch to Khmer" : "Switch to English"}
-        >
-          {language === "en" ? "ខ្មែរ" : "English"}
-        </Button>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center p-4">
+      <div className="max-w-4xl w-full">
+        {/* Logo & Title */}
+        <div className="text-center mb-12">
+          <div className="mx-auto mb-6 w-20 h-20 bg-pink-600 rounded-full flex items-center justify-center">
+            <Coffee className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">ApoloShop</h1>
+          <p className="text-gray-600 text-lg">E-commerce CMS for Cambodian Small Businesses</p>
+        </div>
 
-      {/* Tabs */}
-      <div className="p-6">
-        <Tabs defaultValue="orders" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-white border">
-            <TabsTrigger value="orders">Order Notifications</TabsTrigger>
-            <TabsTrigger value="customers">Customer History</TabsTrigger>
-            <TabsTrigger value="kitchen">Kitchen Screen</TabsTrigger>
-            <TabsTrigger value="receipt">Receipt / Invoice</TabsTrigger>
-          </TabsList>
+        {/* Cards */}
+        <div className="grid md:grid-cols-2 gap-6">
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-4">
+                <ShoppingBag className="w-6 h-6 text-pink-600" />
+              </div>
+              <CardTitle>Shop</CardTitle>
+              <CardDescription>
+                Browse products and place orders via Telegram or Messenger
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/shop">
+                <Button className="w-full bg-pink-600 hover:bg-pink-700">
+                  Visit Shop
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
 
-          <TabsContent value="orders" className="mt-6">
-            <OrderStatusNotification language={language} />
-          </TabsContent>
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                <Settings className="w-6 h-6 text-purple-600" />
+              </div>
+              <CardTitle>Admin Dashboard</CardTitle>
+              <CardDescription>
+                Manage products, orders, customers, and settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/admin">
+                <Button variant="outline" className="w-full">
+                  Go to Admin
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
 
-          <TabsContent value="customers" className="mt-6">
-            <CustomerOrderHistory language={language} />
-          </TabsContent>
-
-          <TabsContent value="kitchen" className="mt-6">
-            <KitchenOrderScreen language={language} />
-          </TabsContent>
-
-          <TabsContent value="receipt" className="mt-6 flex justify-center">
-            <ReceiptInvoice language={language} />
-          </TabsContent>
-        </Tabs>
+        {/* Footer */}
+        <div className="text-center mt-12 text-sm text-gray-500">
+          <p>Multi-language (EN/KH) | Multi-currency (USD/KHR) | KHQR Payments</p>
+        </div>
       </div>
     </div>
   )

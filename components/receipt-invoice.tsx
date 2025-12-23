@@ -3,7 +3,7 @@
 import { useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Printer } from "phosphor-react"
+import { Printer } from "lucide-react"
 import { translations, type Language } from "@/lib/i18n"
 
 interface ReceiptItem {

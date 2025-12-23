@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ShoppingCart } from "phosphor-react"
+import { ShoppingCart } from "lucide-react"
 
 interface Product {
   id: string

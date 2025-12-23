@@ -3,7 +3,7 @@
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
-import { Download } from "phosphor-react"
+import { Download } from "lucide-react"
 
 const salesData = [
   { month: "Jan", sales: 4000, orders: 24 },

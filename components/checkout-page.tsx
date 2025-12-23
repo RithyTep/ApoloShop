@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import type { CartItem } from "./shop-app"
-import { MessageCircle, Envelope } from "phosphor-react"
+import { MessageCircle, Envelope } from "lucide-react"
 
 interface CheckoutPageProps {
   cart: CartItem[]

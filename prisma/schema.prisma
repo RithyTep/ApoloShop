@@ -1,0 +1,341 @@
+// Prisma Schema for ApoloShop CMS
+// PostgreSQL database hosted on Railway.com
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["apolo"]
+}
+
+// ============================================
+// USER & AUTHENTICATION
+// ============================================
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  name         String
+  roleId       String    @map("role_id")
+  role         Role      @relation(fields: [roleId], references: [id])
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  sessions     Session[]
+
+  @@map("users")
+  @@schema("apolo")
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  permissions Json     // { "products": ["read", "write", "delete"], ... }
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  users       User[]
+
+  @@map("roles")
+  @@schema("apolo")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token        String   @unique
+  expiresAt    DateTime @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([token])
+  @@map("sessions")
+  @@schema("apolo")
+}
+
+// ============================================
+// PRODUCT CATALOG
+// ============================================
+
+model Category {
+  id        String    @id @default(cuid())
+  nameEn    String    @map("name_en")
+  nameKh    String    @map("name_kh")
+  slug      String    @unique
+  sortOrder Int       @default(0) @map("sort_order")
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  products  Product[]
+
+  @@map("categories")
+  @@schema("apolo")
+}
+
+model Product {
+  id            String    @id @default(cuid())
+  nameEn        String    @map("name_en")
+  nameKh        String    @map("name_kh")
+  descriptionEn String?   @map("description_en") @db.Text
+  descriptionKh String?   @map("description_kh") @db.Text
+  priceUsd      Decimal   @map("price_usd") @db.Decimal(10, 2)
+  priceKhr      Int       @map("price_khr")
+  categoryId    String    @map("category_id")
+  category      Category  @relation(fields: [categoryId], references: [id])
+  sku           String    @unique
+  imageUrl      String?   @map("image_url")
+  images        Json?     // Array of additional image URLs
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  inventory     Inventory?
+  orderItems    OrderItem[]
+
+  @@index([categoryId])
+  @@index([sku])
+  @@index([isActive])
+  @@map("products")
+  @@schema("apolo")
+}
+
+model Inventory {
+  id          String   @id @default(cuid())
+  productId   String   @unique @map("product_id")
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity    Int      @default(0)
+  minLevel    Int      @default(10) @map("min_level")
+  lastUpdated DateTime @default(now()) @map("last_updated")
+
+  @@map("inventory")
+  @@schema("apolo")
+}
+
+// ============================================
+// CUSTOMERS
+// ============================================
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String   @unique
+  email     String?
+  notes     String?  @db.Text
+  tags      Json?    // ["VIP", "Frequent Buyer"]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  orders    Order[]
+
+  @@index([phone])
+  @@map("customers")
+  @@schema("apolo")
+}
+
+// ============================================
+// ORDERS & PAYMENTS
+// ============================================
+
+enum OrderStatus {
+  NEW
+  CONFIRMED
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+
+  @@schema("apolo")
+}
+
+enum OrderChannel {
+  WEBSITE
+  TELEGRAM
+  MESSENGER
+  PHONE
+  WALK_IN
+
+  @@schema("apolo")
+}
+
+enum Currency {
+  USD
+  KHR
+
+  @@schema("apolo")
+}
+
+model Order {
+  id          String       @id @default(cuid())
+  orderNumber String       @unique @map("order_number")
+  customerId  String       @map("customer_id")
+  customer    Customer     @relation(fields: [customerId], references: [id])
+  status      OrderStatus  @default(NEW)
+  totalUsd    Decimal      @map("total_usd") @db.Decimal(10, 2)
+  totalKhr    Int          @map("total_khr")
+  currency    Currency     @default(USD)
+  channel     OrderChannel @default(WEBSITE)
+  note        String?      @db.Text
+  promotionId String?      @map("promotion_id")
+  promotion   Promotion?   @relation(fields: [promotionId], references: [id])
+  discountUsd Decimal?     @map("discount_usd") @db.Decimal(10, 2)
+  discountKhr Int?         @map("discount_khr")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  items       OrderItem[]
+  payments    Payment[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+  @@schema("apolo")
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String  @map("order_id")
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  priceUsd  Decimal @map("price_usd") @db.Decimal(10, 2)
+  priceKhr  Int     @map("price_khr")
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+  @@schema("apolo")
+}
+
+enum PaymentMethod {
+  CASH
+  ABA_KHQR
+  WING
+  PAYWAY
+  BANK_TRANSFER
+
+  @@schema("apolo")
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+
+  @@schema("apolo")
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  orderId       String        @map("order_id")
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  method        PaymentMethod
+  amount        Decimal       @db.Decimal(10, 2)
+  currency      Currency
+  status        PaymentStatus @default(PENDING)
+  transactionId String?       @map("transaction_id")
+  metadata      Json?
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  @@index([orderId])
+  @@index([transactionId])
+  @@map("payments")
+  @@schema("apolo")
+}
+
+// ============================================
+// PROMOTIONS
+// ============================================
+
+enum PromotionType {
+  PERCENTAGE
+  FIXED_AMOUNT
+
+  @@schema("apolo")
+}
+
+model Promotion {
+  id        String        @id @default(cuid())
+  code      String        @unique
+  type      PromotionType
+  value     Decimal       @db.Decimal(10, 2)
+  minOrder  Decimal?      @map("min_order") @db.Decimal(10, 2)
+  maxUses   Int?          @map("max_uses")
+  usedCount Int           @default(0) @map("used_count")
+  startDate DateTime      @map("start_date")
+  endDate   DateTime      @map("end_date")
+  isActive  Boolean       @default(true) @map("is_active")
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  orders    Order[]
+
+  @@index([code])
+  @@index([isActive])
+  @@map("promotions")
+  @@schema("apolo")
+}
+
+// ============================================
+// CMS CONTENT
+// ============================================
+
+enum ContentType {
+  PAGE
+  BLOG
+  BANNER
+  FAQ
+
+  @@schema("apolo")
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@schema("apolo")
+}
+
+model CMSContent {
+  id        String        @id @default(cuid())
+  slug      String        @unique
+  titleEn   String        @map("title_en")
+  titleKh   String        @map("title_kh")
+  contentEn String        @map("content_en") @db.Text
+  contentKh String        @map("content_kh") @db.Text
+  type      ContentType
+  status    ContentStatus @default(DRAFT)
+  metadata  Json?
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  @@index([type])
+  @@index([status])
+  @@map("cms_content")
+  @@schema("apolo")
+}
+
+// ============================================
+// SETTINGS
+// ============================================
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+  @@schema("apolo")
+}
