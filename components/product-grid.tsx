@@ -1,12 +1,17 @@
 "use client"
 
-import Link from "next/link"
 import { useEffect, useState, useTransition } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ShoppingCart } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { ShoppingCart, Plus, Minus } from "lucide-react"
 import { useProducts, useCategories, Product } from "@/lib/api-hooks"
 import { cn } from "@/lib/utils"
 
@@ -21,6 +26,9 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
   const [categoryFilter, setCategoryFilter] = useState("")
   const [isPending, startTransition] = useTransition()
   const [isAnimating, setIsAnimating] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [quantity, setQuantity] = useState(1)
 
   const { data: productsData, isLoading: productsLoading, isFetching } = useProducts(categoryFilter || undefined)
   const { data: categoriesData } = useCategories()
@@ -92,6 +100,23 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
 
     // Reset animation after transition
     setTimeout(() => setIsAnimating(false), 150)
+  }
+
+  // Open product detail dialog
+  const openProductDialog = (product: Product) => {
+    setSelectedProduct(product)
+    setQuantity(1)
+    setDialogOpen(true)
+  }
+
+  // Handle add to cart from dialog
+  const handleDialogAddToCart = () => {
+    if (selectedProduct) {
+      for (let i = 0; i < quantity; i++) {
+        onAddToCart(selectedProduct.id, selectedProduct.nameEn, selectedProduct.priceUsd, selectedProduct.imageUrl || "")
+      }
+      setDialogOpen(false)
+    }
   }
 
   // Show skeleton only on initial load, not on category switch
@@ -189,23 +214,29 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
                   className="bg-card border border-border flex flex-col group animate-in fade-in-0 slide-in-from-bottom-2"
                   style={{ animationDelay: `${index * 30}ms`, animationDuration: "300ms" }}
                 >
-                  {/* Image - Clickable */}
-                  <Link href={`/shop/product/${product.id}`} className="aspect-square overflow-hidden bg-muted block">
+                  {/* Image - Click to open dialog */}
+                  <button
+                    onClick={() => openProductDialog(product)}
+                    className="aspect-square overflow-hidden bg-muted block w-full cursor-pointer"
+                  >
                     <img
                       src={product.imageUrl || "/placeholder.svg"}
                       alt={product.nameEn}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       loading={index < 8 ? "eager" : "lazy"}
                     />
-                  </Link>
+                  </button>
 
                   {/* Content */}
                   <div className="p-3 sm:p-4 flex flex-col flex-1">
-                    <Link href={`/shop/product/${product.id}`} className="hover:text-primary transition-colors">
+                    <button
+                      onClick={() => openProductDialog(product)}
+                      className="hover:text-primary transition-colors text-left"
+                    >
                       <h3 className="font-semibold text-sm sm:text-base text-foreground mb-1 line-clamp-2">
                         {language === "EN" ? product.nameEn : product.nameKh}
                       </h3>
-                    </Link>
+                    </button>
 
                     {/* Price */}
                     <p className="text-lg sm:text-xl font-bold text-primary mb-3">
@@ -250,6 +281,103 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
           </div>
         )}
       </div>
+
+      {/* Product Detail Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-2xl p-0 overflow-hidden">
+          {selectedProduct && (() => {
+            const inStock = (selectedProduct.inventory?.quantity || 0) > 0
+            return (
+              <div className="flex flex-col md:flex-row">
+                {/* Product Image */}
+                <div className="md:w-1/2 aspect-square bg-muted">
+                  <img
+                    src={selectedProduct.imageUrl || "/placeholder.svg"}
+                    alt={selectedProduct.nameEn}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                {/* Product Details */}
+                <div className="md:w-1/2 p-6 flex flex-col">
+                  <DialogHeader className="mb-4">
+                    <DialogTitle className="text-xl font-bold">
+                      {language === "EN" ? selectedProduct.nameEn : selectedProduct.nameKh}
+                    </DialogTitle>
+                  </DialogHeader>
+
+                  {/* Description */}
+                  <p className="text-muted-foreground text-sm mb-4 flex-grow">
+                    {language === "EN"
+                      ? selectedProduct.descriptionEn || "No description available"
+                      : selectedProduct.descriptionKh || "មិនមានការពិពណ៌នាទេ"}
+                  </p>
+
+                  {/* Price */}
+                  <p className="text-2xl font-bold text-primary mb-4">
+                    {currency === "USD"
+                      ? `$${Number(selectedProduct.priceUsd).toFixed(2)}`
+                      : `${Number(selectedProduct.priceKhr).toLocaleString()}៛`}
+                  </p>
+
+                  {/* Stock Badge */}
+                  <div className="mb-4">
+                    <Badge
+                      variant={inStock ? "default" : "outline"}
+                      className={inStock ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}
+                    >
+                      {language === "EN"
+                        ? inStock ? "In Stock" : "Out of Stock"
+                        : inStock ? "មាននៅក្នុងស្តុក" : "អស់ស្តុក"}
+                    </Badge>
+                  </div>
+
+                  {/* Quantity Selector */}
+                  {inStock && (
+                    <div className="flex items-center gap-4 mb-4">
+                      <span className="text-sm text-muted-foreground">
+                        {language === "EN" ? "Quantity:" : "ចំនួន:"}
+                      </span>
+                      <div className="flex items-center border border-border rounded">
+                        <button
+                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                          className="p-2 hover:bg-muted transition-colors"
+                          disabled={quantity <= 1}
+                        >
+                          <Minus size={16} />
+                        </button>
+                        <span className="px-4 py-2 min-w-[3rem] text-center font-medium">
+                          {quantity}
+                        </span>
+                        <button
+                          onClick={() => setQuantity(quantity + 1)}
+                          className="p-2 hover:bg-muted transition-colors"
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Add to Cart Button */}
+                  <Button
+                    onClick={handleDialogAddToCart}
+                    disabled={!inStock}
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2 transition-transform active:scale-95"
+                    size="lg"
+                  >
+                    <ShoppingCart size={18} />
+                    <span>
+                      {language === "EN" ? "Add to Cart" : "បន្ថែមទៅរទុក"}
+                      {inStock && quantity > 1 && ` (${quantity})`}
+                    </span>
+                  </Button>
+                </div>
+              </div>
+            )
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
