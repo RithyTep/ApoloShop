@@ -1,6 +1,6 @@
 "use client"
 
-import { ShoppingCart, Globe, DollarSign } from "lucide-react"
+import { ShoppingCart } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface HeaderProps {
@@ -33,48 +33,26 @@ export function Header({
           </div>
 
           {/* Center - Dropdowns */}
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2">
             {/* Language Dropdown */}
             <Select value={language} onValueChange={(value) => onLanguageChange(value as "EN" | "KH")}>
-              <SelectTrigger className="w-[100px] sm:w-[130px] h-9">
-                <Globe className="h-4 w-4 mr-1 sm:mr-2 text-muted-foreground" />
+              <SelectTrigger className="w-[70px] h-9">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="EN">
-                  <span className="flex items-center gap-2">
-                    <span>🇺🇸</span>
-                    <span>English</span>
-                  </span>
-                </SelectItem>
-                <SelectItem value="KH">
-                  <span className="flex items-center gap-2">
-                    <span>🇰🇭</span>
-                    <span>ខ្មែរ</span>
-                  </span>
-                </SelectItem>
+                <SelectItem value="EN">🇺🇸 EN</SelectItem>
+                <SelectItem value="KH">🇰🇭 KH</SelectItem>
               </SelectContent>
             </Select>
 
             {/* Currency Dropdown */}
             <Select value={currency} onValueChange={(value) => onCurrencyChange(value as "USD" | "KHR")}>
-              <SelectTrigger className="w-[90px] sm:w-[120px] h-9">
-                <DollarSign className="h-4 w-4 mr-1 sm:mr-2 text-muted-foreground" />
+              <SelectTrigger className="w-[80px] h-9">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="USD">
-                  <span className="flex items-center gap-2">
-                    <span>$</span>
-                    <span>USD</span>
-                  </span>
-                </SelectItem>
-                <SelectItem value="KHR">
-                  <span className="flex items-center gap-2">
-                    <span>៛</span>
-                    <span>KHR</span>
-                  </span>
-                </SelectItem>
+                <SelectItem value="USD">$ USD</SelectItem>
+                <SelectItem value="KHR">៛ KHR</SelectItem>
               </SelectContent>
             </Select>
           </div>
