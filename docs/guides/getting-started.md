@@ -1,5 +1,13 @@
 # Getting Started
 
+| Meta | Value |
+|------|-------|
+| **Format** | Markdown |
+| **Updated** | 2024-12-23 |
+| **Author** | ApoloDev Team |
+
+---
+
 ## Prerequisites
 
 - Node.js 18+

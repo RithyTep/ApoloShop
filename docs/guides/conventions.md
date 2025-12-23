@@ -1,5 +1,13 @@
 # Code Conventions
 
+| Meta | Value |
+|------|-------|
+| **Format** | Markdown |
+| **Updated** | 2024-12-23 |
+| **Author** | ApoloDev Team |
+
+---
+
 ## File Naming
 
 | Type | Convention | Example |

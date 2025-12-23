@@ -2,6 +2,12 @@
 
 > PostgreSQL with Prisma ORM | Schema: `apolo`
 
+| Meta | Value |
+|------|-------|
+| **Format** | Markdown |
+| **Updated** | 2024-12-23 |
+| **Author** | ApoloDev Team |
+
 ## Tables Overview
 
 | Table | Description |

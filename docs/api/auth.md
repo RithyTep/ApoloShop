@@ -1,5 +1,13 @@
 # Authentication API
 
+| Meta | Value |
+|------|-------|
+| **Format** | Markdown |
+| **Updated** | 2024-12-23 |
+| **Author** | ApoloDev Team |
+
+---
+
 ## POST /api/auth/login
 
 Login and receive auth cookie.

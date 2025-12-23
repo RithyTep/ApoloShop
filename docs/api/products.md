@@ -1,5 +1,13 @@
 # Products API
 
+| Meta | Value |
+|------|-------|
+| **Format** | Markdown |
+| **Updated** | 2024-12-23 |
+| **Author** | ApoloDev Team |
+
+---
+
 ## GET /api/products
 
 List products with optional filters.

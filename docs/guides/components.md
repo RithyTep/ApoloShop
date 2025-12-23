@@ -1,5 +1,13 @@
 # Component Patterns
 
+| Meta | Value |
+|------|-------|
+| **Format** | Markdown |
+| **Updated** | 2024-12-23 |
+| **Author** | ApoloDev Team |
+
+---
+
 ## UI Components (Shadcn)
 
 Located in `components/ui/`. These are base primitives.

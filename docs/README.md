@@ -2,6 +2,13 @@
 
 > E-commerce CMS for Cambodian Small Businesses
 
+| Meta | Value |
+|------|-------|
+| **Format** | Markdown |
+| **Updated** | 2024-12-23 |
+| **Author** | ApoloDev Team |
+| **Version** | 1.0.0 |
+
 ## Quick Links
 
 | Document | Description |
