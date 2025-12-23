@@ -11,11 +11,18 @@ import {
   PromotionsConfig,
   ProductsConfig,
   FooterConfig,
+  GalleryConfig,
+  AboutConfig,
+  TeamConfig,
 } from "@/lib/api-hooks"
 import { HeroRenderer } from "./customizer/renderers/hero-renderer"
 import { PromotionsRenderer } from "./customizer/renderers/promotions-renderer"
 import { ProductsRenderer } from "./customizer/renderers/products-renderer"
 import { FooterRenderer } from "./customizer/renderers/footer-renderer"
+import { GalleryRenderer } from "./customizer/renderers/gallery-renderer"
+import { AboutRenderer } from "./customizer/renderers/about-renderer"
+import { TeamRenderer } from "./customizer/renderers/team-renderer"
+import { AnnouncementBanner } from "./shop/announcement-banner"
 
 export interface CartItem {
   id: string
@@ -82,6 +89,15 @@ export function ShopApp() {
       className="min-h-screen bg-background max-w-[1280px] mx-auto"
       style={themeStyles as React.CSSProperties}
     >
+      {/* Announcement Banner */}
+      {config?.announcement && (
+        <AnnouncementBanner
+          config={config.announcement}
+          language={language}
+          currentPage={currentPage === "shop" ? "home" : "checkout"}
+        />
+      )}
+
       <Header
         cartCount={cart.length}
         onCartClick={() => setIsCartOpen(true)}
@@ -131,6 +147,30 @@ export function ShopApp() {
                     <FooterRenderer
                       key={section.id}
                       config={section.config as FooterConfig}
+                      language={language}
+                    />
+                  )
+                case "gallery":
+                  return (
+                    <GalleryRenderer
+                      key={section.id}
+                      config={section.config as GalleryConfig}
+                      language={language}
+                    />
+                  )
+                case "about":
+                  return (
+                    <AboutRenderer
+                      key={section.id}
+                      config={section.config as AboutConfig}
+                      language={language}
+                    />
+                  )
+                case "team":
+                  return (
+                    <TeamRenderer
+                      key={section.id}
+                      config={section.config as TeamConfig}
                       language={language}
                     />
                   )

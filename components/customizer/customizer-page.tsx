@@ -34,6 +34,10 @@ import {
   Layers,
   Eye,
   EyeOff,
+  Images,
+  FileText,
+  Users,
+  Megaphone,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -58,16 +62,28 @@ import {
   PromotionsConfig,
   ProductsConfig,
   FooterConfig,
+  GalleryConfig,
+  AboutConfig,
+  TeamConfig,
+  AnnouncementConfig,
 } from "@/lib/api-hooks"
 import { HeroEditor } from "./editors/hero-editor"
 import { PromotionsEditor } from "./editors/promotions-editor"
 import { ProductsEditor } from "./editors/products-editor"
 import { FooterEditor } from "./editors/footer-editor"
 import { ThemeEditor } from "./editors/theme-editor"
+import { GalleryEditor } from "./editors/gallery-editor"
+import { AboutEditor } from "./editors/about-editor"
+import { TeamEditor } from "./editors/team-editor"
+import { AnnouncementEditor } from "./editors/announcement-editor"
 import { HeroRenderer } from "./renderers/hero-renderer"
 import { PromotionsRenderer } from "./renderers/promotions-renderer"
 import { ProductsRenderer } from "./renderers/products-renderer"
 import { FooterRenderer } from "./renderers/footer-renderer"
+import { GalleryRenderer } from "./renderers/gallery-renderer"
+import { AboutRenderer } from "./renderers/about-renderer"
+import { TeamRenderer } from "./renderers/team-renderer"
+import { AnnouncementBanner } from "../shop/announcement-banner"
 
 type DeviceType = "desktop" | "tablet" | "mobile"
 
@@ -76,6 +92,9 @@ const sectionIcons: Record<SectionType, React.ReactNode> = {
   promotions: <LayoutGrid size={18} />,
   products: <Package size={18} />,
   footer: <PanelBottom size={18} />,
+  gallery: <Images size={18} />,
+  about: <FileText size={18} />,
+  team: <Users size={18} />,
 }
 
 const sectionLabels: Record<SectionType, { en: string; type: string }> = {
@@ -83,6 +102,9 @@ const sectionLabels: Record<SectionType, { en: string; type: string }> = {
   promotions: { en: "Promotion Cards", type: "promotions" },
   products: { en: "Product Section", type: "products" },
   footer: { en: "Footer", type: "footer" },
+  gallery: { en: "Gallery", type: "gallery" },
+  about: { en: "About Section", type: "about" },
+  team: { en: "Team Section", type: "team" },
 }
 
 const defaultSectionConfigs: Record<SectionType, object> = {
@@ -129,6 +151,36 @@ const defaultSectionConfigs: Record<SectionType, object> = {
     showSocialIcons: true,
     socialLinks: {},
   },
+  gallery: {
+    titleEn: "Gallery",
+    titleKh: "វិចិត្រសាល",
+    layout: "grid",
+    columns: 3,
+    images: [],
+  },
+  about: {
+    titleEn: "About Us",
+    titleKh: "អំពីយើង",
+    contentEn: "Tell your story here...",
+    contentKh: "រៀបរាប់រឿងរ៉ាវរបស់អ្នកនៅទីនេះ...",
+    imageUrl: "",
+    imagePosition: "right",
+  },
+  team: {
+    titleEn: "Our Team",
+    titleKh: "ក្រុមការងាររបស់យើង",
+    members: [],
+  },
+}
+
+const defaultAnnouncementConfig: AnnouncementConfig = {
+  enabled: false,
+  textEn: "",
+  textKh: "",
+  backgroundColor: "#f97316",
+  textColor: "#ffffff",
+  isDismissible: true,
+  showOnPages: "all",
 }
 
 // Sortable Section Item Component
@@ -395,6 +447,10 @@ export function CustomizerPage() {
                 <Palette size={14} />
                 Theme
               </TabsTrigger>
+              <TabsTrigger value="announcement" className="flex items-center gap-2">
+                <Megaphone size={14} />
+                Banner
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="sections" className="flex-1 overflow-hidden flex flex-col m-0 min-h-0">
@@ -497,6 +553,24 @@ export function CustomizerPage() {
                           onChange={(c) => updateSectionConfig(selectedSection.id, c)}
                         />
                       )}
+                      {selectedSection.type === "gallery" && (
+                        <GalleryEditor
+                          config={selectedSection.config as GalleryConfig}
+                          onChange={(c) => updateSectionConfig(selectedSection.id, c)}
+                        />
+                      )}
+                      {selectedSection.type === "about" && (
+                        <AboutEditor
+                          config={selectedSection.config as AboutConfig}
+                          onChange={(c) => updateSectionConfig(selectedSection.id, c)}
+                        />
+                      )}
+                      {selectedSection.type === "team" && (
+                        <TeamEditor
+                          config={selectedSection.config as TeamConfig}
+                          onChange={(c) => updateSectionConfig(selectedSection.id, c)}
+                        />
+                      )}
                     </CardContent>
                   </Card>
                 ) : (
@@ -509,6 +583,23 @@ export function CustomizerPage() {
 
             <TabsContent value="theme" className="flex-1 overflow-auto p-4 m-0">
               <ThemeEditor theme={config.theme} onChange={(t) => updateConfig({ theme: t })} />
+            </TabsContent>
+
+            <TabsContent value="announcement" className="flex-1 overflow-auto p-4 m-0">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Megaphone size={18} />
+                    Announcement Banner
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <AnnouncementEditor
+                    config={config.announcement || defaultAnnouncementConfig}
+                    onChange={(c) => updateConfig({ announcement: c })}
+                  />
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>
@@ -532,6 +623,15 @@ export function CustomizerPage() {
               } as React.CSSProperties}
             >
               <div className="max-h-[calc(100vh-180px)] overflow-auto">
+                {/* Announcement Banner Preview */}
+                {config.announcement?.enabled && (
+                  <AnnouncementBanner
+                    config={config.announcement}
+                    language="EN"
+                    currentPage="home"
+                  />
+                )}
+
                 {/* Preview Header */}
                 <div className="bg-background border-b p-4">
                   <div className="flex items-center justify-between">
@@ -595,6 +695,15 @@ export function CustomizerPage() {
                       )}
                       {section.type === "footer" && (
                         <FooterRenderer config={section.config as FooterConfig} language="EN" />
+                      )}
+                      {section.type === "gallery" && (
+                        <GalleryRenderer config={section.config as GalleryConfig} language="EN" />
+                      )}
+                      {section.type === "about" && (
+                        <AboutRenderer config={section.config as AboutConfig} language="EN" />
+                      )}
+                      {section.type === "team" && (
+                        <TeamRenderer config={section.config as TeamConfig} language="EN" />
                       )}
                     </div>
                   ))}

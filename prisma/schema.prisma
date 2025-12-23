@@ -341,6 +341,37 @@ model Setting {
 }
 
 // ============================================
+// BUSINESS HOURS & HOLIDAYS
+// ============================================
+
+model BusinessHours {
+  id        String   @id @default(cuid())
+  dayOfWeek Int      @map("day_of_week") // 0=Sunday, 6=Saturday
+  openTime  String?  @map("open_time")   // "09:00" or null if closed
+  closeTime String?  @map("close_time")  // "22:00" or null if closed
+  isOpen    Boolean  @default(true) @map("is_open")
+
+  @@unique([dayOfWeek])
+  @@map("business_hours")
+  @@schema("apolo")
+}
+
+model Holiday {
+  id        String   @id @default(cuid())
+  date      DateTime @db.Date
+  nameEn    String   @map("name_en")
+  nameKh    String   @map("name_kh")
+  isFullDay Boolean  @default(true) @map("is_full_day")
+  openTime  String?  @map("open_time")
+  closeTime String?  @map("close_time")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([date])
+  @@map("holidays")
+  @@schema("apolo")
+}
+
+// ============================================
 // SHOP CUSTOMIZATION (White Label)
 // ============================================
 

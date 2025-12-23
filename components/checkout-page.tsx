@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import type { CartItem } from "./shop-app"
+import type { CartItem } from "@/lib/shop-context"
 import { MessageCircle, Send, CheckCircle, Loader2 } from "lucide-react"
 import { useCreateOrder, type OrderChannel } from "@/lib/api-hooks"
 

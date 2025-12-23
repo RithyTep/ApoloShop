@@ -16,6 +16,7 @@ import {
   Menu,
   X,
   Palette,
+  Clock,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -33,6 +34,7 @@ type NavItem =
   | "reports"
   | "settings"
   | "customizer"
+  | "business-hours"
 
 interface SidebarProps {
   activeNav: NavItem
@@ -50,6 +52,7 @@ const navItems = [
   { id: "promotions", label: "Promotions", icon: Tag },
   { id: "content", label: "Content", icon: FileText },
   { id: "customizer", label: "Shop Customizer", icon: Palette },
+  { id: "business-hours", label: "Business Hours", icon: Clock },
   { id: "users", label: "Users & Roles", icon: User },
   { id: "reports", label: "Reports", icon: BarChart3 },
   { id: "settings", label: "Settings", icon: Settings },

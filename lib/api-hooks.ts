@@ -757,7 +757,7 @@ export function useDeleteRole() {
 // SHOP CUSTOMIZATION (White Label)
 // ============================================
 
-export type SectionType = "hero" | "promotions" | "products" | "footer";
+export type SectionType = "hero" | "promotions" | "products" | "footer" | "gallery" | "about" | "team";
 
 export interface HeroConfig {
   mediaType: "image" | "video";
@@ -833,12 +833,69 @@ export interface FooterConfig {
   };
 }
 
+// Announcement Banner
+export interface AnnouncementConfig {
+  enabled: boolean;
+  textEn: string;
+  textKh: string;
+  linkUrl?: string;
+  linkTextEn?: string;
+  linkTextKh?: string;
+  backgroundColor: string;
+  textColor: string;
+  isDismissible: boolean;
+  showOnPages: "all" | "home" | "checkout";
+  startDate?: string;
+  endDate?: string;
+}
+
+// Gallery Section
+export interface GalleryImage {
+  id: string;
+  url: string;
+  captionEn?: string;
+  captionKh?: string;
+}
+
+export interface GalleryConfig {
+  titleEn: string;
+  titleKh: string;
+  layout: "grid" | "masonry" | "carousel";
+  columns: 2 | 3 | 4;
+  images: GalleryImage[];
+}
+
+// About Section
+export interface AboutConfig {
+  titleEn: string;
+  titleKh: string;
+  contentEn: string;
+  contentKh: string;
+  imageUrl?: string;
+  imagePosition: "left" | "right" | "top" | "bottom";
+}
+
+// Team Section
+export interface TeamMember {
+  id: string;
+  name: string;
+  roleEn: string;
+  roleKh: string;
+  imageUrl?: string;
+}
+
+export interface TeamConfig {
+  titleEn: string;
+  titleKh: string;
+  members: TeamMember[];
+}
+
 export interface ShopSection {
   id: string;
   type: SectionType;
   enabled: boolean;
   order: number;
-  config: HeroConfig | PromotionsConfig | ProductsConfig | FooterConfig;
+  config: HeroConfig | PromotionsConfig | ProductsConfig | FooterConfig | GalleryConfig | AboutConfig | TeamConfig;
 }
 
 export interface ShopTheme {
@@ -854,6 +911,7 @@ export interface ShopTheme {
 export interface ShopCustomizationConfig {
   theme: ShopTheme;
   sections: ShopSection[];
+  announcement?: AnnouncementConfig;
 }
 
 export function useShopCustomization() {
@@ -877,6 +935,133 @@ export function useUpdateShopCustomization() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shop-customization"] });
+    },
+  });
+}
+
+// ============================================
+// BUSINESS HOURS
+// ============================================
+
+export interface BusinessHoursDay {
+  id?: string;
+  dayOfWeek: number;
+  openTime: string | null;
+  closeTime: string | null;
+  isOpen: boolean;
+}
+
+export interface Holiday {
+  id: string;
+  date: string;
+  nameEn: string;
+  nameKh: string;
+  isFullDay: boolean;
+  openTime: string | null;
+  closeTime: string | null;
+  createdAt?: string;
+}
+
+export interface StoreStatus {
+  isOpen: boolean;
+  reason: "regular" | "holiday" | "holiday_hours";
+  hours?: {
+    openTime: string | null;
+    closeTime: string | null;
+    isOpen: boolean;
+  };
+  holiday?: {
+    nameEn: string;
+    nameKh: string;
+    openTime?: string | null;
+    closeTime?: string | null;
+  };
+}
+
+export function useBusinessHours() {
+  return useQuery({
+    queryKey: ["business-hours"],
+    queryFn: () =>
+      fetchAPI<{ hours: BusinessHoursDay[]; isDefault: boolean }>("/api/business-hours"),
+  });
+}
+
+export function useUpdateBusinessHours() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (hours: BusinessHoursDay[]) =>
+      fetchAPI<{ hours: BusinessHoursDay[]; success: boolean }>("/api/business-hours", {
+        method: "PUT",
+        body: JSON.stringify({ hours }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["business-hours"] });
+      queryClient.invalidateQueries({ queryKey: ["store-status"] });
+    },
+  });
+}
+
+export function useStoreStatus() {
+  return useQuery({
+    queryKey: ["store-status"],
+    queryFn: () =>
+      fetchAPI<StoreStatus>("/api/business-hours", {
+        method: "POST",
+      }),
+    refetchInterval: 60000, // Refresh every minute
+  });
+}
+
+export function useHolidays(year?: number) {
+  return useQuery({
+    queryKey: ["holidays", year],
+    queryFn: () =>
+      fetchAPI<{ holidays: Holiday[] }>(
+        `/api/holidays${year ? `?year=${year}` : ""}`
+      ),
+  });
+}
+
+export function useCreateHoliday() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Omit<Holiday, "id" | "createdAt">) =>
+      fetchAPI<{ holiday: Holiday }>("/api/holidays", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["holidays"] });
+      queryClient.invalidateQueries({ queryKey: ["store-status"] });
+    },
+  });
+}
+
+export function useUpdateHoliday() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<Holiday> & { id: string }) =>
+      fetchAPI<{ holiday: Holiday }>("/api/holidays", {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["holidays"] });
+      queryClient.invalidateQueries({ queryKey: ["store-status"] });
+    },
+  });
+}
+
+export function useDeleteHoliday() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchAPI<{ success: boolean }>(`/api/holidays?id=${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["holidays"] });
+      queryClient.invalidateQueries({ queryKey: ["store-status"] });
     },
   });
 }
