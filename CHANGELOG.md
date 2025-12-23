@@ -22,8 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Real CSV/Excel export** for reports (sales, orders, products, inventory, customers)
 - **Drag-and-drop reordering** for categories using @dnd-kit
 - Language switcher (EN/KH) in shop header
+- **Category preloading** - Zero-loading experience when switching categories
 
 ### Changed
+- **Enhanced ProductGrid UX** with React Query prefetching for instant category switching
+- Sticky category filter bar with backdrop blur effect
+- Smooth transitions with `useTransition` and CSS animations on product cards
 - Updated ProductGrid to use React Query hooks
 - Improved checkout flow with loading states
 - Replaced all native `<select>` elements with shadcn/ui Select component (8 files)
