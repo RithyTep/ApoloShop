@@ -524,7 +524,12 @@ export function CustomizerPage() {
               style={{
                 width: deviceWidths[previewDevice],
                 maxWidth: "100%",
-              }}
+                "--primary": config.theme.primaryColor,
+                "--accent": config.theme.accentColor,
+                "--background": config.theme.backgroundColor,
+                "--foreground": config.theme.textColor,
+                "--radius": `${config.theme.borderRadius}px`,
+              } as React.CSSProperties}
             >
               <div className="max-h-[calc(100vh-180px)] overflow-auto">
                 {/* Preview Header */}

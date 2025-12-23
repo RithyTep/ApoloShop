@@ -66,8 +66,22 @@ export function ShopApp() {
     setCart([])
   }
 
+  // Build custom theme styles
+  const themeStyles = config?.theme
+    ? {
+        "--primary": config.theme.primaryColor,
+        "--accent": config.theme.accentColor,
+        "--background": config.theme.backgroundColor,
+        "--foreground": config.theme.textColor,
+        "--radius": `${config.theme.borderRadius}px`,
+      }
+    : {}
+
   return (
-    <div className="min-h-screen bg-background max-w-[1280px] mx-auto">
+    <div
+      className="min-h-screen bg-background max-w-[1280px] mx-auto"
+      style={themeStyles as React.CSSProperties}
+    >
       <Header
         cartCount={cart.length}
         onCartClick={() => setIsCartOpen(true)}
