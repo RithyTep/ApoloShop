@@ -47,6 +47,9 @@ docs/
 │   ├── payments.md        # Payment processing
 │   ├── settings.md        # Shop settings
 │   └── export.md          # Data export
+├── features/              # Feature documentation
+│   ├── _TEMPLATE.md       # Template for new features
+│   └── shop-frontend.md   # Shop frontend feature
 ├── guides/
 │   ├── getting-started.md # Setup instructions
 │   ├── conventions.md     # Code standards
@@ -55,6 +58,16 @@ docs/
     ├── i18n.md            # Internationalization
     └── troubleshooting.md # Common issues
 ```
+
+---
+
+## Features
+
+| Feature | Status | Documentation |
+|---------|--------|---------------|
+| Shop Frontend | Complete | [shop-frontend.md](./features/shop-frontend.md) |
+
+> See `GIT_WORKFLOW.md` for feature documentation requirements.
 
 ---
 

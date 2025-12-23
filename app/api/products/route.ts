@@ -124,3 +124,106 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+const productUpdateSchema = z.object({
+  id: z.string().min(1, "Product ID is required"),
+  nameEn: z.string().min(1).optional(),
+  nameKh: z.string().min(1).optional(),
+  descriptionEn: z.string().optional().nullable(),
+  descriptionKh: z.string().optional().nullable(),
+  priceUsd: z.number().positive().optional(),
+  priceKhr: z.number().int().positive().optional(),
+  categoryId: z.string().min(1).optional(),
+  sku: z.string().min(1).optional(),
+  imageUrl: z.string().url().optional().nullable(),
+  isActive: z.boolean().optional(),
+})
+
+// PUT /api/products - Update product
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json()
+
+    const result = productUpdateSchema.safeParse(body)
+    if (!result.success) {
+      return NextResponse.json(
+        { error: "Validation failed", details: result.error.flatten() },
+        { status: 400 }
+      )
+    }
+
+    const { id, ...data } = result.data
+
+    // Check if product exists
+    const existing = await prisma.product.findUnique({ where: { id } })
+    if (!existing) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 })
+    }
+
+    // Check SKU uniqueness if changed
+    if (data.sku && data.sku !== existing.sku) {
+      const existingSku = await prisma.product.findUnique({
+        where: { sku: data.sku },
+      })
+      if (existingSku) {
+        return NextResponse.json({ error: "SKU already exists" }, { status: 409 })
+      }
+    }
+
+    const product = await prisma.product.update({
+      where: { id },
+      data,
+      include: {
+        category: true,
+        inventory: true,
+      },
+    })
+
+    return NextResponse.json(product)
+  } catch (error) {
+    console.error("Update product error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
+
+// DELETE /api/products - Delete product
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get("id")
+
+    if (!id) {
+      return NextResponse.json({ error: "Product ID is required" }, { status: 400 })
+    }
+
+    // Check if product exists
+    const existing = await prisma.product.findUnique({
+      where: { id },
+      include: { orderItems: { take: 1 } },
+    })
+
+    if (!existing) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 })
+    }
+
+    // If product has orders, soft delete instead
+    if (existing.orderItems.length > 0) {
+      await prisma.product.update({
+        where: { id },
+        data: { isActive: false },
+      })
+      return NextResponse.json({ success: true, softDeleted: true })
+    }
+
+    // Hard delete - remove inventory first, then product
+    await prisma.$transaction([
+      prisma.inventory.deleteMany({ where: { productId: id } }),
+      prisma.product.delete({ where: { id } }),
+    ])
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("Delete product error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}

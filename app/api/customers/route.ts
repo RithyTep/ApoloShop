@@ -125,3 +125,58 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+const customerUpdateSchema = z.object({
+  id: z.string().min(1, "Customer ID is required"),
+  name: z.string().min(1).optional(),
+  phone: z.string().min(1).optional(),
+  email: z.string().email().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  tags: z.array(z.string()).optional(),
+})
+
+// PUT /api/customers - Update customer
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json()
+
+    const result = customerUpdateSchema.safeParse(body)
+    if (!result.success) {
+      return NextResponse.json(
+        { error: "Validation failed", details: result.error.flatten() },
+        { status: 400 }
+      )
+    }
+
+    const { id, ...data } = result.data
+
+    // Check if customer exists
+    const existing = await prisma.customer.findUnique({ where: { id } })
+    if (!existing) {
+      return NextResponse.json({ error: "Customer not found" }, { status: 404 })
+    }
+
+    // Check phone uniqueness if changed
+    if (data.phone && data.phone !== existing.phone) {
+      const existingPhone = await prisma.customer.findUnique({
+        where: { phone: data.phone },
+      })
+      if (existingPhone) {
+        return NextResponse.json(
+          { error: "Phone number already exists" },
+          { status: 409 }
+        )
+      }
+    }
+
+    const customer = await prisma.customer.update({
+      where: { id },
+      data,
+    })
+
+    return NextResponse.json(customer)
+  } catch (error) {
+    console.error("Update customer error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}

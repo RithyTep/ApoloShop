@@ -459,3 +459,296 @@ export function useLogout() {
     },
   });
 }
+
+// ============================================
+// DASHBOARD
+// ============================================
+
+export interface DashboardStats {
+  kpis: {
+    todayOrders: number;
+    ordersChange: number;
+    pendingOrders: number;
+    lowStockItems: number;
+    revenueUsd: number;
+    revenueKhr: number;
+    revenueChange: number;
+  };
+  recentOrders: {
+    id: string;
+    orderNumber: string;
+    customer: string;
+    phone: string;
+    total: number;
+    status: OrderStatus;
+    channel: OrderChannel;
+    createdAt: string;
+    items: number;
+  }[];
+  chartData: {
+    day: string;
+    date: string;
+    orders: number;
+    revenue: number;
+  }[];
+}
+
+export function useDashboardStats() {
+  return useQuery({
+    queryKey: ["dashboard"],
+    queryFn: () => fetchAPI<DashboardStats>("/api/dashboard"),
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+}
+
+// ============================================
+// PROMOTIONS
+// ============================================
+
+export interface Promotion {
+  id: string;
+  code: string;
+  type: "PERCENTAGE" | "FIXED_AMOUNT";
+  value: number;
+  minOrder: number;
+  maxUses: number | null;
+  usedCount: number;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+}
+
+export function usePromotions(isActive?: boolean) {
+  const params = isActive !== undefined ? `?isActive=${isActive}` : "";
+  return useQuery({
+    queryKey: ["promotions", isActive],
+    queryFn: () => fetchAPI<{ promotions: Promotion[] }>(`/api/promotions${params}`),
+  });
+}
+
+export function useCreatePromotion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<Promotion>) =>
+      fetchAPI<Promotion>("/api/promotions", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["promotions"] });
+    },
+  });
+}
+
+export function useUpdatePromotion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: Partial<Promotion> & { id: string }) =>
+      fetchAPI<Promotion>("/api/promotions", {
+        method: "PUT",
+        body: JSON.stringify({ id, ...data }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["promotions"] });
+    },
+  });
+}
+
+export function useDeletePromotion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchAPI<{ success: boolean }>(`/api/promotions?id=${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["promotions"] });
+    },
+  });
+}
+
+// ============================================
+// CMS CONTENT
+// ============================================
+
+export type CMSContentType = "PAGE" | "BLOG" | "BANNER" | "FAQ";
+export type CMSContentStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
+
+export interface CMSContent {
+  id: string;
+  slug: string;
+  titleEn: string;
+  titleKh: string;
+  contentEn: string;
+  contentKh: string;
+  type: CMSContentType;
+  status: CMSContentStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function useCMSContent(type?: CMSContentType) {
+  const params = type ? `?type=${type}` : "";
+  return useQuery({
+    queryKey: ["cms", type],
+    queryFn: () => fetchAPI<{ contents: CMSContent[] }>(`/api/cms${params}`),
+  });
+}
+
+export function useCreateCMSContent() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<CMSContent>) =>
+      fetchAPI<CMSContent>("/api/cms", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cms"] });
+    },
+  });
+}
+
+export function useUpdateCMSContent() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: Partial<CMSContent> & { id: string }) =>
+      fetchAPI<CMSContent>("/api/cms", {
+        method: "PUT",
+        body: JSON.stringify({ id, ...data }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cms"] });
+    },
+  });
+}
+
+export function useDeleteCMSContent() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchAPI<{ success: boolean }>(`/api/cms?id=${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cms"] });
+    },
+  });
+}
+
+// ============================================
+// USERS & ROLES
+// ============================================
+
+export interface Role {
+  id: string;
+  name: string;
+  permissions: Record<string, string[]>;
+  _count?: { users: number };
+}
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  roleId: string;
+  isActive: boolean;
+  role?: Role;
+  createdAt: string;
+}
+
+export function useUsers() {
+  return useQuery({
+    queryKey: ["users"],
+    queryFn: () => fetchAPI<{ users: User[] }>("/api/users"),
+  });
+}
+
+export function useRoles() {
+  return useQuery({
+    queryKey: ["roles"],
+    queryFn: () => fetchAPI<{ roles: Role[] }>("/api/roles"),
+  });
+}
+
+export function useCreateUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { email: string; password: string; name: string; roleId: string }) =>
+      fetchAPI<User>("/api/users", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+}
+
+export function useUpdateUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: Partial<User> & { id: string; password?: string }) =>
+      fetchAPI<User>("/api/users", {
+        method: "PUT",
+        body: JSON.stringify({ id, ...data }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+}
+
+export function useDeleteUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchAPI<{ success: boolean }>(`/api/users?id=${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+}
+
+export function useCreateRole() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { name: string; permissions: Record<string, string[]> }) =>
+      fetchAPI<Role>("/api/roles", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["roles"] });
+    },
+  });
+}
+
+export function useUpdateRole() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: Partial<Role> & { id: string }) =>
+      fetchAPI<Role>("/api/roles", {
+        method: "PUT",
+        body: JSON.stringify({ id, ...data }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["roles"] });
+    },
+  });
+}
+
+export function useDeleteRole() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchAPI<{ success: boolean }>(`/api/roles?id=${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["roles"] });
+    },
+  });
+}

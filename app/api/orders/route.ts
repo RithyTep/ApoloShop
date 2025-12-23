@@ -161,3 +161,76 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+const orderUpdateSchema = z.object({
+  id: z.string().min(1, "Order ID is required"),
+  status: z.enum(["NEW", "CONFIRMED", "PREPARING", "READY", "COMPLETED", "CANCELLED"]).optional(),
+  note: z.string().optional().nullable(),
+})
+
+// Valid status transitions
+const statusTransitions: Record<string, string[]> = {
+  NEW: ["CONFIRMED", "CANCELLED"],
+  CONFIRMED: ["PREPARING", "CANCELLED"],
+  PREPARING: ["READY", "CANCELLED"],
+  READY: ["COMPLETED", "CANCELLED"],
+  COMPLETED: [],
+  CANCELLED: [],
+}
+
+// PUT /api/orders - Update order status
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json()
+
+    const result = orderUpdateSchema.safeParse(body)
+    if (!result.success) {
+      return NextResponse.json(
+        { error: "Validation failed", details: result.error.flatten() },
+        { status: 400 }
+      )
+    }
+
+    const { id, status, note } = result.data
+
+    // Check if order exists
+    const existing = await prisma.order.findUnique({ where: { id } })
+    if (!existing) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 })
+    }
+
+    // Validate status transition
+    if (status && status !== existing.status) {
+      const allowedTransitions = statusTransitions[existing.status] || []
+      if (!allowedTransitions.includes(status)) {
+        return NextResponse.json(
+          { error: `Cannot transition from ${existing.status} to ${status}` },
+          { status: 400 }
+        )
+      }
+    }
+
+    const updateData: Record<string, unknown> = {}
+    if (status) updateData.status = status
+    if (note !== undefined) updateData.note = note
+
+    const order = await prisma.order.update({
+      where: { id },
+      data: updateData,
+      include: {
+        customer: true,
+        items: {
+          include: {
+            product: true,
+          },
+        },
+        payments: true,
+      },
+    })
+
+    return NextResponse.json(order)
+  } catch (error) {
+    console.error("Update order error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}

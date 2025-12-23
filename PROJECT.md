@@ -1,6 +1,6 @@
 # ApoloShop - Project Memory
 
-> Last updated: 2025-12-23
+> Last Updated: 2025-12-23
 
 ## Overview
 

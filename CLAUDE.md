@@ -57,9 +57,35 @@ bun start    # Start production
 
 ## Git Workflow
 
-- Main branch: `main`
-- Development: `Develop`
-- Docs auto-update on commit via pre-commit hook
+**See `GIT_WORKFLOW.md` for complete documentation.**
+
+### Branch Naming
+```
+Feature/<name>   # New features
+Fix/<name>       # Bug fixes
+Hotfix/<name>    # Urgent fixes
+Refactor/<name>  # Code refactoring
+Docs/<name>      # Documentation
+```
+
+### Commit Convention
+```
+[feat] Add new feature
+[fix] Fix a bug
+[refactor] Refactor code
+[docs] Update documentation
+[test] Add/fix tests
+[chore] Maintenance
+```
+
+### Documentation Requirements
+- **Every feature** must have: `docs/features/<name>.md`
+- **API changes** must update: `docs/api/<endpoint>.md`
+- **Releases** must update: `CHANGELOG.md`
+
+### Git Hooks (Automatic)
+- **pre-commit**: Updates timestamps, validates docs
+- **commit-msg**: Validates commit format `[type] description`
 
 ## MCP Integration
 
