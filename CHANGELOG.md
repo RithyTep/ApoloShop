@@ -2,11 +2,59 @@
 
 All notable changes to ApoloShop will be documented in this file.
 
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
 ## [Unreleased]
 
 ### Added
+- Shop frontend with real data integration
+- Checkout page with order creation API
+- Product grid with category filtering
+- Dashboard stats API
+- Promotions management
+- CMS content management
+- User and role management
 
 ### Changed
+- Updated ProductGrid to use React Query hooks
+- Improved checkout flow with loading states
 
 ### Fixed
+- Fixed icon import in checkout page
 
+---
+
+## [0.1.0] - 2025-12-23
+
+### Added
+- Initial project setup with Next.js 16
+- Admin dashboard with 12 management pages
+- Product, Category, Order, Customer management
+- Multi-language support (English/Khmer)
+- Multi-currency support (USD/KHR)
+- Kitchen Display System (KDS)
+- Telegram/Messenger checkout integration
+- Prisma ORM with PostgreSQL
+- Shadcn/ui component library
+- React Query for data fetching
+
+### Documentation
+- Project documentation (PROJECT.md)
+- API documentation (docs/api/)
+- Developer guides (docs/guides/)
+- Database schema documentation
+
+---
+
+## Version History
+
+| Version | Date | Description |
+|---------|------|-------------|
+| 0.1.0 | 2025-12-23 | Initial release |
+
+---
+
+*For detailed changes, see the [commit history](../../commits/main).*

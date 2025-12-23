@@ -18,6 +18,7 @@ yarn-error.log*
 
 # env files
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -27,3 +28,12 @@ yarn-error.log*
 next-env.d.ts
 
 bun.lock
+
+/lib/generated/prisma
+
+# testing
+coverage/
+playwright-report/
+test-results/
+.playwright/
+*.tsbuildinfo

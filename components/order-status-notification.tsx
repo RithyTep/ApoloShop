@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { MessageCircle, Envelope, Check } from "phosphor-react"
+import { MessageCircle, Mail, Check } from "lucide-react"
 import { translations, type Language } from "@/lib/i18n"
 
 type OrderStatusType = "new" | "confirmed" | "preparing" | "completed" | "cancelled"
@@ -122,7 +122,7 @@ export function OrderStatusNotification({ language = "en" }: OrderStatusNotifica
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
             aria-label="Send via Facebook Messenger"
           >
-            <Envelope className="w-4 h-4 mr-2" aria-hidden="true" />
+            <Mail className="w-4 h-4 mr-2" aria-hidden="true" />
             {t.orderNotification.messengerBtn}
           </Button>
         </div>

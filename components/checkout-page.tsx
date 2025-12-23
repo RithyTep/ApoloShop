@@ -5,37 +5,91 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import type { CartItem } from "./shop-app"
-import { MessageCircle, Envelope } from "phosphor-react"
+import { MessageCircle, Send, CheckCircle, Loader2 } from "lucide-react"
+import { useCreateOrder, type OrderChannel } from "@/lib/api-hooks"
 
 interface CheckoutPageProps {
   cart: CartItem[]
   currency: "USD" | "KHR"
   language: "EN" | "KH"
   onBackToShop: () => void
+  onOrderComplete?: () => void
 }
 
-export function CheckoutPage({ cart, currency, language, onBackToShop }: CheckoutPageProps) {
+export function CheckoutPage({ cart, currency, language, onBackToShop, onOrderComplete }: CheckoutPageProps) {
   const [fullName, setFullName] = useState("")
   const [phone, setPhone] = useState("")
   const [deliveryNote, setDeliveryNote] = useState("")
+  const [orderSuccess, setOrderSuccess] = useState(false)
+  const [orderNumber, setOrderNumber] = useState("")
 
+  const createOrder = useCreateOrder()
   const total = cart.reduce((acc, item) => acc + item.price * item.quantity, 0)
 
-  const handleOrderVia = (method: "telegram" | "messenger") => {
-    const orderSummary = cart.map((item) => `${item.name} x${item.quantity}`).join("\n")
+  const handleOrderVia = async (method: "telegram" | "messenger") => {
+    const channel: OrderChannel = method === "telegram" ? "TELEGRAM" : "MESSENGER"
 
-    const message = `Order from Simple Shop:\n\nName: ${fullName}\nPhone: ${phone}\n\n${orderSummary}\n\nTotal: ${
-      currency === "USD" ? `$${total.toFixed(2)}` : `${Math.round(total * 4000)}៛`
-    }\n\nDelivery Note: ${deliveryNote}`
+    try {
+      const order = await createOrder.mutateAsync({
+        customerName: fullName,
+        customerPhone: phone,
+        items: cart.map((item) => ({
+          productId: item.id,
+          quantity: item.quantity,
+        })),
+        channel,
+        currency,
+        note: deliveryNote || undefined,
+      })
 
-    if (method === "telegram") {
-      window.open(`https://t.me/share/url?url=${encodeURIComponent(message)}`, "_blank")
-    } else {
-      window.open(
-        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("simpleshop.com")}&quote=${encodeURIComponent(message)}`,
-        "_blank",
-      )
+      setOrderNumber(order.orderNumber)
+      setOrderSuccess(true)
+
+      const orderSummary = cart.map((item) => `${item.name} x${item.quantity}`).join("\n")
+      const message = `Order #${order.orderNumber} from ApoloShop:\n\nName: ${fullName}\nPhone: ${phone}\n\n${orderSummary}\n\nTotal: ${
+        currency === "USD" ? `$${total.toFixed(2)}` : `${Math.round(total * 4000)}៛`
+      }\n\nDelivery Note: ${deliveryNote}`
+
+      if (method === "telegram") {
+        window.open(`https://t.me/share/url?url=${encodeURIComponent(message)}`, "_blank")
+      } else {
+        window.open(
+          `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("apoloshop.com")}&quote=${encodeURIComponent(message)}`,
+          "_blank",
+        )
+      }
+
+      onOrderComplete?.()
+    } catch {
+      // Error is handled by the mutation state
     }
+  }
+
+  if (orderSuccess) {
+    return (
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="text-center py-16">
+          <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-6">
+            <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
+          </div>
+          <h1 className="text-3xl font-bold text-foreground mb-4">
+            {language === "EN" ? "Order Placed Successfully!" : "បញ្ជាទិញបានជោគជ័យ!"}
+          </h1>
+          <p className="text-lg text-muted-foreground mb-2">
+            {language === "EN" ? "Your order number is:" : "លេខបញ្ជាទិញរបស់អ្នក:"}
+          </p>
+          <p className="text-2xl font-bold text-primary mb-8">{orderNumber}</p>
+          <p className="text-muted-foreground mb-8">
+            {language === "EN"
+              ? "We'll contact you shortly to confirm your order."
+              : "យើងនឹងទាក់ទងអ្នកក្នុងពេលឆាប់ៗដើម្បីបញ្ជាក់ការបញ្ជាទិញរបស់អ្នក។"}
+          </p>
+          <Button onClick={onBackToShop} className="bg-primary text-primary-foreground">
+            {language === "EN" ? "Continue Shopping" : "បន្តទិញទំនិញ"}
+          </Button>
+        </div>
+      </main>
+    )
   }
 
   return (
@@ -104,22 +158,36 @@ export function CheckoutPage({ cart, currency, language, onBackToShop }: Checkou
                 {language === "EN" ? "Complete Your Order" : "បញ្ចប់ការបញ្ជាទិញរបស់អ្នក"}
               </h2>
 
+              {createOrder.error && (
+                <div className="p-3 bg-destructive/10 text-destructive rounded-md text-sm mb-4">
+                  {language === "EN" ? "Failed to place order. Please try again." : "មិនអាចបញ្ជាទិញបានទេ។ សូមព្យាយាមម្តងទៀត។"}
+                </div>
+              )}
+
               <div className="space-y-3">
                 <Button
                   onClick={() => handleOrderVia("telegram")}
-                  disabled={!fullName || !phone}
+                  disabled={!fullName || !phone || createOrder.isPending}
                   className="w-full bg-primary text-primary-foreground hover:bg-opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  <MessageCircle size={20} />
+                  {createOrder.isPending ? (
+                    <Loader2 size={20} className="animate-spin" />
+                  ) : (
+                    <MessageCircle size={20} />
+                  )}
                   {language === "EN" ? "Order via Telegram" : "បញ្ជាទិញតាម Telegram"}
                 </Button>
 
                 <Button
                   onClick={() => handleOrderVia("messenger")}
-                  disabled={!fullName || !phone}
+                  disabled={!fullName || !phone || createOrder.isPending}
                   className="w-full bg-primary text-primary-foreground hover:bg-opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  <Envelope size={20} />
+                  {createOrder.isPending ? (
+                    <Loader2 size={20} className="animate-spin" />
+                  ) : (
+                    <Send size={20} />
+                  )}
                   {language === "EN" ? "Order via Facebook Messenger" : "បញ្ជាទិញតាម Facebook Messenger"}
                 </Button>
               </div>

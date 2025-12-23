@@ -1,6 +1,6 @@
 "use client"
 
-import { ShoppingCart } from "phosphor-react"
+import { ShoppingCart } from "lucide-react"
 
 interface HeaderProps {
   cartCount: number

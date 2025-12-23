@@ -1,0 +1,23 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$TOOL_INPUT\" | grep -q 'git commit'; then /Users/rithytep_1/projects/Nuxt/ApoloShop/scripts/update-docs.sh; fi"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+    ]
+  },
+  "contextFiles": [
+    "CLAUDE.md",
+    "PROJECT.md"
+  ]
+}

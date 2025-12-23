@@ -66,7 +66,13 @@ export function ShopApp() {
           <ProductGrid onAddToCart={addToCart} currency={currency} language={language} />
         </main>
       ) : (
-        <CheckoutPage cart={cart} currency={currency} language={language} onBackToShop={() => setCurrentPage("shop")} />
+        <CheckoutPage
+          cart={cart}
+          currency={currency}
+          language={language}
+          onBackToShop={() => setCurrentPage("shop")}
+          onOrderComplete={clearCart}
+        />
       )}
 
       <CartDrawer

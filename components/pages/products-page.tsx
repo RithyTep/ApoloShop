@@ -1,20 +1,152 @@
 "use client"
 
+import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Pencil, Trash } from "phosphor-react"
-
-const products = [
-  { id: 1, name: "Iced Coffee", nameKh: "កាហ្វេ​រ​ធ្ងន់", price: "$3.50", stock: 45, sku: "COF-001", active: true },
-  { id: 2, name: "Espresso", nameKh: "អេស​ប​រេ​សូ", price: "$4.00", stock: 32, sku: "COF-002", active: true },
-  { id: 3, name: "Latte", nameKh: "ឡាតេ", price: "$4.50", stock: 8, sku: "COF-003", active: true },
-  { id: 4, name: "Cappuccino", nameKh: "ក​ព៉ូ​ឈី​នូ", price: "$5.00", stock: 0, sku: "COF-004", active: false },
-]
+import { Skeleton } from "@/components/ui/skeleton"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { Plus, Pencil, Trash } from "lucide-react"
+import { useProducts, useCategories, useCreateProduct, useUpdateProduct, useDeleteProduct, Product, Category } from "@/lib/api-hooks"
+import { useToast } from "@/components/ui/use-toast"
 
 export function ProductsPage() {
+  const { toast } = useToast()
+  const [search, setSearch] = useState("")
+  const [categoryFilter, setCategoryFilter] = useState("")
+  const [statusFilter, setStatusFilter] = useState("")
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [deleteProduct, setDeleteProduct] = useState<Product | null>(null)
+
+  const { data: productsData, isLoading } = useProducts(categoryFilter || undefined)
+  const { data: categoriesData } = useCategories()
+  const createMutation = useCreateProduct()
+  const updateMutation = useUpdateProduct()
+  const deleteMutation = useDeleteProduct()
+
+  const categories = categoriesData?.categories || []
+  const allProducts = productsData?.products || []
+
+  // Client-side filtering for search and status
+  const products = allProducts.filter((p) => {
+    const matchesSearch = !search ||
+      p.nameEn.toLowerCase().includes(search.toLowerCase()) ||
+      p.nameKh.toLowerCase().includes(search.toLowerCase()) ||
+      p.sku.toLowerCase().includes(search.toLowerCase())
+    const matchesStatus = !statusFilter ||
+      (statusFilter === "active" && p.isActive) ||
+      (statusFilter === "inactive" && !p.isActive)
+    return matchesSearch && matchesStatus
+  })
+
+  const [formData, setFormData] = useState({
+    nameEn: "",
+    nameKh: "",
+    priceUsd: "",
+    priceKhr: "",
+    categoryId: "",
+    sku: "",
+    imageUrl: "",
+    isActive: true,
+  })
+
+  const resetForm = () => {
+    setFormData({
+      nameEn: "",
+      nameKh: "",
+      priceUsd: "",
+      priceKhr: "",
+      categoryId: "",
+      sku: "",
+      imageUrl: "",
+      isActive: true,
+    })
+    setEditingProduct(null)
+  }
+
+  const openCreateDialog = () => {
+    resetForm()
+    setIsDialogOpen(true)
+  }
+
+  const openEditDialog = (product: Product) => {
+    setEditingProduct(product)
+    setFormData({
+      nameEn: product.nameEn,
+      nameKh: product.nameKh,
+      priceUsd: product.priceUsd.toString(),
+      priceKhr: product.priceKhr.toString(),
+      categoryId: product.categoryId,
+      sku: product.sku,
+      imageUrl: product.imageUrl || "",
+      isActive: product.isActive,
+    })
+    setIsDialogOpen(true)
+  }
+
+  const handleSubmit = async () => {
+    try {
+      const data = {
+        nameEn: formData.nameEn,
+        nameKh: formData.nameKh,
+        priceUsd: parseFloat(formData.priceUsd),
+        priceKhr: parseInt(formData.priceKhr),
+        categoryId: formData.categoryId,
+        sku: formData.sku,
+        imageUrl: formData.imageUrl || null,
+        isActive: formData.isActive,
+      }
+
+      if (editingProduct) {
+        await updateMutation.mutateAsync({ id: editingProduct.id, ...data })
+        toast({ title: "Product updated successfully" })
+      } else {
+        await createMutation.mutateAsync(data)
+        toast({ title: "Product created successfully" })
+      }
+      setIsDialogOpen(false)
+      resetForm()
+    } catch (error) {
+      toast({ title: "Error", description: (error as Error).message, variant: "destructive" })
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!deleteProduct) return
+    try {
+      await deleteMutation.mutateAsync(deleteProduct.id)
+      toast({ title: "Product deleted successfully" })
+      setDeleteProduct(null)
+    } catch (error) {
+      toast({ title: "Error", description: (error as Error).message, variant: "destructive" })
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="p-8 space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Products</h1>
+            <p className="text-muted-foreground mt-2">Manage your shop products and inventory</p>
+          </div>
+        </div>
+        <Card className="p-6">
+          <div className="space-y-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-16 w-full" />
+            ))}
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
@@ -23,7 +155,7 @@ export function ProductsPage() {
           <h1 className="text-3xl font-bold text-foreground">Products</h1>
           <p className="text-muted-foreground mt-2">Manage your shop products and inventory</p>
         </div>
-        <Button className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+        <Button onClick={openCreateDialog} className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
           <Plus size={16} /> Add Product
         </Button>
       </div>
@@ -31,17 +163,30 @@ export function ProductsPage() {
       {/* Filters */}
       <Card className="p-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Input placeholder="Search by product name..." className="border-border" />
-          <select className="px-3 py-2 border border-border bg-background rounded text-sm">
-            <option>All Categories</option>
-            <option>Coffee</option>
-            <option>Tea</option>
-            <option>Snacks</option>
+          <Input
+            placeholder="Search by product name or SKU..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="border-border"
+          />
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="px-3 py-2 border border-border bg-background rounded text-sm"
+          >
+            <option value="">All Categories</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>{cat.nameEn}</option>
+            ))}
           </select>
-          <select className="px-3 py-2 border border-border bg-background rounded text-sm">
-            <option>All Status</option>
-            <option>Active</option>
-            <option>Inactive</option>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2 border border-border bg-background rounded text-sm"
+          >
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
           </select>
         </div>
       </Card>
@@ -49,56 +194,197 @@ export function ProductsPage() {
       {/* Products Table */}
       <Card className="p-6">
         <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-b border-border">
-                <TableHead className="text-foreground font-semibold">Product Name</TableHead>
-                <TableHead className="text-foreground font-semibold">Khmer Name</TableHead>
-                <TableHead className="text-foreground font-semibold">Price</TableHead>
-                <TableHead className="text-foreground font-semibold">Stock</TableHead>
-                <TableHead className="text-foreground font-semibold">SKU</TableHead>
-                <TableHead className="text-foreground font-semibold">Status</TableHead>
-                <TableHead className="text-foreground font-semibold">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.map((product) => (
-                <TableRow key={product.id} className="border-b border-border hover:bg-muted/50">
-                  <TableCell className="text-foreground font-medium">{product.name}</TableCell>
-                  <TableCell className="text-foreground">{product.nameKh}</TableCell>
-                  <TableCell className="text-foreground">{product.price}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={product.stock === 0 ? "destructive" : product.stock < 15 ? "secondary" : "default"}
-                      className="rounded-sm"
-                    >
-                      {product.stock} units
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-foreground text-sm">{product.sku}</TableCell>
-                  <TableCell>
-                    <Badge variant={product.active ? "default" : "secondary"} className="rounded-sm">
-                      {product.active ? "Active" : "Inactive"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="flex gap-2">
-                    <Button variant="outline" size="sm" className="text-xs bg-transparent">
-                      <Pencil size={14} />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs text-destructive hover:text-destructive bg-transparent"
-                    >
-                      <Trash size={14} />
-                    </Button>
-                  </TableCell>
+          {products.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow className="border-b border-border">
+                  <TableHead className="text-foreground font-semibold">Product Name</TableHead>
+                  <TableHead className="text-foreground font-semibold">Khmer Name</TableHead>
+                  <TableHead className="text-foreground font-semibold">Price</TableHead>
+                  <TableHead className="text-foreground font-semibold">Stock</TableHead>
+                  <TableHead className="text-foreground font-semibold">SKU</TableHead>
+                  <TableHead className="text-foreground font-semibold">Status</TableHead>
+                  <TableHead className="text-foreground font-semibold">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {products.map((product) => (
+                  <TableRow key={product.id} className="border-b border-border hover:bg-muted/50">
+                    <TableCell className="text-foreground font-medium">{product.nameEn}</TableCell>
+                    <TableCell className="text-foreground">{product.nameKh}</TableCell>
+                    <TableCell className="text-foreground">${Number(product.priceUsd).toFixed(2)}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          (product.inventory?.quantity || 0) === 0
+                            ? "destructive"
+                            : (product.inventory?.quantity || 0) < (product.inventory?.minLevel || 10)
+                            ? "secondary"
+                            : "default"
+                        }
+                        className="rounded-sm"
+                      >
+                        {product.inventory?.quantity || 0} units
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-foreground text-sm">{product.sku}</TableCell>
+                    <TableCell>
+                      <Badge variant={product.isActive ? "default" : "secondary"} className="rounded-sm">
+                        {product.isActive ? "Active" : "Inactive"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs bg-transparent"
+                        onClick={() => openEditDialog(product)}
+                      >
+                        <Pencil size={14} />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs text-destructive hover:text-destructive bg-transparent"
+                        onClick={() => setDeleteProduct(product)}
+                      >
+                        <Trash size={14} />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="py-8 text-center text-muted-foreground">
+              No products found
+            </div>
+          )}
         </div>
       </Card>
+
+      {/* Create/Edit Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>{editingProduct ? "Edit Product" : "Add New Product"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="nameEn">Name (English)</Label>
+                <Input
+                  id="nameEn"
+                  value={formData.nameEn}
+                  onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="nameKh">Name (Khmer)</Label>
+                <Input
+                  id="nameKh"
+                  value={formData.nameKh}
+                  onChange={(e) => setFormData({ ...formData, nameKh: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="priceUsd">Price (USD)</Label>
+                <Input
+                  id="priceUsd"
+                  type="number"
+                  step="0.01"
+                  value={formData.priceUsd}
+                  onChange={(e) => setFormData({ ...formData, priceUsd: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="priceKhr">Price (KHR)</Label>
+                <Input
+                  id="priceKhr"
+                  type="number"
+                  value={formData.priceKhr}
+                  onChange={(e) => setFormData({ ...formData, priceKhr: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="categoryId">Category</Label>
+                <select
+                  id="categoryId"
+                  value={formData.categoryId}
+                  onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                  className="w-full px-3 py-2 border border-border bg-background rounded text-sm"
+                >
+                  <option value="">Select category</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.nameEn}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sku">SKU</Label>
+                <Input
+                  id="sku"
+                  value={formData.sku}
+                  onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="imageUrl">Image URL</Label>
+              <Input
+                id="imageUrl"
+                value={formData.imageUrl}
+                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                placeholder="https://..."
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="isActive"
+                checked={formData.isActive}
+                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                className="rounded border-border"
+              />
+              <Label htmlFor="isActive">Active</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={createMutation.isPending || updateMutation.isPending}
+            >
+              {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteProduct} onOpenChange={() => setDeleteProduct(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Product</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;{deleteProduct?.nameEn}&quot;? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
