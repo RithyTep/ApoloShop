@@ -33,26 +33,26 @@ export function Header({
           </div>
 
           {/* Center - Dropdowns */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             {/* Language Dropdown */}
             <Select value={language} onValueChange={(value) => onLanguageChange(value as "EN" | "KH")}>
-              <SelectTrigger className="w-[70px] h-9">
-                <SelectValue />
+              <SelectTrigger className="w-[50px] h-8 px-2">
+                <span className="text-lg">{language === "EN" ? "🇺🇸" : "🇰🇭"}</span>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="EN">🇺🇸 EN</SelectItem>
-                <SelectItem value="KH">🇰🇭 KH</SelectItem>
+                <SelectItem value="EN">🇺🇸</SelectItem>
+                <SelectItem value="KH">🇰🇭</SelectItem>
               </SelectContent>
             </Select>
 
             {/* Currency Dropdown */}
             <Select value={currency} onValueChange={(value) => onCurrencyChange(value as "USD" | "KHR")}>
-              <SelectTrigger className="w-[80px] h-9">
-                <SelectValue />
+              <SelectTrigger className="w-[50px] h-8 px-2">
+                <span className="text-lg">{currency === "USD" ? "$" : "៛"}</span>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="USD">$ USD</SelectItem>
-                <SelectItem value="KHR">៛ KHR</SelectItem>
+                <SelectItem value="USD">$</SelectItem>
+                <SelectItem value="KHR">៛</SelectItem>
               </SelectContent>
             </Select>
           </div>
