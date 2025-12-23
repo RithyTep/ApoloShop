@@ -14,6 +14,7 @@ const adminTabs = [
   { name: 'Payments', headers: ['Payments', 'Payment Methods'] },
   { name: 'Promotions', headers: ['Promotions'] },
   { name: 'Content', headers: ['Content', 'CMS'] },
+  { name: 'Shop Customizer', headers: ['Shop Customizer', 'Customizer'] },
   { name: 'Users', headers: ['Users', 'User'] },
   { name: 'Reports', headers: ['Reports'] },
   { name: 'Settings', headers: ['Settings'] },
