@@ -53,7 +53,7 @@ bun start    # Start production
 2. **Multi-currency**: USD / KHR (1 USD = 4000 KHR)
 3. **Checkout**: Via Telegram or Facebook Messenger
 4. **Admin**: 12 dashboard pages for shop management
-5. **KDS**: Kitchen Display System for order tracking
+5. **Shop Customizer**: Visual page builder with drag & drop
 
 ## Git Workflow
 

@@ -29,7 +29,6 @@ ApoloShop/
 │   ├── product-grid.tsx         # Product listing
 │   ├── cart-drawer.tsx          # Shopping cart sidebar
 │   ├── checkout-page.tsx        # Checkout with messaging
-│   ├── kitchen-order-screen.tsx # Kitchen display system
 │   ├── customer-order-history.tsx
 │   ├── order-status-notification.tsx
 │   ├── receipt-invoice.tsx      # Receipt generation
@@ -98,7 +97,6 @@ ApoloShop/
 | Content | CMS for content |
 
 ### Special Features
-- **Kitchen Display System (KDS)** - Real-time order display for kitchen staff
 - **Receipt/Invoice Generation** - Print-ready receipts
 - **Order Status Workflow:** New → Confirmed → Preparing → Completed
 

@@ -56,7 +56,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Product, Category, Order, Customer management
 - Multi-language support (English/Khmer)
 - Multi-currency support (USD/KHR)
-- Kitchen Display System (KDS)
 - Telegram/Messenger checkout integration
 - Prisma ORM with PostgreSQL
 - Shadcn/ui component library

@@ -62,11 +62,6 @@ A modern e-commerce platform built for small Cambodian businesses (coffee shops,
 - **Live Preview** - Desktop, tablet, and mobile preview modes
 - **Drag & Drop** - Reorder sections with drag and drop
 
-### Kitchen Display System (KDS)
-- Real-time order queue
-- Status updates (Pending, Preparing, Ready, Completed)
-- Touch-friendly interface
-
 ## Tech Stack
 
 | Category | Technology |

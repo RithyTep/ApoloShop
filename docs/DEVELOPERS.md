@@ -31,7 +31,7 @@ ApoloShop is a **Next.js 16 e-commerce CMS** designed specifically for **small C
 - **Multi-currency**: USD and KHR (Cambodian Riel)
 - **Local payment methods**: KHQR (ABA, Wing, Bakong)
 - **Social checkout**: Telegram and Facebook Messenger integration
-- **Kitchen Display System (KDS)**: Real-time order tracking
+- **Shop Customizer**: Visual page builder with drag & drop sections
 
 ### Key Features
 
