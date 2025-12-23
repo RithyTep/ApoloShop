@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Download, TrendingUp, TrendingDown, DollarSign, ShoppingCart, Users, Package } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Download, TrendingUp, TrendingDown, DollarSign, ShoppingCart, Users, Package, FileSpreadsheet, FileText } from "lucide-react"
 import { useDashboardStats } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
 
@@ -15,14 +16,80 @@ const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"]
 export function ReportsPage() {
   const { toast } = useToast()
   const [dateRange, setDateRange] = useState("7d")
+  const [isExporting, setIsExporting] = useState(false)
   const { data, isLoading, error } = useDashboardStats()
 
-  const handleExport = async () => {
+  const getDateRange = () => {
+    const now = new Date()
+    const dateFrom = new Date()
+    switch (dateRange) {
+      case "7d":
+        dateFrom.setDate(now.getDate() - 7)
+        break
+      case "30d":
+        dateFrom.setDate(now.getDate() - 30)
+        break
+      case "90d":
+        dateFrom.setDate(now.getDate() - 90)
+        break
+      case "365d":
+        dateFrom.setFullYear(now.getFullYear() - 1)
+        break
+    }
+    return {
+      dateFrom: dateFrom.toISOString().split("T")[0],
+      dateTo: now.toISOString().split("T")[0],
+    }
+  }
+
+  const handleExport = async (type: string, format: "csv" | "json") => {
+    setIsExporting(true)
     toast({ title: "Export started", description: "Your report is being generated..." })
-    // In a real app, this would call an export API
-    setTimeout(() => {
+
+    try {
+      const { dateFrom, dateTo } = getDateRange()
+      const params = new URLSearchParams({
+        type,
+        format,
+        dateFrom,
+        dateTo,
+      })
+
+      const response = await fetch(`/api/export?${params}`)
+
+      if (!response.ok) {
+        throw new Error("Export failed")
+      }
+
+      if (format === "csv") {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = `${type}-report-${new Date().toISOString().split("T")[0]}.csv`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+      } else {
+        const data = await response.json()
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = `${type}-report-${new Date().toISOString().split("T")[0]}.json`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+      }
+
       toast({ title: "Export complete", description: "Report has been downloaded" })
-    }, 2000)
+    } catch (error) {
+      toast({ title: "Export failed", description: (error as Error).message, variant: "destructive" })
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   if (isLoading) {
@@ -126,9 +193,39 @@ export function ReportsPage() {
               <SelectItem value="365d">Last Year</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={handleExport} className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-            <Download size={16} /> Export Report
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button disabled={isExporting} className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+                <Download size={16} /> {isExporting ? "Exporting..." : "Export Report"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => handleExport("sales", "csv")}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                Sales Report (CSV)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("orders", "csv")}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                Orders (CSV)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("products", "csv")}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                Products (CSV)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("inventory", "csv")}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                Inventory (CSV)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("customers", "csv")}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                Customers (CSV)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("sales", "json")}>
+                <FileText className="mr-2 h-4 w-4" />
+                Sales Report (JSON)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

@@ -13,11 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shop frontend with real data integration
 - Checkout page with order creation API
 - Product grid with category filtering
+- **Product detail page** with dynamic routing (`/shop/product/[id]`)
 - Dashboard stats API
 - Promotions management
 - CMS content management
 - User and role management
 - Semantic CSS variables for status colors (--success, --warning, --info)
+- **Real CSV/Excel export** for reports (sales, orders, products, inventory, customers)
+- **Drag-and-drop reordering** for categories using @dnd-kit
+- Language switcher (EN/KH) in shop header
 
 ### Changed
 - Updated ProductGrid to use React Query hooks

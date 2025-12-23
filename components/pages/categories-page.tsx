@@ -12,6 +12,97 @@ import { Switch } from "@/components/ui/switch"
 import { Plus, Pencil, Trash, GripVertical } from "lucide-react"
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, Category } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core"
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
+
+interface SortableCategoryItemProps {
+  category: Category & { _count?: { products: number } }
+  onEdit: (category: Category) => void
+  onDelete: (category: Category) => void
+  onToggleActive: (category: Category) => void
+}
+
+function SortableCategoryItem({ category, onEdit, onDelete, onToggleActive }: SortableCategoryItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: category.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-4 p-4 border border-border rounded hover:bg-muted/50 bg-card ${
+        isDragging ? "shadow-lg ring-2 ring-primary" : ""
+      }`}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing touch-none"
+      >
+        <GripVertical size={20} className="text-muted-foreground" />
+      </button>
+      <div className="flex-1">
+        <p className="font-medium text-foreground">{category.nameEn}</p>
+        <p className="text-sm text-muted-foreground">{category.nameKh}</p>
+      </div>
+      <div className="text-sm text-muted-foreground">
+        {category._count?.products || 0} products
+      </div>
+      <div className="flex items-center gap-2">
+        <Switch
+          checked={category.isActive}
+          onCheckedChange={() => onToggleActive(category)}
+        />
+        <span className="text-sm text-foreground">Enabled</span>
+      </div>
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-xs bg-transparent"
+          onClick={() => onEdit(category)}
+        >
+          <Pencil size={14} />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-xs text-destructive hover:text-destructive bg-transparent"
+          onClick={() => onDelete(category)}
+        >
+          <Trash size={14} />
+        </Button>
+      </div>
+    </div>
+  )
+}
 
 export function CategoriesPage() {
   const { toast } = useToast()
@@ -32,6 +123,48 @@ export function CategoriesPage() {
     isActive: true,
     sortOrder: 0,
   })
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (over && active.id !== over.id) {
+      const oldIndex = categories.findIndex((cat) => cat.id === active.id)
+      const newIndex = categories.findIndex((cat) => cat.id === over.id)
+
+      const reorderedCategories = arrayMove(categories, oldIndex, newIndex)
+
+      // Update sort orders for all affected categories
+      try {
+        const updates = reorderedCategories.map((cat, index) => ({
+          id: cat.id,
+          sortOrder: index,
+        }))
+
+        // Update each category's sort order
+        await Promise.all(
+          updates.map((update) =>
+            updateMutation.mutateAsync({ id: update.id, sortOrder: update.sortOrder })
+          )
+        )
+
+        toast({ title: "Categories reordered successfully" })
+      } catch (error) {
+        toast({ title: "Error", description: "Failed to reorder categories", variant: "destructive" })
+      }
+    }
+  }
 
   const resetForm = () => {
     setFormData({
@@ -128,43 +261,28 @@ export function CategoriesPage() {
 
       <Card className="p-6 space-y-4">
         {categories.length > 0 ? (
-          categories.map((cat) => (
-            <div key={cat.id} className="flex items-center gap-4 p-4 border border-border rounded hover:bg-muted/50">
-              <GripVertical size={20} className="text-muted-foreground cursor-grab" />
-              <div className="flex-1">
-                <p className="font-medium text-foreground">{cat.nameEn}</p>
-                <p className="text-sm text-muted-foreground">{cat.nameKh}</p>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={categories.map((cat) => cat.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-2">
+                {categories.map((cat) => (
+                  <SortableCategoryItem
+                    key={cat.id}
+                    category={cat}
+                    onEdit={openEditDialog}
+                    onDelete={setDeleteCategory}
+                    onToggleActive={handleToggleActive}
+                  />
+                ))}
               </div>
-              <div className="text-sm text-muted-foreground">
-                {cat._count?.products || 0} products
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={cat.isActive}
-                  onCheckedChange={() => handleToggleActive(cat)}
-                />
-                <span className="text-sm text-foreground">Enabled</span>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs bg-transparent"
-                  onClick={() => openEditDialog(cat)}
-                >
-                  <Pencil size={14} />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs text-destructive hover:text-destructive bg-transparent"
-                  onClick={() => setDeleteCategory(cat)}
-                >
-                  <Trash size={14} />
-                </Button>
-              </div>
-            </div>
-          ))
+            </SortableContext>
+          </DndContext>
         ) : (
           <div className="py-8 text-center text-muted-foreground">
             No categories found. Add your first category!

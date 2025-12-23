@@ -11,24 +11,25 @@ A modern e-commerce platform built for small Cambodian businesses (coffee shops,
 
 ### Shop Frontend
 - Product catalog with category filtering
+- **Product detail page** with quantity selector
 - Multi-currency support (USD / KHR)
-- Multi-language support (English / Khmer)
+- Multi-language support (English / Khmer) with language switcher
 - Shopping cart with real-time updates
-- Checkout via Telegram or Facebook Messenger
+- Checkout via Telegram or Facebook Messenger with pre-filled message
 
 ### Admin Dashboard
-- **Dashboard** - Sales analytics and statistics
+- **Dashboard** - Sales analytics and statistics with charts
 - **Orders** - Order management with status tracking
-- **Products** - Product CRUD with inventory
-- **Categories** - Category management with drag & drop
-- **Customers** - Customer database
-- **Inventory** - Stock management and alerts
+- **Products** - Product CRUD with inventory and image upload
+- **Categories** - Category management with **drag & drop reordering**
+- **Customers** - Customer database with order history
+- **Inventory** - Stock management with low-stock alerts
 - **Payments** - Payment gateway configuration (ABA KHQR, Wing, PayWay)
 - **Promotions** - Discount codes and campaigns
-- **Content** - CMS for pages, blogs, banners
-- **Users** - User and role management
-- **Reports** - Sales and inventory reports with export
-- **Settings** - Shop configuration
+- **Content** - CMS for pages, blogs, banners, FAQs
+- **Users** - User and role management with permissions
+- **Reports** - Sales and inventory reports with **CSV/Excel export**
+- **Settings** - Shop info, currency, and social links configuration
 
 ### Kitchen Display System (KDS)
 - Real-time order queue

@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -87,21 +88,23 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
             const price = currency === "USD" ? product.priceUsd : product.priceKhr
 
             return (
-              <div key={product.id} className="bg-card border border-border flex flex-col">
-                {/* Image */}
-                <div className="aspect-square overflow-hidden bg-muted">
+              <div key={product.id} className="bg-card border border-border flex flex-col group">
+                {/* Image - Clickable */}
+                <Link href={`/shop/product/${product.id}`} className="aspect-square overflow-hidden bg-muted block">
                   <img
                     src={product.imageUrl || "/placeholder.svg"}
                     alt={product.nameEn}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
-                </div>
+                </Link>
 
                 {/* Content */}
                 <div className="p-3 sm:p-4 flex flex-col flex-1">
-                  <h3 className="font-semibold text-sm sm:text-base text-foreground mb-1">
-                    {language === "EN" ? product.nameEn : product.nameKh}
-                  </h3>
+                  <Link href={`/shop/product/${product.id}`} className="hover:text-primary transition-colors">
+                    <h3 className="font-semibold text-sm sm:text-base text-foreground mb-1">
+                      {language === "EN" ? product.nameEn : product.nameKh}
+                    </h3>
+                  </Link>
 
                   {/* Price */}
                   <p className="text-lg sm:text-xl font-bold text-primary mb-3">
