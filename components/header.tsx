@@ -33,26 +33,35 @@ export function Header({
           </div>
 
           {/* Center - Dropdowns */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             {/* Language Dropdown */}
             <Select value={language} onValueChange={(value) => onLanguageChange(value as "EN" | "KH")}>
-              <SelectTrigger className="w-[50px] h-8 px-2">
-                <span className="text-lg">{language === "EN" ? "🇺🇸" : "🇰🇭"}</span>
+              <SelectTrigger className="h-9 w-auto gap-1 px-3 border-none bg-muted/50 hover:bg-muted">
+                <span className="text-base">{language === "EN" ? "🇺🇸" : "🇰🇭"}</span>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="EN">🇺🇸</SelectItem>
-                <SelectItem value="KH">🇰🇭</SelectItem>
+                <SelectItem value="EN">
+                  <span className="flex items-center gap-2">🇺🇸 English</span>
+                </SelectItem>
+                <SelectItem value="KH">
+                  <span className="flex items-center gap-2">🇰🇭 ខ្មែរ</span>
+                </SelectItem>
               </SelectContent>
             </Select>
 
             {/* Currency Dropdown */}
             <Select value={currency} onValueChange={(value) => onCurrencyChange(value as "USD" | "KHR")}>
-              <SelectTrigger className="w-[50px] h-8 px-2">
-                <span className="text-lg">{currency === "USD" ? "$" : "៛"}</span>
+              <SelectTrigger className="h-9 w-auto gap-1 px-3 border-none bg-muted/50 hover:bg-muted">
+                <span className="text-base">{currency === "USD" ? "🇺🇸" : "🇰🇭"}</span>
+                <span className="text-sm font-medium">{currency}</span>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="USD">$</SelectItem>
-                <SelectItem value="KHR">៛</SelectItem>
+                <SelectItem value="USD">
+                  <span className="flex items-center gap-2">🇺🇸 USD</span>
+                </SelectItem>
+                <SelectItem value="KHR">
+                  <span className="flex items-center gap-2">🇰🇭 KHR</span>
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
