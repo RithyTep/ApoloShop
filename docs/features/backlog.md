@@ -57,18 +57,53 @@ Provides a Jira-like board with three columns:
 
 ## Data Storage
 
-Items are stored in **localStorage** under the key `apoloshop_backlog`.
+Items are stored in the **PostgreSQL database** using Prisma ORM.
+
+### Database Schema
+
+```prisma
+enum BacklogPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum BacklogStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+model BacklogItem {
+  id          String          @id @default(cuid())
+  title       String
+  description String?         @db.Text
+  priority    BacklogPriority @default(MEDIUM)
+  status      BacklogStatus   @default(TODO)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+```
+
+### API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/backlog` | List all backlog items |
+| `POST` | `/api/backlog` | Create new item |
+| `PUT` | `/api/backlog/[id]` | Update item |
+| `DELETE` | `/api/backlog/[id]` | Delete item |
+
+### React Query Hooks
 
 ```typescript
-interface BacklogItem {
-  id: string
-  title: string
-  description: string
-  priority: "low" | "medium" | "high" | "critical"
-  status: "todo" | "in_progress" | "done"
-  createdAt: string  // ISO date
-  updatedAt: string  // ISO date
-}
+import {
+  useBacklogItems,
+  useCreateBacklogItem,
+  useUpdateBacklogItem,
+  useDeleteBacklogItem,
+} from "@/lib/api-hooks"
 ```
 
 ---
@@ -99,8 +134,12 @@ In production builds, this section is completely hidden.
 ## Related Files
 
 - `components/pages/backlog-page.tsx` - Backlog page component
-- `components/sidebar.tsx` - Developer section (lines 105-115)
+- `components/sidebar.tsx` - Developer section (dev-only)
 - `components/admin-dashboard.tsx` - Backlog navigation
+- `app/api/backlog/route.ts` - List/Create API
+- `app/api/backlog/[id]/route.ts` - Update/Delete API
+- `lib/api-hooks.ts` - React Query hooks
+- `prisma/schema.prisma` - Database model
 
 ---
 
@@ -131,8 +170,10 @@ In production builds, this section is completely hidden.
 ### 2025-12-24
 - Initial backlog feature implementation
 - Added Kanban board with drag-and-drop
-- Added priority levels (low, medium, high, critical)
-- Added localStorage persistence
+- Added priority levels (LOW, MEDIUM, HIGH, CRITICAL)
+- **Database storage** with PostgreSQL via Prisma
+- API endpoints for CRUD operations
+- React Query hooks for data fetching
 - Hidden in production environment
 
 ---

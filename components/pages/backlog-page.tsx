@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Plus, GripVertical, X, Edit2, Check } from "lucide-react"
+import { useState } from "react"
+import { Plus, GripVertical, X, Edit2, Check, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -23,50 +23,44 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import {
+  useBacklogItems,
+  useCreateBacklogItem,
+  useUpdateBacklogItem,
+  useDeleteBacklogItem,
+  type BacklogItem,
+  type BacklogPriority,
+  type BacklogStatus,
+} from "@/lib/api-hooks"
+import { toast } from "sonner"
 
-type Priority = "low" | "medium" | "high" | "critical"
-type Status = "todo" | "in_progress" | "done"
-
-interface BacklogItem {
-  id: string
-  title: string
-  description: string
-  priority: Priority
-  status: Status
-  createdAt: string
-  updatedAt: string
+const priorityColors: Record<BacklogPriority, string> = {
+  LOW: "bg-slate-500",
+  MEDIUM: "bg-blue-500",
+  HIGH: "bg-orange-500",
+  CRITICAL: "bg-red-500",
 }
 
-const STORAGE_KEY = "apoloshop_backlog"
-
-const priorityColors: Record<Priority, string> = {
-  low: "bg-slate-500",
-  medium: "bg-blue-500",
-  high: "bg-orange-500",
-  critical: "bg-red-500",
+const priorityLabels: Record<BacklogPriority, string> = {
+  LOW: "Low",
+  MEDIUM: "Medium",
+  HIGH: "High",
+  CRITICAL: "Critical",
 }
 
-const priorityLabels: Record<Priority, string> = {
-  low: "Low",
-  medium: "Medium",
-  high: "High",
-  critical: "Critical",
+const statusLabels: Record<BacklogStatus, string> = {
+  TODO: "To Do",
+  IN_PROGRESS: "In Progress",
+  DONE: "Done",
 }
 
-const statusLabels: Record<Status, string> = {
-  todo: "To Do",
-  in_progress: "In Progress",
-  done: "Done",
-}
-
-const statusColors: Record<Status, string> = {
-  todo: "bg-slate-100 border-slate-300",
-  in_progress: "bg-blue-50 border-blue-300",
-  done: "bg-green-50 border-green-300",
+const statusColors: Record<BacklogStatus, string> = {
+  TODO: "bg-slate-100 border-slate-300",
+  IN_PROGRESS: "bg-blue-50 border-blue-300",
+  DONE: "bg-green-50 border-green-300",
 }
 
 export function BacklogPage() {
-  const [items, setItems] = useState<BacklogItem[]>([])
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<BacklogItem | null>(null)
   const [draggedItem, setDraggedItem] = useState<BacklogItem | null>(null)
@@ -74,82 +68,75 @@ export function BacklogPage() {
   // Form state
   const [formTitle, setFormTitle] = useState("")
   const [formDescription, setFormDescription] = useState("")
-  const [formPriority, setFormPriority] = useState<Priority>("medium")
+  const [formPriority, setFormPriority] = useState<BacklogPriority>("MEDIUM")
+  const [formStatus, setFormStatus] = useState<BacklogStatus>("TODO")
 
-  // Load from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      try {
-        setItems(JSON.parse(stored))
-      } catch {
-        console.error("Failed to parse backlog from localStorage")
-      }
-    }
-  }, [])
+  // API hooks
+  const { data, isLoading } = useBacklogItems()
+  const createItem = useCreateBacklogItem()
+  const updateItem = useUpdateBacklogItem()
+  const deleteItem = useDeleteBacklogItem()
 
-  // Save to localStorage
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
-  }, [items])
+  const items = data?.items || []
 
   const resetForm = () => {
     setFormTitle("")
     setFormDescription("")
-    setFormPriority("medium")
+    setFormPriority("MEDIUM")
+    setFormStatus("TODO")
     setEditingItem(null)
   }
 
-  const handleAddItem = () => {
+  const handleAddItem = async () => {
     if (!formTitle.trim()) return
 
-    const now = new Date().toISOString()
-    const newItem: BacklogItem = {
-      id: crypto.randomUUID(),
-      title: formTitle.trim(),
-      description: formDescription.trim(),
-      priority: formPriority,
-      status: "todo",
-      createdAt: now,
-      updatedAt: now,
+    try {
+      await createItem.mutateAsync({
+        title: formTitle.trim(),
+        description: formDescription.trim() || undefined,
+        priority: formPriority,
+      })
+      resetForm()
+      setIsAddDialogOpen(false)
+      toast.success("Item added")
+    } catch (error) {
+      toast.error("Failed to add item")
     }
-
-    setItems((prev) => [...prev, newItem])
-    resetForm()
-    setIsAddDialogOpen(false)
   }
 
-  const handleUpdateItem = () => {
+  const handleUpdateItem = async () => {
     if (!editingItem || !formTitle.trim()) return
 
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === editingItem.id
-          ? {
-              ...item,
-              title: formTitle.trim(),
-              description: formDescription.trim(),
-              priority: formPriority,
-              updatedAt: new Date().toISOString(),
-            }
-          : item
-      )
-    )
-    resetForm()
+    try {
+      await updateItem.mutateAsync({
+        id: editingItem.id,
+        title: formTitle.trim(),
+        description: formDescription.trim() || undefined,
+        priority: formPriority,
+        status: formStatus,
+      })
+      resetForm()
+      toast.success("Item updated")
+    } catch (error) {
+      toast.error("Failed to update item")
+    }
   }
 
-  const handleDeleteItem = (id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id))
+  const handleDeleteItem = async (id: string) => {
+    try {
+      await deleteItem.mutateAsync(id)
+      toast.success("Item deleted")
+    } catch (error) {
+      toast.error("Failed to delete item")
+    }
   }
 
-  const handleStatusChange = (id: string, newStatus: Status) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? { ...item, status: newStatus, updatedAt: new Date().toISOString() }
-          : item
-      )
-    )
+  const handleStatusChange = async (id: string, newStatus: BacklogStatus) => {
+    try {
+      await updateItem.mutateAsync({ id, status: newStatus })
+    } catch (error) {
+      toast.error("Failed to update status")
+    }
   }
 
   const handleDragStart = (item: BacklogItem) => {
@@ -160,7 +147,7 @@ export function BacklogPage() {
     e.preventDefault()
   }
 
-  const handleDrop = (status: Status) => {
+  const handleDrop = (status: BacklogStatus) => {
     if (draggedItem && draggedItem.status !== status) {
       handleStatusChange(draggedItem.id, status)
     }
@@ -170,18 +157,27 @@ export function BacklogPage() {
   const openEditDialog = (item: BacklogItem) => {
     setEditingItem(item)
     setFormTitle(item.title)
-    setFormDescription(item.description)
+    setFormDescription(item.description || "")
     setFormPriority(item.priority)
+    setFormStatus(item.status)
   }
 
-  const getItemsByStatus = (status: Status) =>
+  const getItemsByStatus = (status: BacklogStatus) =>
     items.filter((item) => item.status === status)
 
-  const columns: { status: Status; title: string }[] = [
-    { status: "todo", title: "To Do" },
-    { status: "in_progress", title: "In Progress" },
-    { status: "done", title: "Done" },
+  const columns: { status: BacklogStatus; title: string }[] = [
+    { status: "TODO", title: "To Do" },
+    { status: "IN_PROGRESS", title: "In Progress" },
+    { status: "DONE", title: "Done" },
   ]
+
+  if (isLoading) {
+    return (
+      <div className="p-6 flex items-center justify-center h-full">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -229,20 +225,27 @@ export function BacklogPage() {
                 <Label htmlFor="priority">Priority</Label>
                 <Select
                   value={formPriority}
-                  onValueChange={(v) => setFormPriority(v as Priority)}
+                  onValueChange={(v) => setFormPriority(v as BacklogPriority)}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="critical">Critical</SelectItem>
+                    <SelectItem value="LOW">Low</SelectItem>
+                    <SelectItem value="MEDIUM">Medium</SelectItem>
+                    <SelectItem value="HIGH">High</SelectItem>
+                    <SelectItem value="CRITICAL">Critical</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={handleAddItem} className="w-full">
+              <Button
+                onClick={handleAddItem}
+                className="w-full"
+                disabled={createItem.isPending}
+              >
+                {createItem.isPending && (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                )}
                 Add Item
               </Button>
             </div>
@@ -332,6 +335,7 @@ export function BacklogPage() {
                           size="icon"
                           className="h-6 w-6 text-destructive hover:text-destructive"
                           onClick={() => handleDeleteItem(item.id)}
+                          disabled={deleteItem.isPending}
                         >
                           <X className="w-3 h-3" />
                         </Button>
@@ -375,42 +379,45 @@ export function BacklogPage() {
               <Label htmlFor="edit-priority">Priority</Label>
               <Select
                 value={formPriority}
-                onValueChange={(v) => setFormPriority(v as Priority)}
+                onValueChange={(v) => setFormPriority(v as BacklogPriority)}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="critical">Critical</SelectItem>
+                  <SelectItem value="LOW">Low</SelectItem>
+                  <SelectItem value="MEDIUM">Medium</SelectItem>
+                  <SelectItem value="HIGH">High</SelectItem>
+                  <SelectItem value="CRITICAL">Critical</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-status">Status</Label>
               <Select
-                value={editingItem?.status}
-                onValueChange={(v) => {
-                  if (editingItem) {
-                    handleStatusChange(editingItem.id, v as Status)
-                    setEditingItem({ ...editingItem, status: v as Status })
-                  }
-                }}
+                value={formStatus}
+                onValueChange={(v) => setFormStatus(v as BacklogStatus)}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="todo">To Do</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="done">Done</SelectItem>
+                  <SelectItem value="TODO">To Do</SelectItem>
+                  <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                  <SelectItem value="DONE">Done</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={handleUpdateItem} className="w-full">
-              <Check className="w-4 h-4 mr-2" />
+            <Button
+              onClick={handleUpdateItem}
+              className="w-full"
+              disabled={updateItem.isPending}
+            >
+              {updateItem.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Check className="w-4 h-4 mr-2" />
+              )}
               Save Changes
             </Button>
           </div>

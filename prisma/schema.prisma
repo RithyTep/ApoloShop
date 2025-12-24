@@ -388,3 +388,39 @@ model ShopCustomization {
   @@map("shop_customization")
   @@schema("apolo")
 }
+
+// ============================================
+// DEVELOPER BACKLOG (Dev Only)
+// ============================================
+
+enum BacklogPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+
+  @@schema("apolo")
+}
+
+enum BacklogStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+
+  @@schema("apolo")
+}
+
+model BacklogItem {
+  id          String          @id @default(cuid())
+  title       String
+  description String?         @db.Text
+  priority    BacklogPriority @default(MEDIUM)
+  status      BacklogStatus   @default(TODO)
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([priority])
+  @@map("backlog_items")
+  @@schema("apolo")
+}

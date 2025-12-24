@@ -1065,3 +1065,77 @@ export function useDeleteHoliday() {
     },
   });
 }
+
+// ============================================
+// DEVELOPER BACKLOG
+// ============================================
+
+export type BacklogPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+export type BacklogStatus = "TODO" | "IN_PROGRESS" | "DONE";
+
+export interface BacklogItem {
+  id: string;
+  title: string;
+  description: string | null;
+  priority: BacklogPriority;
+  status: BacklogStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function useBacklogItems() {
+  return useQuery({
+    queryKey: ["backlog"],
+    queryFn: () => fetchAPI<{ items: BacklogItem[] }>("/api/backlog"),
+  });
+}
+
+export function useCreateBacklogItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { title: string; description?: string; priority?: BacklogPriority }) =>
+      fetchAPI<{ item: BacklogItem }>("/api/backlog", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["backlog"] });
+    },
+  });
+}
+
+export function useUpdateBacklogItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      ...data
+    }: {
+      id: string;
+      title?: string;
+      description?: string;
+      priority?: BacklogPriority;
+      status?: BacklogStatus;
+    }) =>
+      fetchAPI<{ item: BacklogItem }>(`/api/backlog/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["backlog"] });
+    },
+  });
+}
+
+export function useDeleteBacklogItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchAPI<{ success: boolean }>(`/api/backlog/${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["backlog"] });
+    },
+  });
+}
