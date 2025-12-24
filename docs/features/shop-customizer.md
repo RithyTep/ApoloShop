@@ -2,7 +2,7 @@
 
 > **Branch:** `Develop`
 > **Status:** Complete
-> **Last Updated:** 2025-12-23
+> **Last Updated:** 2025-12-24
 
 ---
 
@@ -170,8 +170,30 @@ Uses existing packages:
 - `@dnd-kit/core` - Drag and drop
 - `@dnd-kit/sortable` - Sortable list
 - `@tanstack/react-query` - Data fetching
+- `@aws-sdk/client-s3` - Cloudflare R2 uploads
 
-No new dependencies required.
+---
+
+## Image Upload
+
+All section editors now use the **ImageUpload** component for image management:
+
+| Section | Folder | Description |
+|---------|--------|-------------|
+| Hero | `hero` | Hero banner images/videos |
+| Promotions | `promotions` | Promotion card images |
+| About | `about` | About section images |
+| Team | `team` | Team member photos |
+| Gallery | `gallery` | Gallery images |
+
+### Features
+- Drag and drop upload
+- Click to browse
+- Image preview
+- Delete with automatic R2 cleanup
+- Cloudflare CDN caching
+
+See [Image Upload Documentation](./image-upload.md) for details.
 
 ---
 
@@ -196,6 +218,37 @@ No new dependencies required.
 5. Drag sections to reorder
 6. Click Save Changes
 7. Visit /shop to see changes applied
+
+---
+
+## Testing
+
+### E2E Tests (12 tests)
+Located in `e2e/admin/customizer.spec.ts`:
+- Load customizer page
+- Show Sections and Theme tabs
+- Add new section
+- Edit section configuration
+- Delete section
+- Drag and drop reordering
+- Theme editor
+- Preview modes (desktop/tablet/mobile)
+- Save changes
+
+---
+
+## Changelog
+
+### 2025-12-24
+- Replaced URL inputs with ImageUpload component
+- Added Cloudflare R2 integration for image storage
+- Images now have CDN caching via Cloudflare
+
+### 2025-12-23
+- Initial shop customizer implementation
+- Added drag and drop section reordering
+- Added preview modes
+- Added theme editor
 
 ---
 
