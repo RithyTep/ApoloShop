@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { PromotionsConfig } from "@/lib/api-hooks"
@@ -69,13 +70,17 @@ export function PromotionsRenderer({
               href={isPreview ? undefined : card.link}
               className="group block bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
             >
-              {/* Image */}
+              {/* Image - Cached with Next.js Image */}
               <div className="aspect-[16/9] bg-muted overflow-hidden relative">
                 {card.imageUrl ? (
-                  <img
+                  <Image
                     src={card.imageUrl}
                     alt={language === "EN" ? card.titleEn : card.titleKh}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    fill
+                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    priority={false}
+                    loading="lazy"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground">
