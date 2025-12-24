@@ -16,6 +16,7 @@ import { ReportsPage } from "./pages/reports-page"
 import { SettingsPage } from "./pages/settings-page"
 import { CustomizerPage } from "./customizer/customizer-page"
 import { BusinessHoursPage } from "./pages/business-hours-page"
+import { BacklogPage } from "./pages/backlog-page"
 import { useOrders, useLowStockItems } from "@/lib/api-hooks"
 
 type NavItem =
@@ -33,6 +34,7 @@ type NavItem =
   | "settings"
   | "customizer"
   | "business-hours"
+  | "backlog"
 
 export function AdminDashboard() {
   const [activeNav, setActiveNav] = useState<NavItem>("dashboard")
@@ -74,6 +76,8 @@ export function AdminDashboard() {
         return <CustomizerPage />
       case "business-hours":
         return <BusinessHoursPage />
+      case "backlog":
+        return <BacklogPage />
       default:
         return <DashboardPage />
     }

@@ -17,6 +17,7 @@ import {
   X,
   Palette,
   Clock,
+  ClipboardList,
   type LucideIcon,
 } from "lucide-react"
 import { useState } from "react"
@@ -37,6 +38,7 @@ type NavItem =
   | "settings"
   | "customizer"
   | "business-hours"
+  | "backlog"
 
 interface SidebarProps {
   activeNav: NavItem
@@ -100,6 +102,17 @@ export function Sidebar({ activeNav, setActiveNav, orderCount = 0, lowStockCount
         { id: "settings", label: "Settings", icon: Settings },
       ],
     },
+    // Developer section - only in development mode
+    ...(process.env.NODE_ENV === "development"
+      ? [
+          {
+            label: "Developer",
+            items: [
+              { id: "backlog" as NavItem, label: "Backlog", icon: ClipboardList },
+            ],
+          },
+        ]
+      : []),
   ]
 
   return (
