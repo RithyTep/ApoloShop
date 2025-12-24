@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
+import { ImageUpload } from "@/components/ui/image-upload"
 import { PromotionsConfig, PromotionCard } from "@/lib/api-hooks"
 
 interface PromotionsEditorProps {
@@ -166,11 +167,13 @@ export function PromotionsEditor({ config, onChange }: PromotionsEditorProps) {
             <Label className="text-sm font-medium">Editing: {editingCard.titleEn}</Label>
 
             <div>
-              <Label className="text-xs text-muted-foreground">Image URL</Label>
-              <Input
+              <Label className="text-xs text-muted-foreground">Promotion Image</Label>
+              <ImageUpload
                 value={editingCard.imageUrl}
-                onChange={(e) => updateCard(editingCard.id, { imageUrl: e.target.value })}
-                placeholder="https://example.com/promo.jpg"
+                onChange={(url) => updateCard(editingCard.id, { imageUrl: url })}
+                onRemove={() => updateCard(editingCard.id, { imageUrl: "" })}
+                folder="promotions"
+                aspectRatio="video"
               />
             </div>
 

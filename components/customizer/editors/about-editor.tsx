@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
+import { ImageUpload } from "@/components/ui/image-upload"
 import { AboutConfig } from "@/lib/api-hooks"
 
 interface AboutEditorProps {
@@ -74,14 +75,13 @@ export function AboutEditor({ config, onChange }: AboutEditorProps) {
       {/* Image */}
       <div className="space-y-3">
         <Label className="text-sm font-medium">Image (Optional)</Label>
-        <div>
-          <Label className="text-xs text-muted-foreground">Image URL</Label>
-          <Input
-            value={config.imageUrl || ""}
-            onChange={(e) => update({ imageUrl: e.target.value || undefined })}
-            placeholder="https://example.com/about-image.jpg"
-          />
-        </div>
+        <ImageUpload
+          value={config.imageUrl || ""}
+          onChange={(url) => update({ imageUrl: url })}
+          onRemove={() => update({ imageUrl: undefined })}
+          folder="about"
+          aspectRatio="video"
+        />
         {config.imageUrl && (
           <div>
             <Label className="text-xs text-muted-foreground">Image Position</Label>
@@ -100,13 +100,6 @@ export function AboutEditor({ config, onChange }: AboutEditorProps) {
               </SelectContent>
             </Select>
           </div>
-        )}
-        {config.imageUrl && (
-          <img
-            src={config.imageUrl}
-            alt="Preview"
-            className="w-full h-32 object-cover rounded-lg mt-2"
-          />
         )}
       </div>
     </div>

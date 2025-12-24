@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import { ImageUpload } from "@/components/ui/image-upload"
 import { TeamConfig, TeamMember } from "@/lib/api-hooks"
 
 interface TeamEditorProps {
@@ -160,21 +161,15 @@ export function TeamEditor({ config, onChange }: TeamEditorProps) {
             </div>
 
             <div>
-              <Label className="text-xs text-muted-foreground">Photo URL</Label>
-              <Input
+              <Label className="text-xs text-muted-foreground">Photo</Label>
+              <ImageUpload
                 value={editingMember.imageUrl || ""}
-                onChange={(e) => updateMember(editingMember.id, { imageUrl: e.target.value })}
-                placeholder="https://example.com/photo.jpg"
+                onChange={(url) => updateMember(editingMember.id, { imageUrl: url })}
+                onRemove={() => updateMember(editingMember.id, { imageUrl: "" })}
+                folder="team"
+                aspectRatio="square"
               />
             </div>
-
-            {editingMember.imageUrl && (
-              <img
-                src={editingMember.imageUrl}
-                alt="Preview"
-                className="w-20 h-20 object-cover rounded-full mx-auto"
-              />
-            )}
           </div>
         </>
       )}

@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
+import { ImageUpload } from "@/components/ui/image-upload"
 import { HeroConfig } from "@/lib/api-hooks"
 
 interface HeroEditorProps {
@@ -22,21 +23,13 @@ export function HeroEditor({ config, onChange }: HeroEditorProps) {
       {/* Media */}
       <div className="space-y-3">
         <Label className="text-sm font-medium">Background Image</Label>
-        <Input
-          placeholder="https://example.com/image.jpg"
+        <ImageUpload
           value={config.mediaUrl}
-          onChange={(e) => update({ mediaUrl: e.target.value })}
+          onChange={(url) => update({ mediaUrl: url, mediaType: "image" })}
+          onRemove={() => update({ mediaUrl: "" })}
+          folder="hero"
+          aspectRatio="video"
         />
-        {config.mediaUrl && (
-          <div className="aspect-video bg-muted rounded overflow-hidden">
-            <img
-              src={config.mediaUrl}
-              alt="Preview"
-              className="w-full h-full object-cover"
-              onError={(e) => (e.currentTarget.style.display = "none")}
-            />
-          </div>
-        )}
       </div>
 
       <Separator />

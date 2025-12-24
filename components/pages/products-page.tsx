@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import { ImageUpload } from "@/components/ui/image-upload"
 import { Plus, Pencil, Trash } from "lucide-react"
 import { useProducts, useCategories, useCreateProduct, useUpdateProduct, useDeleteProduct, Product, Category } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
@@ -337,12 +338,13 @@ export function ProductsPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="imageUrl">Image URL</Label>
-              <Input
-                id="imageUrl"
+              <Label>Product Image</Label>
+              <ImageUpload
                 value={formData.imageUrl}
-                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                placeholder="https://..."
+                onChange={(url) => setFormData({ ...formData, imageUrl: url })}
+                onRemove={() => setFormData({ ...formData, imageUrl: "" })}
+                folder="products"
+                aspectRatio="square"
               />
             </div>
             <div className="flex items-center gap-2">

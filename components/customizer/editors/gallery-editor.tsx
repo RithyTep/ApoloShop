@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
+import { ImageUpload } from "@/components/ui/image-upload"
 import { GalleryConfig, GalleryImage } from "@/lib/api-hooks"
 
 interface GalleryEditorProps {
@@ -166,11 +167,13 @@ export function GalleryEditor({ config, onChange }: GalleryEditorProps) {
             <Label className="text-sm font-medium">Edit Image</Label>
 
             <div>
-              <Label className="text-xs text-muted-foreground">Image URL</Label>
-              <Input
+              <Label className="text-xs text-muted-foreground">Image</Label>
+              <ImageUpload
                 value={editingImage.url}
-                onChange={(e) => updateImage(editingImage.id, { url: e.target.value })}
-                placeholder="https://example.com/image.jpg"
+                onChange={(url) => updateImage(editingImage.id, { url })}
+                onRemove={() => updateImage(editingImage.id, { url: "" })}
+                folder="gallery"
+                aspectRatio="square"
               />
             </div>
 
