@@ -3,22 +3,24 @@
 import {
   LayoutDashboard,
   Package,
-  List,
+  FolderTree,
   Users,
   Boxes,
   CreditCard,
-  Tag,
+  Gift,
   FileText,
-  User,
+  UserCog,
   BarChart3,
   Settings,
-  ShoppingCart,
+  ShoppingBag,
   Menu,
   X,
   Palette,
   Clock,
+  type LucideIcon,
 } from "lucide-react"
 import { useState } from "react"
+import { cn } from "@/lib/utils"
 
 type NavItem =
   | "dashboard"
@@ -39,27 +41,66 @@ type NavItem =
 interface SidebarProps {
   activeNav: NavItem
   setActiveNav: (item: NavItem) => void
+  orderCount?: number
+  lowStockCount?: number
 }
 
-const navItems = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "orders", label: "Orders", icon: ShoppingCart },
-  { id: "products", label: "Products", icon: Package },
-  { id: "categories", label: "Categories", icon: List },
-  { id: "customers", label: "Customers", icon: Users },
-  { id: "inventory", label: "Inventory", icon: Boxes },
-  { id: "payments", label: "Payments", icon: CreditCard },
-  { id: "promotions", label: "Promotions", icon: Tag },
-  { id: "content", label: "Content", icon: FileText },
-  { id: "customizer", label: "Shop Customizer", icon: Palette },
-  { id: "business-hours", label: "Business Hours", icon: Clock },
-  { id: "users", label: "Users & Roles", icon: User },
-  { id: "reports", label: "Reports", icon: BarChart3 },
-  { id: "settings", label: "Settings", icon: Settings },
-]
+interface NavItemConfig {
+  id: NavItem
+  label: string
+  icon: LucideIcon
+  badge?: number
+  alert?: boolean
+}
 
-export function Sidebar({ activeNav, setActiveNav }: SidebarProps) {
+interface NavGroup {
+  label?: string
+  items: NavItemConfig[]
+}
+
+export function Sidebar({ activeNav, setActiveNav, orderCount = 0, lowStockCount = 0 }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(true)
+
+  const navGroups: NavGroup[] = [
+    {
+      items: [
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+      ],
+    },
+    {
+      label: "Sales",
+      items: [
+        { id: "orders", label: "Orders", icon: ShoppingBag, badge: orderCount > 0 ? orderCount : undefined },
+        { id: "customers", label: "Customers", icon: Users },
+      ],
+    },
+    {
+      label: "Catalog",
+      items: [
+        { id: "products", label: "Products", icon: Package },
+        { id: "categories", label: "Categories", icon: FolderTree },
+        { id: "inventory", label: "Inventory", icon: Boxes, alert: lowStockCount > 0 },
+      ],
+    },
+    {
+      label: "Marketing",
+      items: [
+        { id: "promotions", label: "Promotions", icon: Gift },
+        { id: "content", label: "Content", icon: FileText },
+        { id: "customizer", label: "Customizer", icon: Palette },
+      ],
+    },
+    {
+      label: "System",
+      items: [
+        { id: "business-hours", label: "Business Hours", icon: Clock },
+        { id: "users", label: "Users", icon: UserCog },
+        { id: "payments", label: "Payments", icon: CreditCard },
+        { id: "reports", label: "Reports", icon: BarChart3 },
+        { id: "settings", label: "Settings", icon: Settings },
+      ],
+    },
+  ]
 
   return (
     <>
@@ -73,55 +114,87 @@ export function Sidebar({ activeNav, setActiveNav }: SidebarProps) {
 
       {/* Sidebar */}
       <div
-        className={`
-          fixed md:relative z-40 w-64 h-screen bg-sidebar border-r border-sidebar-border
-          transition-transform duration-300 md:translate-x-0
-          ${isOpen ? "translate-x-0" : "-translate-x-full"}
-        `}
+        className={cn(
+          "fixed md:relative z-40 w-56 h-screen bg-sidebar border-r border-sidebar-border",
+          "transition-transform duration-300 md:translate-x-0 flex flex-col",
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        )}
       >
         {/* Logo */}
-        <div className="p-6 border-b border-sidebar-border">
-          <h1 className="text-xl font-bold text-sidebar-foreground">Shop CMS</h1>
+        <div className="px-5 py-4 border-b border-sidebar-border">
+          <h1 className="text-base font-semibold text-sidebar-foreground">ApoloShop</h1>
+          <p className="text-xs text-sidebar-foreground/50">Admin Panel</p>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2">
-          {navItems.map((item) => {
-            const Icon = item.icon as any
-            const isActive = activeNav === item.id
+        <nav className="flex-1 overflow-y-auto py-3">
+          {navGroups.map((group, groupIndex) => (
+            <div key={groupIndex} className={cn(group.label && "mt-4 first:mt-0")}>
+              {/* Section Header */}
+              {group.label && (
+                <div className="px-5 py-1.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">
+                    {group.label}
+                  </span>
+                </div>
+              )}
 
-            return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setActiveNav(item.id as NavItem)
-                  setIsOpen(false)
-                }}
-                className={`
-                  w-full flex items-center gap-3 px-4 py-3 rounded text-left
-                  transition-colors duration-200
-                  ${
-                    isActive
-                      ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent"
-                  }
-                `}
-              >
-                <Icon size={20} />
-                <span className="text-sm font-medium">{item.label}</span>
-              </button>
-            )
-          })}
+              {/* Items */}
+              <div className="px-2 space-y-0.5">
+                {group.items.map((item) => {
+                  const Icon = item.icon
+                  const isActive = activeNav === item.id
+
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setActiveNav(item.id)
+                        setIsOpen(false)
+                      }}
+                      className={cn(
+                        "w-full flex items-center justify-between px-3 py-2 rounded-md text-left",
+                        "transition-colors duration-150",
+                        isActive
+                          ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Icon size={16} strokeWidth={1.75} />
+                        <span className="text-sm">{item.label}</span>
+                      </div>
+
+                      {/* Badge or Alert */}
+                      {item.badge && (
+                        <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1.5 text-[10px] font-medium rounded-full bg-primary text-primary-foreground">
+                          {item.badge > 99 ? "99+" : item.badge}
+                        </span>
+                      )}
+                      {item.alert && !item.badge && (
+                        <span className="w-2 h-2 rounded-full bg-orange-500" />
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-sidebar-border">
-          <div className="text-xs text-sidebar-foreground/60">Logged in as Admin</div>
+        <div className="px-5 py-3 border-t border-sidebar-border">
+          <div className="text-xs text-sidebar-foreground/50">Admin</div>
         </div>
       </div>
 
       {/* Mobile overlay */}
-      {isOpen && <div className="fixed inset-0 bg-black/50 md:hidden z-30" onClick={() => setIsOpen(false)} />}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 md:hidden z-30"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
     </>
   )
 }

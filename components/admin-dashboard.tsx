@@ -16,6 +16,7 @@ import { ReportsPage } from "./pages/reports-page"
 import { SettingsPage } from "./pages/settings-page"
 import { CustomizerPage } from "./customizer/customizer-page"
 import { BusinessHoursPage } from "./pages/business-hours-page"
+import { useOrders, useLowStockItems } from "@/lib/api-hooks"
 
 type NavItem =
   | "dashboard"
@@ -35,6 +36,13 @@ type NavItem =
 
 export function AdminDashboard() {
   const [activeNav, setActiveNav] = useState<NavItem>("dashboard")
+
+  // Fetch counts for sidebar badges
+  const { data: ordersData } = useOrders({ status: "NEW" })
+  const { data: lowStockData } = useLowStockItems()
+
+  const newOrderCount = ordersData?.pagination?.total || 0
+  const lowStockCount = lowStockData?.inventory?.length || 0
 
   const renderPage = () => {
     switch (activeNav) {
@@ -73,7 +81,12 @@ export function AdminDashboard() {
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar activeNav={activeNav} setActiveNav={setActiveNav} />
+      <Sidebar
+        activeNav={activeNav}
+        setActiveNav={setActiveNav}
+        orderCount={newOrderCount}
+        lowStockCount={lowStockCount}
+      />
       <main className="flex-1 overflow-auto">{renderPage()}</main>
     </div>
   )
