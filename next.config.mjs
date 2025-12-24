@@ -22,41 +22,10 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "*.cloudinary.com",
+        hostname: "r2apsaramenu.rithytep.online",
         pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "*.supabase.co",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "*.amazonaws.com",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "cdn.shopify.com",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "i.imgur.com",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "*.com.kh",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "**",
-        pathname: "/**",
-      },
+      }
     ],
   },
 }
-
 export default nextConfig
