@@ -68,7 +68,7 @@ export function OrdersPage() {
 
   const formatCurrency = (amount: number, currency: string) => {
     if (currency === "KHR") return `៛${amount.toLocaleString()}`
-    return `$${amount.toFixed(2)}`
+    return `$${Number(amount).toFixed(2)}`
   }
 
   const formatDate = (dateStr: string) => {
