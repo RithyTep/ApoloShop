@@ -5,8 +5,6 @@ import { prisma } from "@/lib/prisma"
 const orderItemSchema = z.object({
   productId: z.string().min(1),
   quantity: z.number().int().positive(),
-  priceUsd: z.number().positive(),
-  priceKhr: z.number().int().positive(),
 })
 
 const orderCreateSchema = z.object({
@@ -90,6 +88,37 @@ export async function POST(request: NextRequest) {
 
     const data = result.data
 
+    // Fetch product prices from database
+    const productIds = data.items.map((item) => item.productId)
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true, priceUsd: true, priceKhr: true, nameEn: true },
+    })
+
+    // Create a map for quick lookup
+    const productMap = new Map(products.map((p) => [p.id, p]))
+
+    // Validate all products exist
+    for (const item of data.items) {
+      if (!productMap.has(item.productId)) {
+        return NextResponse.json(
+          { error: `Product not found: ${item.productId}` },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Build items with prices from database
+    const itemsWithPrices = data.items.map((item) => {
+      const product = productMap.get(item.productId)!
+      return {
+        productId: item.productId,
+        quantity: item.quantity,
+        priceUsd: Number(product.priceUsd),
+        priceKhr: product.priceKhr,
+      }
+    })
+
     // Find or create customer
     let customer = await prisma.customer.findUnique({
       where: { phone: data.customerPhone },
@@ -105,11 +134,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate totals
-    const totalUsd = data.items.reduce(
+    const totalUsd = itemsWithPrices.reduce(
       (sum, item) => sum + item.priceUsd * item.quantity,
       0
     )
-    const totalKhr = data.items.reduce(
+    const totalKhr = itemsWithPrices.reduce(
       (sum, item) => sum + item.priceKhr * item.quantity,
       0
     )
@@ -126,12 +155,7 @@ export async function POST(request: NextRequest) {
         channel: data.channel,
         note: data.note,
         items: {
-          create: data.items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            priceUsd: item.priceUsd,
-            priceKhr: item.priceKhr,
-          })),
+          create: itemsWithPrices,
         },
       },
       include: {
