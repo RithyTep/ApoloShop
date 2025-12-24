@@ -1,6 +1,6 @@
 [phases.setup]
 nixPkgs = ["bun", "openssl_3"]
-aptPkgs = ["libssl3", "openssl"]
+aptPkgs = ["libssl3", "openssl", "ca-certificates"]
 
 [phases.install]
 cmds = ["bun install"]
@@ -10,3 +10,6 @@ cmds = ["bunx prisma generate", "bun run build"]
 
 [start]
 cmd = "bun run start"
+
+[variables]
+LD_LIBRARY_PATH = "/nix/store/$(ls /nix/store | grep openssl | head -1)/lib:$LD_LIBRARY_PATH"
