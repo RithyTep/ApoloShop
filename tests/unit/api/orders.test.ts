@@ -17,6 +17,7 @@ vi.mock('@/lib/prisma', () => ({
     },
     product: {
       findUnique: vi.fn(),
+      findMany: vi.fn(),
     },
     inventory: {
       update: vi.fn(),
@@ -70,6 +71,7 @@ describe('Orders API', () => {
   describe('POST /api/orders', () => {
     it('should create an order with existing customer', async () => {
       const customer = { id: 'cust-1', name: 'John', phone: '+855123456789' }
+      const product = { id: 'prod-1', priceUsd: 5, priceKhr: 20000, nameEn: 'Coffee' }
       const newOrder = {
         id: 'order-1',
         orderNumber: 'ORD-20251223-001',
@@ -81,6 +83,7 @@ describe('Orders API', () => {
       }
 
       vi.mocked(prisma.customer.findUnique).mockResolvedValue(customer as never)
+      vi.mocked(prisma.product.findMany).mockResolvedValue([product] as never)
       vi.mocked(prisma.order.create).mockResolvedValue(newOrder as never)
       vi.mocked(prisma.inventory.updateMany).mockResolvedValue({ count: 1 })
 
@@ -89,7 +92,7 @@ describe('Orders API', () => {
         body: JSON.stringify({
           customerName: 'John',
           customerPhone: '+855123456789',
-          items: [{ productId: 'prod-1', quantity: 2, priceUsd: 5, priceKhr: 20000 }],
+          items: [{ productId: 'prod-1', quantity: 2 }],
           channel: 'WEBSITE',
           currency: 'USD',
         }),
@@ -102,10 +105,12 @@ describe('Orders API', () => {
 
     it('should create customer if not exists', async () => {
       const newCustomer = { id: 'cust-new', name: 'New Customer', phone: '+855999888777' }
+      const product = { id: 'prod-1', priceUsd: 5, priceKhr: 20000, nameEn: 'Coffee' }
       const newOrder = { id: 'order-1', orderNumber: 'ORD-001', customer: newCustomer, items: [] }
 
       vi.mocked(prisma.customer.findUnique).mockResolvedValue(null)
       vi.mocked(prisma.customer.create).mockResolvedValue(newCustomer as never)
+      vi.mocked(prisma.product.findMany).mockResolvedValue([product] as never)
       vi.mocked(prisma.order.create).mockResolvedValue(newOrder as never)
       vi.mocked(prisma.inventory.updateMany).mockResolvedValue({ count: 1 })
 
@@ -114,7 +119,7 @@ describe('Orders API', () => {
         body: JSON.stringify({
           customerName: 'New Customer',
           customerPhone: '+855999888777',
-          items: [{ productId: 'prod-1', quantity: 1, priceUsd: 5, priceKhr: 20000 }],
+          items: [{ productId: 'prod-1', quantity: 1 }],
           channel: 'WEBSITE',
           currency: 'USD',
         }),
