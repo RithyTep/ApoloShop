@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
 
         return {
           ...customer,
-          totalSpent: totalSpent._sum.totalUsd || 0,
+          totalSpent: Number(totalSpent._sum.totalUsd || 0),
           orderCount: customer._count.orders,
           lastOrder: customer.orders[0] || null,
         }

@@ -129,8 +129,8 @@ export function CustomersPage() {
                   <TableRow key={customer.id} className="border-b border-border hover:bg-muted/50">
                     <TableCell className="text-foreground font-medium">{customer.name || "Unknown"}</TableCell>
                     <TableCell className="text-foreground">{customer.phone}</TableCell>
-                    <TableCell className="text-foreground">{customer._count?.orders || 0}</TableCell>
-                    <TableCell className="text-foreground">${customer.totalSpent?.toFixed(2) || "0.00"}</TableCell>
+                    <TableCell className="text-foreground">{customer._count?.orders || customer.orderCount || 0}</TableCell>
+                    <TableCell className="text-foreground">${Number(customer.totalSpent || 0).toFixed(2)}</TableCell>
                     <TableCell>
                       <div className="flex gap-1 flex-wrap">
                         {customer.tags?.map((tag, idx) => (
@@ -141,7 +141,7 @@ export function CustomersPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-foreground text-sm">
-                      {customer.lastOrderAt ? formatDate(customer.lastOrderAt) : "-"}
+                      {customer.lastOrder?.createdAt ? formatDate(customer.lastOrder.createdAt) : "-"}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
@@ -194,15 +194,11 @@ export function CustomersPage() {
                 </div>
                 <div>
                   <span className="text-muted-foreground">Total Orders:</span>
-                  <p className="font-medium">{viewCustomer._count?.orders || 0}</p>
+                  <p className="font-medium">{viewCustomer._count?.orders || viewCustomer.orderCount || 0}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Total Spent:</span>
-                  <p className="font-medium">${viewCustomer.totalSpent?.toFixed(2) || "0.00"}</p>
-                </div>
-                <div className="col-span-2">
-                  <span className="text-muted-foreground">Address:</span>
-                  <p className="font-medium">{viewCustomer.address || "-"}</p>
+                  <p className="font-medium">${Number(viewCustomer.totalSpent || 0).toFixed(2)}</p>
                 </div>
                 <div className="col-span-2">
                   <span className="text-muted-foreground">Notes:</span>
