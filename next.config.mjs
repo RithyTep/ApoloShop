@@ -24,7 +24,22 @@ const nextConfig = {
         protocol: "https",
         hostname: "r2apsaramenu.rithytep.online",
         pathname: "/**",
-      }
+      },
+      {
+        protocol: "https",
+        hostname: "*.r2.cloudflarestorage.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "*.r2.dev",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "**",
+        pathname: "/**",
+      },
     ],
   },
 }
