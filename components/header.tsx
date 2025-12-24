@@ -1,7 +1,6 @@
 "use client"
 
 import { ShoppingCart } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { StoreStatus } from "@/components/shop/store-status"
 
 interface HeaderProps {
@@ -30,11 +29,12 @@ export function Header({
   showStoreStatus = true,
 }: HeaderProps) {
   return (
-    <header className="fixed top-0 left-0 right-0 bg-background border-b border-border z-40 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex items-center justify-between">
-          {/* Logo & Store Status */}
-          <div className="flex items-center gap-3">
+    <>
+      {/* Minimal Header */}
+      <header className="fixed top-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-b border-border z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex items-center justify-between">
+            {/* Logo */}
             <div className="flex items-center gap-2">
               {logoUrl ? (
                 <img src={logoUrl} alt={shopName} className="h-8 w-auto object-contain" />
@@ -48,55 +48,61 @@ export function Header({
                   </span>
                 </div>
               )}
-              <span className="font-bold text-xl text-foreground hidden sm:inline">{shopName}</span>
+              <span className="font-semibold text-lg text-foreground hidden sm:inline">{shopName}</span>
+              {showStoreStatus && <StoreStatus language={language} />}
             </div>
-            {showStoreStatus && <StoreStatus language={language} />}
+
+            {/* Right side: Settings + Cart */}
+            <div className="flex items-center gap-4">
+              {/* Language/Currency toggles - minimal text buttons */}
+              <div className="hidden sm:flex items-center gap-1 text-sm text-muted-foreground">
+                <button
+                  onClick={() => onLanguageChange(language === "EN" ? "KH" : "EN")}
+                  className="hover:text-foreground transition-colors px-1"
+                >
+                  {language === "EN" ? "EN" : "ខ្មែរ"}
+                </button>
+                <span className="text-border">|</span>
+                <button
+                  onClick={() => onCurrencyChange(currency === "USD" ? "KHR" : "USD")}
+                  className="hover:text-foreground transition-colors px-1"
+                >
+                  {currency === "USD" ? "$" : "៛"}
+                </button>
+              </div>
+
+              {/* Cart Icon */}
+              <button onClick={onCartClick} className="relative p-2 hover:bg-muted transition-colors rounded-full">
+                <ShoppingCart size={22} className="text-foreground" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+                    {cartCount}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
+        </div>
+      </header>
 
-          {/* Center - Dropdowns */}
-          <div className="flex items-center gap-2">
-            {/* Language Dropdown */}
-            <Select value={language} onValueChange={(value) => onLanguageChange(value as "EN" | "KH")}>
-              <SelectTrigger className="h-9 w-auto gap-1 px-3 border-none bg-muted/50 hover:bg-muted">
-                <span className="text-base">{language === "EN" ? "English" : "ខ្មែរ"}</span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="EN">
-                  <span className="flex items-center gap-2">English</span>
-                </SelectItem>
-                <SelectItem value="KH">
-                  <span className="flex items-center gap-2">ខ្មែរ</span>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Currency Dropdown */}
-            <Select value={currency} onValueChange={(value) => onCurrencyChange(value as "USD" | "KHR")}>
-              <SelectTrigger className="h-9 w-auto gap-1 px-3 border-none bg-muted/50 hover:bg-muted">
-                <span className="text-sm font-medium">{currency}</span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="USD">
-                  <span className="flex items-center gap-2">USD</span>
-                </SelectItem>
-                <SelectItem value="KHR">
-                  <span className="flex items-center gap-2">KHR</span>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Cart Icon */}
-          <button onClick={onCartClick} className="relative p-2 hover:bg-muted transition-colors rounded">
-            <ShoppingCart size={24} className="text-foreground" />
-            {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
-                {cartCount}
-              </span>
-            )}
+      {/* Mobile bottom bar for language/currency */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border z-40 py-2 px-4">
+        <div className="flex items-center justify-center gap-6 text-sm">
+          <button
+            onClick={() => onLanguageChange(language === "EN" ? "KH" : "EN")}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {language === "EN" ? "English" : "ខ្មែរ"}
+          </button>
+          <span className="text-border">•</span>
+          <button
+            onClick={() => onCurrencyChange(currency === "USD" ? "KHR" : "USD")}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {currency === "USD" ? "USD $" : "KHR ៛"}
           </button>
         </div>
       </div>
-    </header>
+    </>
   )
 }
