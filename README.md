@@ -1,11 +1,15 @@
 # ApoloShop
 
-A modern e-commerce platform built for small Cambodian businesses (coffee shops, bakeries, retail stores).
+A modern, open-source e-commerce platform built for small Cambodian businesses (coffee shops, bakeries, retail stores).
 
+[![MIT License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+[![Open Source](https://img.shields.io/badge/Open%20Source-Yes-brightgreen?style=for-the-badge&logo=opensourceinitiative)](https://github.com/RithyTep/ApoloShop)
+[![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen?style=for-the-badge)](https://github.com/RithyTep/ApoloShop/pulls)
 [![Built with Next.js](https://img.shields.io/badge/Next.js-16.0-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.1-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com)
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com)
+
+> **We welcome contributors!** Whether you're fixing bugs, adding features, improving docs, or suggesting ideas - all contributions are appreciated.
 
 ## Screenshots
 
@@ -198,11 +202,55 @@ bun test:e2e:ui
 
 ## Contributing
 
-1. Create a feature branch: `git checkout -b Feature/your-feature`
-2. Commit with convention: `[feat] Add your feature`
-3. Push and create PR
+We love contributions! ApoloShop is open source and we welcome developers of all skill levels.
+
+### Ways to Contribute
+
+- **Bug Reports** - Found a bug? [Open an issue](https://github.com/RithyTep/ApoloShop/issues/new)
+- **Feature Requests** - Have an idea? [Start a discussion](https://github.com/RithyTep/ApoloShop/discussions)
+- **Code** - Pick an issue and submit a PR
+- **Documentation** - Help improve our docs
+- **Translations** - Add support for more languages
+
+### Quick Start for Contributors
+
+```bash
+# 1. Fork and clone the repo
+git clone https://github.com/YOUR_USERNAME/ApoloShop.git
+cd ApoloShop
+
+# 2. Install dependencies
+bun install
+
+# 3. Set up environment
+cp .env.example .env
+
+# 4. Create a feature branch
+git checkout -b Feature/your-feature
+
+# 5. Make changes and commit
+git commit -m "[feat] Add your feature"
+
+# 6. Push and create PR
+git push origin Feature/your-feature
+```
+
+### Commit Convention
+
+| Prefix | Description |
+|--------|-------------|
+| `[feat]` | New feature |
+| `[fix]` | Bug fix |
+| `[docs]` | Documentation |
+| `[refactor]` | Code refactoring |
+| `[test]` | Tests |
+| `[chore]` | Maintenance |
 
 See [GIT_WORKFLOW.md](./GIT_WORKFLOW.md) for detailed guidelines.
+
+### Good First Issues
+
+Look for issues labeled [`good first issue`](https://github.com/RithyTep/ApoloShop/labels/good%20first%20issue) - these are great for newcomers!
 
 ## Documentation
 
@@ -211,10 +259,34 @@ See [GIT_WORKFLOW.md](./GIT_WORKFLOW.md) for detailed guidelines.
 - [Feature Documentation](./docs/features/)
 - [Changelog](./CHANGELOG.md)
 
+## Community & Support
+
+- [GitHub Issues](https://github.com/RithyTep/ApoloShop/issues) - Bug reports & feature requests
+- [GitHub Discussions](https://github.com/RithyTep/ApoloShop/discussions) - Questions & ideas
+- [Changelog](./CHANGELOG.md) - See what's new
+
+## Roadmap
+
+- [ ] Multi-branch support
+- [ ] Loyalty/rewards system
+- [ ] Product variants (size, color)
+- [ ] Order notifications (Telegram)
+- [ ] Analytics dashboard
+- [ ] Reviews & ratings
+
+See [white-label-modules.md](./docs/features/white-label-modules.md) for the full roadmap.
+
 ## License
 
 MIT License - see [LICENSE](./LICENSE) for details.
 
+This means you can:
+- Use it for commercial projects
+- Modify and distribute
+- Use privately
+
 ---
 
-Built with Next.js and shadcn/ui
+**Built with love for Cambodian small businesses**
+
+[Next.js](https://nextjs.org) | [shadcn/ui](https://ui.shadcn.com) | [Prisma](https://prisma.io) | [Tailwind CSS](https://tailwindcss.com)
