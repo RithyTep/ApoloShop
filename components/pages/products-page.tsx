@@ -25,6 +25,7 @@ export function ProductsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null)
+  const [forceDeleteProduct, setForceDeleteProduct] = useState<Product | null>(null)
 
   const { data: productsData, isLoading } = useProducts(categoryFilter && categoryFilter !== "all" ? categoryFilter : undefined)
   const { data: categoriesData } = useCategories()
@@ -121,10 +122,28 @@ export function ProductsPage() {
 
   const handleDelete = async () => {
     if (!deleteProduct) return
+    const product = deleteProduct
+    setDeleteProduct(null)
     try {
-      await deleteMutation.mutateAsync(deleteProduct.id)
-      toast({ title: "Product deleted successfully" })
-      setDeleteProduct(null)
+      const result = await deleteMutation.mutateAsync({ id: product.id })
+      if (result.softDeleted) {
+        // Product has orders - ask if they want to force delete
+        setForceDeleteProduct(product)
+      } else {
+        toast({ title: "Product deleted successfully" })
+      }
+    } catch (error) {
+      toast({ title: "Error", description: (error as Error).message, variant: "destructive" })
+    }
+  }
+
+  const handleForceDelete = async () => {
+    if (!forceDeleteProduct) return
+    const productId = forceDeleteProduct.id
+    setForceDeleteProduct(null)
+    try {
+      await deleteMutation.mutateAsync({ id: productId, force: true })
+      toast({ title: "Product permanently deleted" })
     } catch (error) {
       toast({ title: "Error", description: (error as Error).message, variant: "destructive" })
     }
@@ -384,6 +403,32 @@ export function ProductsPage() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Force Delete Confirmation (for products with orders) */}
+      <AlertDialog open={!!forceDeleteProduct} onOpenChange={() => setForceDeleteProduct(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Product Has Order History</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">
+                &quot;{forceDeleteProduct?.nameEn}&quot; has been used in orders and was deactivated.
+              </span>
+              <span className="block font-medium text-destructive">
+                Do you want to permanently delete it? The product name will be preserved in order history.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Deactivated</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleForceDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete Permanently"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

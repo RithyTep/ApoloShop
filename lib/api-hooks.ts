@@ -162,10 +162,11 @@ export function useUpdateProduct() {
 export function useDeleteProduct() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
-      fetchAPI<{ success: boolean }>(`/api/products?id=${id}`, {
-        method: "DELETE",
-      }),
+    mutationFn: ({ id, force = false }: { id: string; force?: boolean }) =>
+      fetchAPI<{ success: boolean; softDeleted?: boolean; hasOrders?: boolean; forceDeleted?: boolean }>(
+        `/api/products?id=${id}${force ? "&force=true" : ""}`,
+        { method: "DELETE" }
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
     },

@@ -202,14 +202,15 @@ model Order {
 }
 
 model OrderItem {
-  id        String  @id @default(cuid())
-  orderId   String  @map("order_id")
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String  @map("product_id")
-  product   Product @relation(fields: [productId], references: [id])
-  quantity  Int
-  priceUsd  Decimal @map("price_usd") @db.Decimal(10, 2)
-  priceKhr  Int     @map("price_khr")
+  id          String   @id @default(cuid())
+  orderId     String   @map("order_id")
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String?  @map("product_id")
+  product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productName String?  @map("product_name") // Preserved when product is deleted
+  quantity    Int
+  priceUsd    Decimal  @map("price_usd") @db.Decimal(10, 2)
+  priceKhr    Int      @map("price_khr")
 
   @@index([orderId])
   @@index([productId])

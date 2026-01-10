@@ -191,6 +191,7 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get("id")
+    const force = searchParams.get("force") === "true"
 
     if (!id) {
       return NextResponse.json({ error: "Product ID is required" }, { status: 400 })
@@ -199,29 +200,42 @@ export async function DELETE(request: NextRequest) {
     // Check if product exists
     const existing = await prisma.product.findUnique({
       where: { id },
-      include: { orderItems: { take: 1 } },
+      include: { orderItems: true },
     })
 
     if (!existing) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 })
     }
 
-    // If product has orders, soft delete instead
-    if (existing.orderItems.length > 0) {
+    const hasOrders = existing.orderItems.length > 0
+
+    // If product has orders and force is not set, soft delete instead
+    if (hasOrders && !force) {
       await prisma.product.update({
         where: { id },
         data: { isActive: false },
       })
-      return NextResponse.json({ success: true, softDeleted: true })
+      return NextResponse.json({ success: true, softDeleted: true, hasOrders: true })
     }
 
-    // Hard delete - remove inventory first, then product
-    await prisma.$transaction([
-      prisma.inventory.deleteMany({ where: { productId: id } }),
-      prisma.product.delete({ where: { id } }),
-    ])
+    // Force delete or no orders - hard delete
+    await prisma.$transaction(async (tx) => {
+      // If has orders, preserve product name in order items before deletion
+      if (hasOrders) {
+        await tx.orderItem.updateMany({
+          where: { productId: id },
+          data: { productName: existing.nameEn },
+        })
+      }
 
-    return NextResponse.json({ success: true })
+      // Remove inventory
+      await tx.inventory.deleteMany({ where: { productId: id } })
+
+      // Delete product (orderItems.productId will be set to null via onDelete: SetNull)
+      await tx.product.delete({ where: { id } })
+    })
+
+    return NextResponse.json({ success: true, forceDeleted: hasOrders })
   } catch (error) {
     console.error("Delete product error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
