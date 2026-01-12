@@ -1082,8 +1082,8 @@
         "Build passes: bun run build"
       ],
       "priority": 69,
-      "passes": false,
-      "notes": "Essential for Facebook/Instagram ad optimization"
+      "passes": true,
+      "notes": "Facebook Pixel integration with admin config, standard events, and Conversions API"
     },
     {
       "id": "US-070",

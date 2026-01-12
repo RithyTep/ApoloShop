@@ -2145,3 +2145,28 @@ Project: ApoloShop - Product Search Feature
   - Settings stored as nested object: `{ ga4: { enabled, measurementId, enhancedConversions, debugMode } }`
   - useEffect with isCartOpen dependency tracks view_cart only on cart open, not on content changes
 ---
+
+## 2026-01-13 - US-069
+- **Implemented**: Facebook Pixel integration with Conversions API
+- **Files changed**:
+  - `lib/fb-pixel.ts` (new file - helper functions)
+  - `providers/fb-pixel-provider.tsx` (new file - provider component)
+  - `app/api/conversions/facebook/route.ts` (new file - server-side Conversions API)
+  - `components/pages/settings-page.tsx` (modified - added FB Pixel config UI)
+  - `app/layout.tsx` (modified - added FBPixelProvider)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **lib/fb-pixel.ts**: Helper functions for all standard FB events (ViewContent, AddToCart, InitiateCheckout, Purchase, etc.)
+  - **FBPixelProvider**: Injects FB Pixel script with admin-configurable Pixel ID
+  - **Standard events**: ViewContent, AddToCart, InitiateCheckout, AddPaymentInfo, Purchase, Search
+  - **Conversions API**: Server-side event tracking with SHA-256 user data hashing
+  - **Admin config**: Enable/disable, Pixel ID, Conversions API toggle, access token, test event code, debug mode
+  - **Tracked events list**: Shows in settings UI when enabled
+- **Learnings for future iterations**:
+  - FB Pixel uses 15-16 digit numeric IDs (validate with /^\d{15,16}$/)
+  - Conversions API requires access token generated in Events Manager
+  - User data for Conversions API must be SHA-256 hashed on server side
+  - FB Pixel script initialization uses specific fbq pattern with queue array
+  - Test event codes allow testing without affecting live data
+  - Pattern follows GA4 integration: helper lib + provider + settings UI
+---
