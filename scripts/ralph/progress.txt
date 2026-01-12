@@ -110,3 +110,66 @@ Project: ApoloShop - Product Search Feature
   - Use `translations[language === "EN" ? "en" : "kh"]` for mapping
   - Keep translation structure consistent with existing sections (orderStatus, receipt, etc.)
 ---
+
+## 2026-01-12 - US-006
+- **Implemented**: Search API security features
+- **Files changed**:
+  - `app/api/products/search/route.ts` (modified - added security features)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - Input validation: max query length 100 characters (returns 400 if exceeded)
+  - XSS sanitization: strips HTML tags and dangerous characters (<>"'`)
+  - Suspicious pattern detection: blocks <script>, javascript:, event handlers, etc.
+  - In-memory rate limiting: 60 requests per minute per IP
+  - Rate limit headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
+  - Returns 400 for invalid/malformed queries with descriptive error messages
+  - Logs suspicious search patterns with client IP for monitoring
+  - Validates limit parameter (positive integer, max 50)
+- **Learnings for future iterations**:
+  - In-memory rate limiter works for single server but won't persist across restarts or scale horizontally
+  - For production, consider Redis-based rate limiting for distributed deployments
+  - Client IP extracted from x-forwarded-for (proxy) or x-real-ip headers
+  - 429 status code is standard for rate limit exceeded responses
+  - Sanitization happens AFTER suspicious pattern check to preserve evidence for logging
+---
+
+## 2026-01-12 - US-007
+- **Implemented**: Whitelabel product filtering for search API
+- **Files changed**:
+  - `app/api/products/search/route.ts` (modified - added inStock filter and inventory include)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - `isActive: true` filter already present (active products only)
+  - Added `?inStock=true` query param to filter out-of-stock products
+  - Filters by `inventory.quantity > 0` when inStock=true
+  - Includes inventory data in response for display purposes
+  - Single-tenant architecture: no shopId filtering needed (schema has no multi-tenant fields)
+  - `isVisible` field doesn't exist in Product schema, so not applicable
+- **Learnings for future iterations**:
+  - Prisma relation filtering: `whereClause.inventory = { quantity: { gt: 0 } }`
+  - The schema is single-tenant (no shopId/tenantId on Product model)
+  - Inventory is optional relation - products without inventory won't match `inStock=true` filter
+  - Include inventory in response so frontend can show stock status
+  - Use TypeScript's `Parameters<typeof prisma.product.findMany>[0]["where"]` for type-safe where clause building
+---
+
+## 2026-01-12 - US-008
+- **Implemented**: Search result branding support for whitelabel customization
+- **Files changed**:
+  - `components/search-dropdown.tsx` (modified - added SearchBranding interface and branding props)
+  - `components/header.tsx` (modified - added searchBranding prop and passed to SearchDropdown)
+  - `components/shop-app.tsx` (modified - passes theme branding to Header)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Primary color for search highlight**: Keyboard-highlighted items use shop's primaryColor with white text
+  - **Custom no results message**: Supports customNoResultsMessage.en/kh override from branding settings
+  - **Font settings**: Dropdown inherits parent font via CSS cascade (uses --foreground CSS var)
+  - **Currency display**: Already respected via currency prop (USD/KHR)
+  - **Border radius**: Dropdown corners respect shop's borderRadius theme setting
+- **Learnings for future iterations**:
+  - ShopTheme interface in lib/api-hooks.ts has: primaryColor, accentColor, backgroundColor, textColor, borderRadius
+  - Theme doesn't have explicit fontFamily field - fonts cascade from parent container CSS vars
+  - Create separate SearchBranding interface to avoid coupling to full ShopTheme
+  - Use inline styles for conditional branding (when primaryColor exists) vs Tailwind classes (fallback)
+  - shop-app.tsx applies theme via CSS variables: --primary, --accent, --background, --foreground, --radius
+---

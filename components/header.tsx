@@ -7,6 +7,13 @@ import { useState } from "react"
 import { SearchDropdown } from "@/components/search-dropdown"
 import { translations } from "@/lib/i18n"
 
+interface SearchBranding {
+  primaryColor?: string
+  accentColor?: string
+  customNoResultsMessage?: { en?: string; kh?: string }
+  borderRadius?: number
+}
+
 interface HeaderProps {
   cartCount: number
   onCartClick: () => void
@@ -20,6 +27,7 @@ interface HeaderProps {
   showStoreStatus?: boolean
   searchQuery?: string
   onSearchChange?: (query: string) => void
+  searchBranding?: SearchBranding
 }
 
 export function Header({
@@ -35,6 +43,7 @@ export function Header({
   showStoreStatus = true,
   searchQuery: externalSearchQuery,
   onSearchChange,
+  searchBranding,
 }: HeaderProps) {
   const [internalSearchQuery, setInternalSearchQuery] = useState("")
   const [isSearchOpen, setIsSearchOpen] = useState(false)
@@ -106,6 +115,7 @@ export function Header({
                 onProductSelect={handleProductSelect}
                 language={language}
                 currency={currency}
+                branding={searchBranding}
               />
             </div>
           </div>
@@ -191,6 +201,7 @@ export function Header({
               onProductSelect={handleProductSelect}
               language={language}
               currency={currency}
+              branding={searchBranding}
             />
           </div>
         </div>

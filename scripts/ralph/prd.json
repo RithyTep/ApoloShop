@@ -92,8 +92,8 @@
         "Build passes: bun run build"
       ],
       "priority": 6,
-      "passes": false,
-      "notes": "Security hardening for production use"
+      "passes": true,
+      "notes": "Implemented input validation (100 char max), XSS sanitization, in-memory rate limiting (60 req/min), 400 responses for invalid queries, suspicious pattern logging"
     },
     {
       "id": "US-007",
@@ -107,8 +107,8 @@
         "Build passes: bun run build"
       ],
       "priority": 7,
-      "passes": false,
-      "notes": "Ensures whitelabel shops only show their own active products"
+      "passes": true,
+      "notes": "Implemented: isActive=true (already present), inStock=true param filters by inventory.quantity > 0, includes inventory data in response. Single-tenant system so no shopId filtering needed. isVisible field doesn't exist in schema."
     },
     {
       "id": "US-008",
@@ -122,8 +122,8 @@
         "Build passes: bun run build"
       ],
       "priority": 8,
-      "passes": false,
-      "notes": "Whitelabel customization for search UI"
+      "passes": true,
+      "notes": "Implemented SearchBranding interface with primaryColor/accentColor/borderRadius/customNoResultsMessage. Keyboard-highlighted items use shop primary color. Dropdown inherits parent font via CSS cascade. Currency already respected via currency prop."
     },
     {
       "id": "US-009",
@@ -139,6 +139,328 @@
       "priority": 9,
       "passes": false,
       "notes": "Helps shop owners understand customer search behavior"
+    },
+    {
+      "id": "US-010",
+      "title": "Dynamic component registry system",
+      "description": "Create a registry for dynamic shop components that can be enabled/disabled per client",
+      "acceptanceCriteria": [
+        "Create ComponentRegistry type with id, name, component, defaultEnabled fields",
+        "Create lib/component-registry.ts with register/get functions",
+        "Support lazy loading components with React.lazy()",
+        "Add enable/disable toggle in admin settings",
+        "Build passes: bun run build"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "Foundation for dynamic modular components"
+    },
+    {
+      "id": "US-011",
+      "title": "Dynamic page builder blocks",
+      "description": "Add draggable content blocks for the shop page builder",
+      "acceptanceCriteria": [
+        "Create block types: Hero, ProductGrid, Banner, Testimonials, Features, FAQ",
+        "Each block has configurable props (title, images, products, etc.)",
+        "Blocks can be reordered via drag-and-drop",
+        "Preview mode shows live changes",
+        "Build passes: bun run build"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": "Extends existing customizer with more block types"
+    },
+    {
+      "id": "US-012",
+      "title": "Admin sales report dashboard",
+      "description": "Create comprehensive sales reporting for admin dashboard",
+      "acceptanceCriteria": [
+        "Create GET /api/reports/sales endpoint with date range filter",
+        "Return: totalRevenue, orderCount, averageOrderValue, topProducts",
+        "Create components/pages/reports-page.tsx",
+        "Add chart visualization (use Recharts or similar)",
+        "Export to CSV functionality",
+        "Build passes: bun run build"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": "Key admin feature for business insights"
+    },
+    {
+      "id": "US-013",
+      "title": "Admin customer analytics report",
+      "description": "Track and display customer behavior analytics",
+      "acceptanceCriteria": [
+        "Create GET /api/reports/customers endpoint",
+        "Return: newCustomers, returningCustomers, customerLifetimeValue",
+        "Show customer growth chart over time",
+        "Display top customers by order value",
+        "Build passes: bun run build"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": "Customer insights for retention strategies"
+    },
+    {
+      "id": "US-014",
+      "title": "Admin inventory report",
+      "description": "Inventory status and low stock alerts report",
+      "acceptanceCriteria": [
+        "Create GET /api/reports/inventory endpoint",
+        "Return: lowStockProducts, outOfStockProducts, inventoryValue",
+        "Configurable low stock threshold per product",
+        "Email/notification alerts for low stock (optional)",
+        "Build passes: bun run build"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": "Prevent stockouts with proactive alerts"
+    },
+    {
+      "id": "US-015",
+      "title": "Multi-tenant client model",
+      "description": "Database schema and API support for multiple shop clients",
+      "acceptanceCriteria": [
+        "Add Client model to Prisma: id, name, domain, settings, createdAt",
+        "Add clientId foreign key to Product, Order, Customer models",
+        "Create GET/POST /api/clients endpoint (super admin only)",
+        "Middleware to inject clientId from domain/subdomain",
+        "Build passes: bun run build"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": "Core multi-tenant architecture"
+    },
+    {
+      "id": "US-016",
+      "title": "Client-specific theming",
+      "description": "Each client can have custom theme colors and branding",
+      "acceptanceCriteria": [
+        "Add theme fields to Client model: primaryColor, secondaryColor, logo, favicon",
+        "Create useClientTheme() hook to apply theme CSS variables",
+        "Theme applies to all shop pages automatically",
+        "Preview theme in admin before saving",
+        "Build passes: bun run build"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": "Visual whitelabeling for each client"
+    },
+    {
+      "id": "US-017",
+      "title": "Client domain routing",
+      "description": "Route requests to correct client based on domain/subdomain",
+      "acceptanceCriteria": [
+        "Create middleware to detect client from request hostname",
+        "Support custom domains (shop.example.com) and subdomains (client.apoloshop.com)",
+        "Store client context in request for API routes",
+        "Fallback to default client if domain not found",
+        "Build passes: bun run build"
+      ],
+      "priority": 17,
+      "passes": false,
+      "notes": "Enables true multi-tenant SaaS model"
+    },
+    {
+      "id": "US-018",
+      "title": "Recently viewed products",
+      "description": "Track and display recently viewed products for better UX",
+      "acceptanceCriteria": [
+        "Store recently viewed product IDs in localStorage (max 10)",
+        "Create RecentlyViewed component showing product cards",
+        "Display on product detail page and homepage",
+        "Clear history option in UI",
+        "Build passes: bun run build"
+      ],
+      "priority": 18,
+      "passes": false,
+      "notes": "Improves product discovery and conversion"
+    },
+    {
+      "id": "US-019",
+      "title": "Product recommendations",
+      "description": "Show related products based on category and purchase history",
+      "acceptanceCriteria": [
+        "Create GET /api/products/[id]/recommendations endpoint",
+        "Return products from same category, excluding current product",
+        "Optional: Use order history for 'customers also bought' logic",
+        "Create ProductRecommendations component",
+        "Build passes: bun run build"
+      ],
+      "priority": 19,
+      "passes": false,
+      "notes": "Cross-selling opportunity"
+    },
+    {
+      "id": "US-020",
+      "title": "Wishlist functionality",
+      "description": "Allow customers to save products to a wishlist",
+      "acceptanceCriteria": [
+        "Add Wishlist model: id, customerId, productId, createdAt",
+        "Create POST/DELETE /api/wishlist endpoint",
+        "Add heart icon button on product cards",
+        "Create wishlist page showing saved products",
+        "Persist in localStorage for guests, database for logged-in users",
+        "Build passes: bun run build"
+      ],
+      "priority": 20,
+      "passes": false,
+      "notes": "Popular e-commerce feature for engagement"
+    },
+    {
+      "id": "US-021",
+      "title": "Product quick view modal",
+      "description": "Quick view popup without navigating to product page",
+      "acceptanceCriteria": [
+        "Create ProductQuickView modal component",
+        "Show product image, name, price, description, add to cart button",
+        "Open via 'Quick View' button on product card hover",
+        "Support image gallery in modal",
+        "Build passes: bun run build"
+      ],
+      "priority": 21,
+      "passes": false,
+      "notes": "Faster browsing experience"
+    },
+    {
+      "id": "US-022",
+      "title": "Advanced product filtering",
+      "description": "Filter products by price range, category, and attributes",
+      "acceptanceCriteria": [
+        "Create FilterSidebar component with collapsible sections",
+        "Price range slider (min/max)",
+        "Category checkbox filter",
+        "Sort options: price low-high, high-low, newest, popular",
+        "URL query params sync for shareable filtered views",
+        "Build passes: bun run build"
+      ],
+      "priority": 22,
+      "passes": false,
+      "notes": "Essential for shops with many products"
+    },
+    {
+      "id": "US-023",
+      "title": "Product reviews and ratings",
+      "description": "Customer reviews with star ratings for products",
+      "acceptanceCriteria": [
+        "Add Review model: id, productId, customerId, rating (1-5), comment, createdAt",
+        "Create POST /api/products/[id]/reviews endpoint",
+        "Display average rating on product cards",
+        "Show review list on product detail page",
+        "Admin moderation: approve/reject reviews",
+        "Build passes: bun run build"
+      ],
+      "priority": 23,
+      "passes": false,
+      "notes": "Social proof increases conversions"
+    },
+    {
+      "id": "US-024",
+      "title": "Order status notifications",
+      "description": "Notify customers of order status changes",
+      "acceptanceCriteria": [
+        "Create notification service for order updates",
+        "Support Telegram bot notifications (existing integration)",
+        "Support email notifications (optional, if SMTP configured)",
+        "Notification preferences in customer profile",
+        "Build passes: bun run build"
+      ],
+      "priority": 24,
+      "passes": false,
+      "notes": "Keeps customers informed about their orders"
+    },
+    {
+      "id": "US-025",
+      "title": "Admin dashboard widgets",
+      "description": "Customizable dashboard with draggable widget cards",
+      "acceptanceCriteria": [
+        "Create widget types: SalesOverview, RecentOrders, LowStock, TopProducts",
+        "Drag-and-drop widget reordering",
+        "Save widget layout preference per admin user",
+        "Widgets auto-refresh data every 5 minutes",
+        "Build passes: bun run build"
+      ],
+      "priority": 25,
+      "passes": false,
+      "notes": "Personalized admin experience"
+    },
+    {
+      "id": "US-026",
+      "title": "Bulk product import/export",
+      "description": "Import and export products via CSV/Excel files",
+      "acceptanceCriteria": [
+        "Create POST /api/products/import endpoint accepting CSV",
+        "Create GET /api/products/export endpoint returning CSV",
+        "Support fields: name, price, stock, category, description, images",
+        "Validation with error report for failed rows",
+        "Progress indicator for large imports",
+        "Build passes: bun run build"
+      ],
+      "priority": 26,
+      "passes": false,
+      "notes": "Essential for shops with large catalogs"
+    },
+    {
+      "id": "US-027",
+      "title": "Super admin client management",
+      "description": "Super admin panel to manage all clients/tenants",
+      "acceptanceCriteria": [
+        "Create components/pages/super-admin-page.tsx",
+        "List all clients with search and pagination",
+        "Create/edit/disable client functionality",
+        "View client statistics: orders, revenue, products count",
+        "Impersonate client admin feature",
+        "Build passes: bun run build"
+      ],
+      "priority": 27,
+      "passes": false,
+      "notes": "Central management for SaaS operators"
+    },
+    {
+      "id": "US-028",
+      "title": "Client subscription/billing model",
+      "description": "Subscription tiers for multi-tenant SaaS billing",
+      "acceptanceCriteria": [
+        "Add Subscription model: clientId, plan (free/starter/pro), status, expiresAt",
+        "Define plan limits: products, orders/month, features",
+        "Create GET /api/subscription endpoint for current plan",
+        "Show upgrade prompts when approaching limits",
+        "Build passes: bun run build"
+      ],
+      "priority": 28,
+      "passes": false,
+      "notes": "Monetization foundation for SaaS"
+    },
+    {
+      "id": "US-029",
+      "title": "Audit log for admin actions",
+      "description": "Track all admin actions for security and compliance",
+      "acceptanceCriteria": [
+        "Add AuditLog model: userId, action, resource, details, timestamp, ipAddress",
+        "Log product/order/settings changes automatically",
+        "Create GET /api/audit-logs endpoint (admin only)",
+        "Display audit log in admin settings page",
+        "Filter by date range, user, action type",
+        "Build passes: bun run build"
+      ],
+      "priority": 29,
+      "passes": false,
+      "notes": "Security and accountability tracking"
+    },
+    {
+      "id": "US-030",
+      "title": "PWA offline support",
+      "description": "Progressive Web App features for offline access",
+      "acceptanceCriteria": [
+        "Add manifest.json with app icons and theme color",
+        "Create service worker for caching static assets",
+        "Offline page showing cached products",
+        "Add to Home Screen prompt on mobile",
+        "Build passes: bun run build"
+      ],
+      "priority": 30,
+      "passes": false,
+      "notes": "Improved mobile UX, especially in Cambodia with spotty internet"
     }
   ]
 }

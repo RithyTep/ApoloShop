@@ -108,6 +108,11 @@ export function ShopApp() {
         shopName={config?.theme?.shopName}
         logoUrl={config?.theme?.logoUrl}
         primaryColor={config?.theme?.primaryColor}
+        searchBranding={config?.theme ? {
+          primaryColor: config.theme.primaryColor,
+          accentColor: config.theme.accentColor,
+          borderRadius: config.theme.borderRadius,
+        } : undefined}
       />
 
       {currentPage === "shop" ? (

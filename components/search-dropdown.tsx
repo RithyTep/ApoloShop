@@ -12,6 +12,13 @@ interface SearchResult {
   total: number
 }
 
+interface SearchBranding {
+  primaryColor?: string
+  accentColor?: string
+  customNoResultsMessage?: { en?: string; kh?: string }
+  borderRadius?: number
+}
+
 interface SearchDropdownProps {
   query: string
   isOpen: boolean
@@ -19,6 +26,7 @@ interface SearchDropdownProps {
   onProductSelect?: (product: Product) => void
   language: "EN" | "KH"
   currency: "USD" | "KHR"
+  branding?: SearchBranding
 }
 
 export function SearchDropdown({
@@ -28,6 +36,7 @@ export function SearchDropdown({
   onProductSelect,
   language,
   currency,
+  branding,
 }: SearchDropdownProps) {
   const router = useRouter()
   const [results, setResults] = useState<SearchResult | null>(null)
@@ -137,13 +146,33 @@ export function SearchDropdown({
   }
 
   const t = translations[language === "EN" ? "en" : "kh"]
-  const noResultsText = t.search.noResults
+  const langKey = language === "EN" ? "en" : "kh"
+
+  // Use custom no results message from branding if provided, otherwise use default translation
+  const noResultsText = branding?.customNoResultsMessage?.[langKey] || t.search.noResults
   const searchingText = t.search.searching
+
+  // Build custom styles from branding
+  const dropdownStyles: React.CSSProperties = {
+    ...(branding?.borderRadius !== undefined && { borderRadius: `${branding.borderRadius}px` }),
+  }
+
+  // Highlight style for selected item (using shop's primary color)
+  const getHighlightStyle = (isHighlighted: boolean): React.CSSProperties => {
+    if (!isHighlighted || !branding?.primaryColor) {
+      return {}
+    }
+    return {
+      backgroundColor: branding.primaryColor,
+      color: "#ffffff",
+    }
+  }
 
   return (
     <div
       ref={dropdownRef}
       className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-lg shadow-lg z-50 overflow-hidden"
+      style={dropdownStyles}
     >
       {isLoading ? (
         <div className="p-3 space-y-2">
@@ -169,31 +198,42 @@ export function SearchDropdown({
         </div>
       ) : results && results.products.length > 0 ? (
         <div className="py-1">
-          {results.products.map((product, index) => (
-            <div
-              key={product.id}
-              onClick={() => handleProductSelect(product)}
-              className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors ${
-                index === highlightedIndex ? "bg-muted" : "hover:bg-muted"
-              }`}
-            >
-              {product.imageUrl ? (
-                <img
-                  src={product.imageUrl}
-                  alt={getProductName(product)}
-                  className="w-10 h-10 rounded object-cover"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
-                  <span className="text-xs text-muted-foreground">N/A</span>
+          {results.products.map((product, index) => {
+            const isHighlighted = index === highlightedIndex
+            const highlightStyle = getHighlightStyle(isHighlighted)
+            const hasCustomHighlight = isHighlighted && branding?.primaryColor
+
+            return (
+              <div
+                key={product.id}
+                onClick={() => handleProductSelect(product)}
+                className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors ${
+                  !hasCustomHighlight && isHighlighted ? "bg-muted" : ""
+                } ${!hasCustomHighlight && !isHighlighted ? "hover:bg-muted" : ""}`}
+                style={highlightStyle}
+              >
+                {product.imageUrl ? (
+                  <img
+                    src={product.imageUrl}
+                    alt={getProductName(product)}
+                    className="w-10 h-10 rounded object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
+                    <span className="text-xs text-muted-foreground">N/A</span>
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{getProductName(product)}</p>
+                  <p
+                    className={hasCustomHighlight ? "text-xs opacity-80" : "text-xs text-muted-foreground"}
+                  >
+                    {formatPrice(product)}
+                  </p>
                 </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{getProductName(product)}</p>
-                <p className="text-xs text-muted-foreground">{formatPrice(product)}</p>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       ) : null}
     </div>
