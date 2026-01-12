@@ -52,6 +52,16 @@ export function Header({
     setIsSearchOpen(false)
   }
 
+  const handleProductSelect = () => {
+    // Clear search input and close dropdown after navigation
+    if (onSearchChange) {
+      onSearchChange("")
+    } else {
+      setInternalSearchQuery("")
+    }
+    setIsSearchOpen(false)
+  }
+
   const searchPlaceholder = language === "EN" ? "Search products..." : "ស្វែងរកផលិតផល..."
   return (
     <header className="fixed top-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-b border-border z-40">
@@ -91,6 +101,7 @@ export function Header({
                 query={searchQuery}
                 isOpen={isSearchOpen}
                 onClose={handleSearchClose}
+                onProductSelect={handleProductSelect}
                 language={language}
                 currency={currency}
               />
@@ -175,6 +186,7 @@ export function Header({
               query={searchQuery}
               isOpen={isSearchOpen}
               onClose={handleSearchClose}
+              onProductSelect={handleProductSelect}
               language={language}
               currency={currency}
             />
