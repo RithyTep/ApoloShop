@@ -2568,3 +2568,170 @@ export function useRevokeAllSessions() {
     },
   });
 }
+
+// ============================================
+// API KEYS
+// ============================================
+
+export interface ApiKey {
+  id: string;
+  name: string;
+  keyPrefix: string;
+  clientId: string | null;
+  scopes: string[];
+  rateLimitPerMinute: number;
+  lastUsedAt: string | null;
+  usageCount: number;
+  isActive: boolean;
+  expiresAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  description: string | null;
+  createdBy: string | null;
+}
+
+export interface ApiKeyScope {
+  scope: string;
+  description: string;
+}
+
+export interface ApiKeysResponse {
+  keys: ApiKey[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  availableScopes: ApiKeyScope[];
+  scopePresets: Record<string, string[]>;
+}
+
+export interface CreateApiKeyInput {
+  name: string;
+  scopes: string[];
+  clientId?: string;
+  description?: string;
+  expiresAt?: string;
+  rateLimitPerMinute?: number;
+}
+
+export interface CreateApiKeyResponse {
+  apiKey: ApiKey & { key: string }; // Full key only on creation
+  message: string;
+  warning: string;
+}
+
+export interface UpdateApiKeyInput {
+  id: string;
+  name?: string;
+  scopes?: string[];
+  description?: string;
+  expiresAt?: string | null;
+  rateLimitPerMinute?: number;
+  isActive?: boolean;
+  rotate?: boolean; // Request key rotation
+}
+
+export interface UpdateApiKeyResponse {
+  apiKey?: ApiKey;
+  message: string;
+  newKey?: string; // Only present when rotate=true
+  warning?: string;
+  gracePeriodEnds?: string;
+}
+
+/**
+ * Hook to fetch API keys list
+ */
+export function useApiKeys(params?: {
+  page?: number;
+  limit?: number;
+  clientId?: string;
+  includeDisabled?: boolean;
+}) {
+  const queryString = new URLSearchParams();
+  if (params?.page) queryString.set("page", params.page.toString());
+  if (params?.limit) queryString.set("limit", params.limit.toString());
+  if (params?.clientId) queryString.set("clientId", params.clientId);
+  if (params?.includeDisabled) queryString.set("includeDisabled", "true");
+
+  return useQuery({
+    queryKey: ["api-keys", params],
+    queryFn: () =>
+      fetchAPI<ApiKeysResponse>(`/api/keys?${queryString.toString()}`),
+    staleTime: 30000, // 30 seconds
+  });
+}
+
+/**
+ * Hook to create a new API key
+ */
+export function useCreateApiKey() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateApiKeyInput) =>
+      fetchAPI<CreateApiKeyResponse>("/api/keys", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["api-keys"] });
+    },
+  });
+}
+
+/**
+ * Hook to update an API key
+ */
+export function useUpdateApiKey() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateApiKeyInput) =>
+      fetchAPI<UpdateApiKeyResponse>("/api/keys", {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["api-keys"] });
+    },
+  });
+}
+
+/**
+ * Hook to rotate an API key
+ */
+export function useRotateApiKey() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchAPI<UpdateApiKeyResponse>("/api/keys", {
+        method: "PUT",
+        body: JSON.stringify({ id, rotate: true }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["api-keys"] });
+    },
+  });
+}
+
+/**
+ * Hook to delete/disable an API key
+ */
+export function useDeleteApiKey() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, permanent = false }: { id: string; permanent?: boolean }) =>
+      fetchAPI<{ message: string }>(
+        `/api/keys?id=${id}${permanent ? "&permanent=true" : ""}`,
+        { method: "DELETE" }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["api-keys"] });
+    },
+  });
+}

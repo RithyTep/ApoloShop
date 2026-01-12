@@ -760,6 +760,61 @@ model AuditLog {
 }
 
 // ============================================
+// API KEYS FOR THIRD-PARTY INTEGRATIONS
+// ============================================
+
+model ApiKey {
+  id           String    @id @default(cuid())
+  clientId     String?   @map("client_id")
+  name         String    // Human-readable name for the key
+  keyHash      String    @unique @map("key_hash") // SHA-256 hash of the API key
+  keyPrefix    String    @map("key_prefix") // First 8 chars for identification (ak_XXXXXXXX...)
+  scopes       Json      // Array of scopes: ["read:products", "write:orders", etc.]
+  // Rate limiting
+  rateLimitPerMinute Int @default(60) @map("rate_limit_per_minute")
+  // Usage tracking
+  lastUsedAt   DateTime? @map("last_used_at")
+  usageCount   Int       @default(0) @map("usage_count")
+  // Key rotation
+  previousKeyHash String? @map("previous_key_hash") // For key rotation without downtime
+  previousKeyExpiresAt DateTime? @map("previous_key_expires_at")
+  // Status
+  isActive     Boolean   @default(true) @map("is_active")
+  expiresAt    DateTime? @map("expires_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  // Metadata
+  description  String?   @db.Text
+  createdBy    String?   @map("created_by") // User ID who created the key
+
+  @@index([clientId])
+  @@index([keyHash])
+  @@index([keyPrefix])
+  @@index([isActive])
+  @@map("api_keys")
+  @@schema("apolo")
+}
+
+// API Key usage log for rate limiting and analytics
+model ApiKeyUsageLog {
+  id        String   @id @default(cuid())
+  apiKeyId  String   @map("api_key_id")
+  endpoint  String   // The endpoint that was accessed
+  method    String   // HTTP method
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent") @db.Text
+  statusCode Int?    @map("status_code")
+  responseTime Int?  @map("response_time") // In milliseconds
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([apiKeyId])
+  @@index([createdAt])
+  @@index([apiKeyId, createdAt])
+  @@map("api_key_usage_logs")
+  @@schema("apolo")
+}
+
+// ============================================
 // DEVELOPER BACKLOG (Dev Only)
 // ============================================
 

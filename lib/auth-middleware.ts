@@ -27,6 +27,16 @@ import {
   CSRF_CONFIG,
   CSRFValidationResult,
 } from "./csrf"
+import {
+  extractApiKey,
+  validateApiKey,
+  checkRateLimit,
+  recordApiKeyUsage,
+  hasScope,
+  hasAnyScope,
+  hasAllScopes,
+  ApiKeyScope,
+} from "./api-key"
 
 // User context type
 export interface AuthUser {
@@ -52,6 +62,12 @@ export const AUTH_ERROR_CODES = {
   CSRF_MISSING: "CSRF_MISSING",
   CSRF_INVALID: "CSRF_INVALID",
   CSRF_EXPIRED: "CSRF_EXPIRED",
+  // API Key errors
+  API_KEY_INVALID: "API_KEY_INVALID",
+  API_KEY_EXPIRED: "API_KEY_EXPIRED",
+  API_KEY_DISABLED: "API_KEY_DISABLED",
+  API_KEY_RATE_LIMITED: "API_KEY_RATE_LIMITED",
+  API_KEY_INSUFFICIENT_SCOPE: "API_KEY_INSUFFICIENT_SCOPE",
 } as const
 
 export type AuthErrorCode = (typeof AUTH_ERROR_CODES)[keyof typeof AUTH_ERROR_CODES]
@@ -623,4 +639,265 @@ export function withoutCSRF(
   handler: (request: NextRequest) => Promise<NextResponse>
 ) {
   return handler
+}
+
+// ============================================
+// API KEY AUTHENTICATION MIDDLEWARE
+// ============================================
+
+/**
+ * API Key context type
+ */
+export interface ApiKeyContext {
+  id: string
+  name: string
+  clientId: string | null
+  scopes: string[]
+  rateLimitPerMinute: number
+}
+
+export type ApiKeyAuthenticatedRequest = NextRequest & {
+  apiKey: ApiKeyContext
+}
+
+/**
+ * Higher-order function to protect API routes with API key authentication
+ * Validates API key, checks rate limits, and records usage
+ */
+export function withApiKey(
+  handler: (request: ApiKeyAuthenticatedRequest) => Promise<NextResponse>
+) {
+  return async (request: NextRequest) => {
+    const startTime = Date.now()
+
+    // Extract API key from request
+    const key = extractApiKey(request.headers)
+
+    if (!key) {
+      return NextResponse.json(
+        {
+          error: "API key required",
+          code: AUTH_ERROR_CODES.NO_TOKEN,
+          hint: "Include API key in Authorization: Bearer ak_xxx or X-API-Key: ak_xxx header",
+        },
+        { status: 401 }
+      )
+    }
+
+    // Validate the API key
+    const validation = await validateApiKey(key)
+
+    if (!validation.valid || !validation.apiKey) {
+      const errorCode = mapApiKeyErrorCode(validation.errorCode)
+      return NextResponse.json(
+        {
+          error: validation.error,
+          code: errorCode,
+        },
+        { status: 401 }
+      )
+    }
+
+    const apiKeyContext = validation.apiKey
+
+    // Check rate limit
+    const rateLimit = checkRateLimit(
+      apiKeyContext.id,
+      apiKeyContext.rateLimitPerMinute
+    )
+
+    if (!rateLimit.allowed) {
+      const retryAfter = Math.ceil((rateLimit.resetAt - Date.now()) / 1000)
+      const response = NextResponse.json(
+        {
+          error: "Rate limit exceeded",
+          code: AUTH_ERROR_CODES.API_KEY_RATE_LIMITED,
+          retryAfter,
+        },
+        { status: 429 }
+      )
+      response.headers.set("Retry-After", retryAfter.toString())
+      response.headers.set(
+        "X-RateLimit-Limit",
+        apiKeyContext.rateLimitPerMinute.toString()
+      )
+      response.headers.set("X-RateLimit-Remaining", "0")
+      response.headers.set(
+        "X-RateLimit-Reset",
+        Math.ceil(rateLimit.resetAt / 1000).toString()
+      )
+      return response
+    }
+
+    // Attach API key context to request
+    const authenticatedRequest = request as ApiKeyAuthenticatedRequest
+    authenticatedRequest.apiKey = apiKeyContext
+
+    // Call handler
+    let response: NextResponse
+    let statusCode: number | undefined
+    try {
+      response = await handler(authenticatedRequest)
+      statusCode = response.status
+    } catch (error) {
+      statusCode = 500
+      throw error
+    } finally {
+      // Record usage (fire-and-forget)
+      const responseTime = Date.now() - startTime
+      recordApiKeyUsage(
+        apiKeyContext.id,
+        request.nextUrl.pathname,
+        request.method,
+        request.headers.get("x-forwarded-for") ||
+          request.headers.get("x-real-ip") ||
+          undefined,
+        request.headers.get("user-agent") || undefined,
+        statusCode,
+        responseTime
+      )
+    }
+
+    // Add rate limit headers to response
+    response.headers.set(
+      "X-RateLimit-Limit",
+      apiKeyContext.rateLimitPerMinute.toString()
+    )
+    response.headers.set(
+      "X-RateLimit-Remaining",
+      rateLimit.remaining.toString()
+    )
+    response.headers.set(
+      "X-RateLimit-Reset",
+      Math.ceil(rateLimit.resetAt / 1000).toString()
+    )
+
+    return response
+  }
+}
+
+/**
+ * Middleware that requires specific API key scope(s)
+ */
+export function requireApiKeyScope(scope: ApiKeyScope) {
+  return (
+    handler: (request: ApiKeyAuthenticatedRequest) => Promise<NextResponse>
+  ) => {
+    return async (request: ApiKeyAuthenticatedRequest) => {
+      if (!hasScope(request.apiKey.scopes, scope)) {
+        return NextResponse.json(
+          {
+            error: `Insufficient scope: ${scope} required`,
+            code: AUTH_ERROR_CODES.API_KEY_INSUFFICIENT_SCOPE,
+            required: scope,
+            granted: request.apiKey.scopes,
+          },
+          { status: 403 }
+        )
+      }
+
+      return handler(request)
+    }
+  }
+}
+
+/**
+ * Middleware that requires any of the specified API key scopes
+ */
+export function requireAnyApiKeyScope(scopes: ApiKeyScope[]) {
+  return (
+    handler: (request: ApiKeyAuthenticatedRequest) => Promise<NextResponse>
+  ) => {
+    return async (request: ApiKeyAuthenticatedRequest) => {
+      if (!hasAnyScope(request.apiKey.scopes, scopes)) {
+        return NextResponse.json(
+          {
+            error: "Insufficient scope",
+            code: AUTH_ERROR_CODES.API_KEY_INSUFFICIENT_SCOPE,
+            required: scopes,
+            granted: request.apiKey.scopes,
+          },
+          { status: 403 }
+        )
+      }
+
+      return handler(request)
+    }
+  }
+}
+
+/**
+ * Middleware that requires all specified API key scopes
+ */
+export function requireAllApiKeyScopes(scopes: ApiKeyScope[]) {
+  return (
+    handler: (request: ApiKeyAuthenticatedRequest) => Promise<NextResponse>
+  ) => {
+    return async (request: ApiKeyAuthenticatedRequest) => {
+      if (!hasAllScopes(request.apiKey.scopes, scopes)) {
+        return NextResponse.json(
+          {
+            error: "Insufficient scopes",
+            code: AUTH_ERROR_CODES.API_KEY_INSUFFICIENT_SCOPE,
+            required: scopes,
+            granted: request.apiKey.scopes,
+            missing: scopes.filter(s => !request.apiKey.scopes.includes(s)),
+          },
+          { status: 403 }
+        )
+      }
+
+      return handler(request)
+    }
+  }
+}
+
+/**
+ * Helper to check API key scope inline
+ */
+export function apiKeyHasScope(
+  apiKey: ApiKeyContext,
+  scope: ApiKeyScope
+): boolean {
+  return hasScope(apiKey.scopes, scope)
+}
+
+/**
+ * Map API key validation error codes to AUTH_ERROR_CODES
+ */
+function mapApiKeyErrorCode(errorCode?: string): AuthErrorCode {
+  switch (errorCode) {
+    case "KEY_EXPIRED":
+      return AUTH_ERROR_CODES.API_KEY_EXPIRED
+    case "KEY_DISABLED":
+      return AUTH_ERROR_CODES.API_KEY_DISABLED
+    case "INVALID_KEY_FORMAT":
+    case "KEY_NOT_FOUND":
+    default:
+      return AUTH_ERROR_CODES.API_KEY_INVALID
+  }
+}
+
+/**
+ * Combined middleware that supports both user auth (JWT/session) and API key auth
+ * Tries API key first, falls back to user auth
+ * Useful for endpoints that should support both authentication methods
+ */
+export function withAuthOrApiKey(
+  handler: (
+    request: NextRequest & { user?: AuthUser; apiKey?: ApiKeyContext }
+  ) => Promise<NextResponse>
+) {
+  return async (request: NextRequest) => {
+    // Try API key first
+    const apiKey = extractApiKey(request.headers)
+
+    if (apiKey) {
+      // Use API key authentication
+      return withApiKey(handler as (request: ApiKeyAuthenticatedRequest) => Promise<NextResponse>)(request)
+    }
+
+    // Fall back to user authentication
+    return withAuth(handler as (request: AuthenticatedRequest) => Promise<NextResponse>)(request)
+  }
 }
