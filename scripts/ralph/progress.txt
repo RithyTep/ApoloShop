@@ -1130,3 +1130,43 @@ Project: ApoloShop - Product Search Feature
   - Session ID extraction works with both JWT (first 32 chars of Bearer token) and legacy cookies
   - CSRF_SECRET should be separate from JWT_SECRET but can share as fallback
 ---
+
+## 2026-01-12 - US-039
+- **Implemented**: API key authentication for third-party integrations
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added ApiKey and ApiKeyUsageLog models)
+  - `lib/api-key.ts` (new file - key generation, validation, rate limiting, scopes)
+  - `app/api/keys/route.ts` (new file - GET/POST/PUT/DELETE endpoint for key management)
+  - `lib/auth-middleware.ts` (modified - added withApiKey, requireApiKeyScope, ApiKeyContext)
+  - `lib/api-hooks.ts` (modified - added ApiKey types and hooks)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **ApiKey model**: id, clientId, name, keyHash (SHA-256), keyPrefix (for identification), scopes (JSON array), rateLimitPerMinute, lastUsedAt, usageCount, expiresAt, previousKeyHash/previousKeyExpiresAt (for rotation)
+  - **ApiKeyUsageLog model**: Tracks endpoint, method, ipAddress, userAgent, statusCode, responseTime per request
+  - **12 scopes across 8 resources**: products (read/write/delete), orders (read/write), customers (read/write), inventory (read/write), categories (read/write), settings (read), analytics (read), webhooks (write)
+  - **SCOPE_PRESETS**: readonly, standard, full for quick scope selection
+  - **Key generation**: `ak_<random>` format with SHA-256 hashing for storage
+  - **Key validation**: Timing-safe comparison, expiry check, active status check
+  - **Rate limiting**: In-memory rate limiter with per-key limits (default 60/min, max 1000/min)
+  - **Rate limit headers**: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
+  - **Key rotation**: rotateApiKey() preserves old key for 24h grace period
+  - **Usage tracking**: Fire-and-forget logging of every API key request
+  - **withApiKey middleware**: Full API key authentication with rate limiting
+  - **requireApiKeyScope/requireAnyApiKeyScope/requireAllApiKeyScopes**: Scope-based authorization
+  - **withAuthOrApiKey middleware**: Supports both user auth and API key auth
+  - **GET /api/keys**: List keys (masked), pagination, available scopes, scope presets
+  - **POST /api/keys**: Create key (returns full key ONCE, with warning)
+  - **PUT /api/keys**: Update settings or rotate key
+  - **DELETE /api/keys**: Soft disable or permanent delete
+  - **Hooks**: useApiKeys, useCreateApiKey, useUpdateApiKey, useRotateApiKey, useDeleteApiKey
+- **Learnings for future iterations**:
+  - API keys use SHA-256 hash (not bcrypt) since we never need to verify partial keys
+  - Key shown only once on creation - important to warn users to save it
+  - Key prefix (first 8 chars) stored separately for identification in UI
+  - In-memory rate limiting works for single server but needs Redis for distributed
+  - Key rotation with grace period allows seamless transition without downtime
+  - Fire-and-forget pattern for usage logging avoids blocking API responses
+  - Scope format "action:resource" (e.g., "read:products") is intuitive and matches common patterns
+  - X-API-Key header as alternative to Authorization: Bearer for compatibility
+  - Timing-safe comparison prevents timing attacks on key validation
+---
