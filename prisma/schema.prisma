@@ -34,16 +34,55 @@ model User {
   @@schema("apolo")
 }
 
+// System roles: super_admin, admin, manager, staff
 model Role {
   id          String   @id @default(cuid())
-  name        String   @unique
-  permissions Json     // { "products": ["read", "write", "delete"], ... }
+  name        String   @unique // super_admin, admin, manager, staff
+  displayName String   @default("") @map("display_name") // Human-readable name
+  description String?  // Role description
+  permissions Json     // Legacy: { "products": ["read", "write", "delete"], ... }
+  isSystem    Boolean  @default(false) @map("is_system") // System roles cannot be deleted
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   users       User[]
+  rolePermissions RolePermission[]
 
   @@map("roles")
+  @@schema("apolo")
+}
+
+// Permission model for granular access control
+model Permission {
+  id          String   @id @default(cuid())
+  name        String   @unique // e.g., "products:read", "orders:write"
+  resource    String   // e.g., "products", "orders", "customers"
+  action      String   // e.g., "read", "write", "delete"
+  displayName String   @map("display_name") // Human-readable name
+  description String?  // Permission description
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  rolePermissions RolePermission[]
+
+  @@index([resource])
+  @@index([action])
+  @@map("permissions")
+  @@schema("apolo")
+}
+
+// Junction table for Role <-> Permission many-to-many
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String     @map("role_id")
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String     @map("permission_id")
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("role_permissions")
   @@schema("apolo")
 }
 

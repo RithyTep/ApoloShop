@@ -641,11 +641,34 @@ export function useDeleteCMSContent() {
 // USERS & ROLES
 // ============================================
 
+export interface Permission {
+  id: string;
+  name: string;
+  resource: string;
+  action: string;
+  displayName: string;
+  description?: string;
+}
+
+export interface RolePermission {
+  id: string;
+  roleId: string;
+  permissionId: string;
+  permission: Permission;
+}
+
 export interface Role {
   id: string;
   name: string;
+  displayName?: string;
+  description?: string;
   permissions: Record<string, string[]>;
+  permissionNames?: string[];
+  isSystem?: boolean;
+  rolePermissions?: RolePermission[];
   _count?: { users: number };
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface User {
@@ -656,6 +679,7 @@ export interface User {
   isActive: boolean;
   role?: Role;
   createdAt: string;
+  lastLoginAt?: string;
 }
 
 export function useUsers() {
@@ -665,10 +689,14 @@ export function useUsers() {
   });
 }
 
-export function useRoles() {
+export function useRoles(options?: { includePermissions?: boolean }) {
+  const params = new URLSearchParams();
+  if (options?.includePermissions) {
+    params.set("includePermissions", "true");
+  }
   return useQuery({
-    queryKey: ["roles"],
-    queryFn: () => fetchAPI<{ roles: Role[] }>("/api/roles"),
+    queryKey: ["roles", options],
+    queryFn: () => fetchAPI<{ roles: Role[] }>(`/api/roles?${params.toString()}`),
   });
 }
 
@@ -716,7 +744,7 @@ export function useDeleteUser() {
 export function useCreateRole() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { name: string; permissions: Record<string, string[]> }) =>
+    mutationFn: (data: { name: string; displayName?: string; description?: string; permissions: Record<string, string[]> }) =>
       fetchAPI<Role>("/api/roles", {
         method: "POST",
         body: JSON.stringify(data),
@@ -730,7 +758,7 @@ export function useCreateRole() {
 export function useUpdateRole() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...data }: Partial<Role> & { id: string }) =>
+    mutationFn: ({ id, ...data }: Partial<Role> & { id: string; permissionNames?: string[] }) =>
       fetchAPI<Role>("/api/roles", {
         method: "PUT",
         body: JSON.stringify({ id, ...data }),
@@ -750,6 +778,51 @@ export function useDeleteRole() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["roles"] });
+    },
+  });
+}
+
+export function useSeedRoles() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      fetchAPI<{ success: boolean; created: string[]; updated: string[] }>("/api/roles", {
+        method: "POST",
+        body: JSON.stringify({ seed: true }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["roles"] });
+    },
+  });
+}
+
+// ============================================
+// PERMISSIONS (RBAC)
+// ============================================
+
+export interface PermissionsResponse {
+  permissions: Permission[];
+  byResource: Record<string, Permission[]>;
+  resources: string[];
+  seeded: boolean;
+}
+
+export function usePermissions() {
+  return useQuery({
+    queryKey: ["permissions"],
+    queryFn: () => fetchAPI<PermissionsResponse>("/api/permissions"),
+  });
+}
+
+export function useSeedPermissions() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      fetchAPI<{ success: boolean; created: string[]; existing: string[] }>("/api/permissions", {
+        method: "POST",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["permissions"] });
     },
   });
 }

@@ -20,6 +20,7 @@ import { BacklogPage } from "./pages/backlog-page"
 import { ReviewsPage } from "./pages/reviews-page"
 import { SuperAdminPage } from "./pages/super-admin-page"
 import { AuditLogsPage } from "./pages/audit-logs-page"
+import { RolePermissionsPage } from "./pages/role-permissions-page"
 import { useOrders, useLowStockItems, useAdminReviews } from "@/lib/api-hooks"
 
 type NavItem =
@@ -41,6 +42,7 @@ type NavItem =
   | "reviews"
   | "super-admin"
   | "audit-logs"
+  | "role-permissions"
 
 export function AdminDashboard() {
   const [activeNav, setActiveNav] = useState<NavItem>("dashboard")
@@ -92,6 +94,8 @@ export function AdminDashboard() {
         return <SuperAdminPage />
       case "audit-logs":
         return <AuditLogsPage />
+      case "role-permissions":
+        return <RolePermissionsPage />
       default:
         return <DashboardPage />
     }
