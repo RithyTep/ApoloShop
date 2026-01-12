@@ -1,12 +1,25 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
 import type { CartItem } from "@/lib/shop-context"
-import { MessageCircle, Send, CheckCircle, Loader2 } from "lucide-react"
+import {
+  MessageCircle,
+  Send,
+  CheckCircle,
+  Loader2,
+  CreditCard,
+  Smartphone,
+  QrCode,
+  Banknote,
+} from "lucide-react"
 import { useCreateOrder, type OrderChannel } from "@/lib/api-hooks"
+import { translations } from "@/lib/i18n"
+import type { PaymentGatewayType, PaymentInitResponse } from "@/lib/payment-gateways"
 
 interface CheckoutPageProps {
   cart: CartItem[]
@@ -16,6 +29,14 @@ interface CheckoutPageProps {
   onOrderComplete?: () => void
 }
 
+// Payment method icons mapping
+const PAYMENT_ICONS: Record<PaymentGatewayType, typeof CreditCard> = {
+  CASH: Banknote,
+  ABA_PAYWAY: CreditCard,
+  WING: Smartphone,
+  KHQR: QrCode,
+}
+
 export function CheckoutPage({ cart, currency, language, onBackToShop, onOrderComplete }: CheckoutPageProps) {
   const [fullName, setFullName] = useState("")
   const [phone, setPhone] = useState("")
@@ -23,8 +44,102 @@ export function CheckoutPage({ cart, currency, language, onBackToShop, onOrderCo
   const [orderSuccess, setOrderSuccess] = useState(false)
   const [orderNumber, setOrderNumber] = useState("")
 
+  // Payment state
+  const [selectedPayment, setSelectedPayment] = useState<PaymentGatewayType>("CASH")
+  const [paymentStep, setPaymentStep] = useState<"select" | "processing" | "qr" | "success" | "failed">("select")
+  const [paymentResponse, setPaymentResponse] = useState<PaymentInitResponse | null>(null)
+  const [qrCountdown, setQrCountdown] = useState(0)
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false)
+  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null)
+
   const createOrder = useCreateOrder()
   const total = cart.reduce((acc, item) => acc + item.price * item.quantity, 0)
+  const t = translations[language === "EN" ? "en" : "kh"]
+
+  // QR countdown timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    if (paymentStep === "qr" && qrCountdown > 0) {
+      interval = setInterval(() => {
+        setQrCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    }
+    return () => clearInterval(interval)
+  }, [paymentStep, qrCountdown])
+
+  const handleCreateOrderAndPay = async () => {
+    // First create the order
+    setPaymentStep("processing")
+    setIsProcessingPayment(true)
+
+    try {
+      const order = await createOrder.mutateAsync({
+        customerName: fullName,
+        customerPhone: phone,
+        items: cart.map((item) => ({
+          productId: item.id,
+          quantity: item.quantity,
+        })),
+        channel: "WEBSITE" as OrderChannel,
+        currency,
+        note: deliveryNote || undefined,
+      })
+
+      setCurrentOrderId(order.id)
+      setOrderNumber(order.orderNumber)
+
+      // Now initiate payment
+      const paymentAmount = currency === "USD" ? total : Math.round(total * 4000)
+
+      const response = await fetch("/api/payments/gateway", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: order.id,
+          gateway: selectedPayment,
+          amount: paymentAmount,
+          currency,
+          customerPhone: phone,
+          customerName: fullName,
+          returnUrl: `${window.location.origin}/checkout/callback`,
+        }),
+      })
+
+      const paymentData: PaymentInitResponse = await response.json()
+
+      if (!paymentData.success) {
+        throw new Error(paymentData.message || "Payment initialization failed")
+      }
+
+      setPaymentResponse(paymentData)
+
+      // Handle different payment flows
+      if (selectedPayment === "CASH") {
+        // COD - Order confirmed, show success
+        setPaymentStep("success")
+        setOrderSuccess(true)
+        onOrderComplete?.()
+      } else if (paymentData.redirectUrl) {
+        // Redirect-based payment (ABA PayWay, Wing)
+        window.location.href = paymentData.redirectUrl
+      } else if (paymentData.qrImage) {
+        // QR-based payment (KHQR)
+        setPaymentStep("qr")
+        setQrCountdown(15 * 60) // 15 minutes
+      }
+    } catch (error) {
+      console.error("Payment error:", error)
+      setPaymentStep("failed")
+    } finally {
+      setIsProcessingPayment(false)
+    }
+  }
 
   const handleOrderVia = async (method: "telegram" | "messenger") => {
     const channel: OrderChannel = method === "telegram" ? "TELEGRAM" : "MESSENGER"
@@ -65,6 +180,12 @@ export function CheckoutPage({ cart, currency, language, onBackToShop, onOrderCo
     }
   }
 
+  const handleRetryPayment = () => {
+    setPaymentStep("select")
+    setPaymentResponse(null)
+  }
+
+  // Success screen
   if (orderSuccess) {
     return (
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -78,7 +199,14 @@ export function CheckoutPage({ cart, currency, language, onBackToShop, onOrderCo
           <p className="text-lg text-muted-foreground mb-2">
             {language === "EN" ? "Your order number is:" : "លេខបញ្ជាទិញរបស់អ្នក:"}
           </p>
-          <p className="text-2xl font-bold text-primary mb-8">{orderNumber}</p>
+          <p className="text-2xl font-bold text-primary mb-4">{orderNumber}</p>
+
+          {selectedPayment === "CASH" && (
+            <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+              {t.payment.codInstructions}
+            </p>
+          )}
+
           <p className="text-muted-foreground mb-8">
             {language === "EN"
               ? "We'll contact you shortly to confirm your order."
@@ -92,6 +220,109 @@ export function CheckoutPage({ cart, currency, language, onBackToShop, onOrderCo
     )
   }
 
+  // QR Code payment screen
+  if (paymentStep === "qr" && paymentResponse?.qrImage) {
+    const minutes = Math.floor(qrCountdown / 60)
+    const seconds = qrCountdown % 60
+
+    return (
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <Button onClick={handleRetryPayment} variant="outline" className="mb-8 bg-transparent">
+          ← {t.payment.changeMethod}
+        </Button>
+
+        <div className="text-center py-8">
+          <h1 className="text-2xl font-bold text-foreground mb-4">{t.payment.scanQR}</h1>
+
+          <div className="bg-white p-6 rounded-lg shadow-lg inline-block mb-6">
+            <img
+              src={paymentResponse.qrImage}
+              alt="KHQR Payment Code"
+              className="w-64 h-64 mx-auto"
+            />
+          </div>
+
+          <div className="mb-6">
+            <p className="text-lg font-bold text-primary mb-2">
+              {t.payment.totalToPay}:{" "}
+              {paymentResponse.currency === "USD"
+                ? `$${paymentResponse.amount.toFixed(2)}`
+                : `${Math.round(paymentResponse.amount)}៛`}
+            </p>
+            <p className="text-muted-foreground">
+              {language === "EN" ? "Order #" : "ការបញ្ជាទិញ #"}{orderNumber}
+            </p>
+          </div>
+
+          {qrCountdown > 0 ? (
+            <p className="text-sm text-muted-foreground mb-6">
+              {t.payment.qrExpires} {minutes}:{seconds.toString().padStart(2, "0")} {t.payment.minutes}
+            </p>
+          ) : (
+            <div className="mb-6">
+              <p className="text-destructive mb-4">
+                {language === "EN" ? "QR code expired" : "QR កូដផុតកំណត់"}
+              </p>
+              <Button onClick={handleCreateOrderAndPay} className="bg-primary text-primary-foreground">
+                {t.payment.generateQR}
+              </Button>
+            </div>
+          )}
+
+          <div className="flex gap-4 justify-center">
+            <Button
+              onClick={() => {
+                // Poll for payment status
+                if (paymentResponse.paymentId) {
+                  fetch("/api/payments/verify", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ paymentId: paymentResponse.paymentId }),
+                  })
+                    .then((res) => res.json())
+                    .then((data) => {
+                      if (data.status === "COMPLETED") {
+                        setPaymentStep("success")
+                        setOrderSuccess(true)
+                        onOrderComplete?.()
+                      }
+                    })
+                }
+              }}
+              variant="outline"
+              className="bg-transparent"
+            >
+              {t.payment.verifying}
+            </Button>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  // Payment failed screen
+  if (paymentStep === "failed") {
+    return (
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="text-center py-16">
+          <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mb-6">
+            <span className="text-3xl">❌</span>
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-4">{t.payment.failed}</h1>
+          <div className="flex gap-4 justify-center">
+            <Button onClick={handleRetryPayment} className="bg-primary text-primary-foreground">
+              {t.payment.retryPayment}
+            </Button>
+            <Button onClick={onBackToShop} variant="outline" className="bg-transparent">
+              {language === "EN" ? "Back to Shop" : "ត្រលប់ទៅហាង"}
+            </Button>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  // Main checkout form
   return (
     <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <Button onClick={onBackToShop} variant="outline" className="mb-8 bg-transparent">
@@ -152,49 +383,122 @@ export function CheckoutPage({ cart, currency, language, onBackToShop, onOrderCo
 
             <Separator />
 
-            {/* Payment Methods */}
+            {/* Payment Method Selection */}
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-foreground">
-                {language === "EN" ? "Complete Your Order" : "បញ្ចប់ការបញ្ជាទិញរបស់អ្នក"}
-              </h2>
+              <h2 className="text-xl font-semibold text-foreground">{t.payment.selectMethod}</h2>
+
+              <RadioGroup
+                value={selectedPayment}
+                onValueChange={(value) => setSelectedPayment(value as PaymentGatewayType)}
+                className="space-y-3"
+              >
+                {/* Cash on Delivery */}
+                <div className="flex items-center space-x-3 p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                  <RadioGroupItem value="CASH" id="payment-cash" />
+                  <Label htmlFor="payment-cash" className="flex items-center gap-3 cursor-pointer flex-1">
+                    <Banknote className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">{t.payment.methods.cash}</p>
+                      <p className="text-sm text-muted-foreground">{t.payment.descriptions.cash}</p>
+                    </div>
+                  </Label>
+                </div>
+
+                {/* ABA PayWay */}
+                <div className="flex items-center space-x-3 p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                  <RadioGroupItem value="ABA_PAYWAY" id="payment-aba" />
+                  <Label htmlFor="payment-aba" className="flex items-center gap-3 cursor-pointer flex-1">
+                    <CreditCard className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">{t.payment.methods.abaPayway}</p>
+                      <p className="text-sm text-muted-foreground">{t.payment.descriptions.abaPayway}</p>
+                    </div>
+                  </Label>
+                </div>
+
+                {/* Wing */}
+                <div className="flex items-center space-x-3 p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                  <RadioGroupItem value="WING" id="payment-wing" />
+                  <Label htmlFor="payment-wing" className="flex items-center gap-3 cursor-pointer flex-1">
+                    <Smartphone className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">{t.payment.methods.wing}</p>
+                      <p className="text-sm text-muted-foreground">{t.payment.descriptions.wing}</p>
+                    </div>
+                  </Label>
+                </div>
+
+                {/* KHQR */}
+                <div className="flex items-center space-x-3 p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                  <RadioGroupItem value="KHQR" id="payment-khqr" />
+                  <Label htmlFor="payment-khqr" className="flex items-center gap-3 cursor-pointer flex-1">
+                    <QrCode className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">{t.payment.methods.khqr}</p>
+                      <p className="text-sm text-muted-foreground">{t.payment.descriptions.khqr}</p>
+                    </div>
+                  </Label>
+                </div>
+              </RadioGroup>
 
               {createOrder.error && (
-                <div className="p-3 bg-destructive/10 text-destructive rounded-md text-sm mb-4">
+                <div className="p-3 bg-destructive/10 text-destructive rounded-md text-sm">
                   {language === "EN" ? "Failed to place order. Please try again." : "មិនអាចបញ្ជាទិញបានទេ។ សូមព្យាយាមម្តងទៀត។"}
                 </div>
               )}
 
-              <div className="space-y-3">
+              {/* Pay Now Button */}
+              <Button
+                onClick={handleCreateOrderAndPay}
+                disabled={!fullName || !phone || isProcessingPayment || createOrder.isPending}
+                className="w-full bg-primary text-primary-foreground hover:bg-opacity-90 disabled:opacity-50 h-12 text-lg"
+              >
+                {isProcessingPayment || createOrder.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    {t.payment.processing}
+                  </>
+                ) : (
+                  <>
+                    {(() => {
+                      const Icon = PAYMENT_ICONS[selectedPayment]
+                      return <Icon className="mr-2 h-5 w-5" />
+                    })()}
+                    {t.payment.payNow}
+                  </>
+                )}
+              </Button>
+            </div>
+
+            <Separator />
+
+            {/* Alternative: Order via Messaging */}
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground text-center">
+                {language === "EN" ? "Or order via messaging apps" : "ឬបញ្ជាទិញតាមកម្មវិធីផ្ញើសារ"}
+              </p>
+
+              <div className="grid grid-cols-2 gap-3">
                 <Button
                   onClick={() => handleOrderVia("telegram")}
                   disabled={!fullName || !phone || createOrder.isPending}
-                  className="w-full bg-primary text-primary-foreground hover:bg-opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+                  variant="outline"
+                  className="bg-transparent flex items-center justify-center gap-2"
                 >
-                  {createOrder.isPending ? (
-                    <Loader2 size={20} className="animate-spin" />
-                  ) : (
-                    <MessageCircle size={20} />
-                  )}
-                  {language === "EN" ? "Order via Telegram" : "បញ្ជាទិញតាម Telegram"}
+                  <MessageCircle size={18} />
+                  Telegram
                 </Button>
 
                 <Button
                   onClick={() => handleOrderVia("messenger")}
                   disabled={!fullName || !phone || createOrder.isPending}
-                  className="w-full bg-primary text-primary-foreground hover:bg-opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+                  variant="outline"
+                  className="bg-transparent flex items-center justify-center gap-2"
                 >
-                  {createOrder.isPending ? (
-                    <Loader2 size={20} className="animate-spin" />
-                  ) : (
-                    <Send size={20} />
-                  )}
-                  {language === "EN" ? "Order via Facebook Messenger" : "បញ្ជាទិញតាម Facebook Messenger"}
+                  <Send size={18} />
+                  Messenger
                 </Button>
               </div>
-
-              <p className="text-xs text-muted-foreground text-center">
-                {language === "EN" ? "Your order details will be shared with our team" : "សមាសភាគលម្អិតលម្អិតនឹងត្រូវចែករំលែក"}
-              </p>
             </div>
           </div>
         </div>

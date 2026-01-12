@@ -779,8 +779,8 @@
         "Build passes: bun run build"
       ],
       "priority": 50,
-      "passes": false,
-      "notes": "Central security monitoring for admins"
+      "passes": true,
+      "notes": "Implemented SecurityDashboardPage with security score, login activity (success/failed), active sessions by device, failed login trends chart, security alerts, locked accounts with unlock action, suspicious logins with force logout, critical events log. API at /api/admin/security-dashboard with timeframe filter (1h/6h/24h/7d/30d)."
     },
     {
       "id": "US-051",
@@ -795,8 +795,8 @@
         "Build passes: bun run build"
       ],
       "priority": 51,
-      "passes": false,
-      "notes": "Critical for Cambodian market - ABA and Wing are dominant"
+      "passes": true,
+      "notes": "Implemented lib/payment-gateways.ts with PaymentGatewayType (CASH/ABA_PAYWAY/WING/KHQR), unified /api/payments/gateway endpoint for all methods, /api/payments/verify for status checks, checkout-page.tsx with RadioGroup payment method selection, QR code display for KHQR, redirect support for ABA/Wing, COD confirmation flow, bilingual translations (EN/KH)"
     },
     {
       "id": "US-052",

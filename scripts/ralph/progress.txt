@@ -1547,3 +1547,74 @@ Project: ApoloShop - Product Search Feature
   - Type detection should use detected type for storage, not client-declared type
   - Consider fail-open vs fail-closed for ClamAV - currently fail-open with logging
 ---
+
+## 2026-01-12 - US-050
+- **Implemented**: Admin security dashboard for real-time security monitoring
+- **Files changed**:
+  - `app/api/admin/security-dashboard/route.ts` (new file - security dashboard API)
+  - `components/pages/security-dashboard-page.tsx` (new file - dashboard UI component)
+  - `components/sidebar.tsx` (modified - added security-dashboard nav item)
+  - `components/admin-dashboard.tsx` (modified - integrated SecurityDashboardPage)
+  - `lib/api-hooks.ts` (modified - added useSecurityDashboard, useUnlockAccount, useForceLogout hooks and types)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **GET /api/admin/security-dashboard**: Returns comprehensive security metrics with timeframe filter (1h/6h/24h/7d/30d)
+  - **Security score (0-100)**: Calculated from failed login rate, locked accounts, critical events, suspicious logins
+  - **Summary metrics**: loginSuccessCount, loginFailedCount, failedLoginRate, activeSessions, lockedAccountsCount, unreviewedSuspiciousLogins, criticalEventsCount
+  - **Sessions breakdown**: Total active sessions with device type distribution (desktop/mobile/tablet)
+  - **Locked accounts list**: Shows locked users with unlock button and remaining lockout time
+  - **Recent login activity**: Table of last 20 login attempts with success/fail status
+  - **Failed login trends**: Hourly trend chart for failed login attempts
+  - **Security alerts**: Suspicious patterns detected (multiple failed logins, 2FA failures, password reset spam, lockouts)
+  - **Critical events**: List of CRITICAL severity security log entries
+  - **Suspicious login activity**: New device/location logins with force logout option
+  - **Quick actions**: Unlock account dialog, force logout dialog, event details viewer
+  - **Auto-refresh**: Dashboard refreshes every minute
+- **Learnings for future iterations**:
+  - Security score formula: Start at 100, deduct for failed login ratio (max -30), locked accounts (max -20), critical events (max -30), suspicious logins (max -20)
+  - Use Promise.all for parallel fetching of multiple security metrics
+  - Hourly trend processing: Create time buckets, count events per bucket
+  - Recharts works well for security visualizations (AreaChart for trends, PieChart for device breakdown, BarChart for severity distribution)
+  - Suspicion indicators: isNewDevice, isNewLocation from LoginActivity model
+  - Force logout = revoke all sessions for a user
+  - Session by device uses groupBy on deviceType field
+---
+
+## 2026-01-12 - US-051
+- **Implemented**: Multiple payment gateways for Cambodian market
+- **Files changed**:
+  - `lib/payment-gateways.ts` (new file - payment gateway configurations and types)
+  - `app/api/payments/gateway/route.ts` (new file - unified payment initialization endpoint)
+  - `app/api/payments/verify/route.ts` (new file - payment verification endpoint)
+  - `components/checkout-page.tsx` (modified - added payment method selection UI)
+  - `components/ui/radio-group.tsx` (new file - Shadcn RadioGroup component)
+  - `lib/i18n.ts` (modified - added payment translations EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **PaymentGatewayType**: CASH, ABA_PAYWAY, WING, KHQR with config fields
+  - **Payment gateway configs**: Each gateway has name (EN/KH), description (EN/KH), icon, configFields for admin setup
+  - **POST /api/payments/gateway**: Initialize payment with selected gateway
+    - CASH: Creates COD order, auto-confirms, returns confirmationRequired
+    - ABA_PAYWAY: Generates hash, creates redirectUrl to PayWay checkout
+    - WING: Generates signature, creates redirectUrl to Wing checkout
+    - KHQR: Generates QR code image via lib/khqr.ts, returns qrImage
+  - **GET /api/payments/gateway**: Returns available gateways for checkout
+  - **POST /api/payments/verify**: Check payment status (polling for KHQR)
+  - **PUT /api/payments/verify**: Admin update payment status manually
+  - **Checkout UI**:
+    - RadioGroup selection of 4 payment methods with icons
+    - Processing state with spinner
+    - QR code display screen with 15-minute countdown timer
+    - Payment verification button for KHQR
+    - Failed/retry screen
+    - Success screen with COD-specific instructions
+  - **Bilingual translations**: All payment UI text in English and Khmer
+- **Learnings for future iterations**:
+  - ABA PayWay uses SHA512 hash of concatenated fields
+  - Wing uses HMAC-SHA256 signature
+  - KHQR QR code display needs countdown timer (15 min expiry)
+  - COD flow auto-confirms order, shows "pay on delivery" instructions
+  - Payment response types differ per gateway (redirectUrl vs qrImage vs confirmationRequired)
+  - RadioGroup from @radix-ui/react-radio-group already in package.json
+  - Keep messaging order options (Telegram/Messenger) as fallback
+---
