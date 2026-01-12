@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#000000" rx="96"/>
+  <text x="256" y="300" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="200" font-weight="bold" fill="white">A</text>
+  <text x="256" y="400" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="60" fill="white" opacity="0.8">SHOP</text>
+</svg>

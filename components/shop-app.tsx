@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Header } from "./header"
 import { ProductGrid } from "./product-grid"
 import { CartDrawer } from "./cart-drawer"
@@ -25,6 +25,8 @@ import { GalleryRenderer } from "./customizer/renderers/gallery-renderer"
 import { AboutRenderer } from "./customizer/renderers/about-renderer"
 import { TeamRenderer } from "./customizer/renderers/team-renderer"
 import { AnnouncementBanner } from "./shop/announcement-banner"
+import { PWAInstallPrompt, PWAUpdateBanner, OfflineIndicator } from "./pwa-install-prompt"
+import { usePWA } from "@/lib/use-pwa"
 
 export interface CartItem {
   id: string
@@ -52,6 +54,30 @@ export function ShopApp() {
   // Load and apply client-specific theme (multi-tenant whitelabel)
   const { data: clientThemeData } = useClientThemeQuery()
   useClientThemeStyles(clientThemeData?.theme)
+
+  // PWA integration - register service worker and cache products
+  const { cacheProducts, isServiceWorkerReady } = usePWA()
+
+  // Cache products when they're loaded and SW is ready
+  useEffect(() => {
+    if (isServiceWorkerReady && sections.length > 0) {
+      // Find products from the products section config
+      const productSection = sections.find(s => s.type === "products")
+      if (productSection?.config) {
+        const productsConfig = productSection.config as ProductsConfig
+        if (productsConfig.products) {
+          cacheProducts(productsConfig.products.map(p => ({
+            id: p.id,
+            nameEn: p.nameEn || "",
+            nameKh: p.nameKh || "",
+            priceUsd: Number(p.priceUsd),
+            priceKhr: Number(p.priceKhr),
+            imageUrl: p.imageUrl,
+          })))
+        }
+      }
+    }
+  }, [isServiceWorkerReady, sections, cacheProducts])
 
   const addToCart = (id: string, name: string, price: number, image: string) => {
     setCart((prev) => {
@@ -233,6 +259,11 @@ export function ShopApp() {
         currency={currency}
         language={language}
       />
+
+      {/* PWA Components */}
+      <PWAInstallPrompt language={language} />
+      <PWAUpdateBanner language={language} />
+      <OfflineIndicator language={language} />
     </div>
   )
 }
