@@ -173,3 +173,29 @@ Project: ApoloShop - Product Search Feature
   - Use inline styles for conditional branding (when primaryColor exists) vs Tailwind classes (fallback)
   - shop-app.tsx applies theme via CSS variables: --primary, --accent, --background, --foreground, --radius
 ---
+
+## 2026-01-12 - US-009
+- **Implemented**: Search analytics tracking
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added SearchLog model)
+  - `app/api/products/search/route.ts` (modified - added query logging)
+  - `app/api/analytics/search/route.ts` (new file - analytics endpoint)
+  - `lib/api-hooks.ts` (modified - added useSearchAnalytics hook and types)
+  - `components/popular-searches-widget.tsx` (new file - dashboard widget)
+  - `components/pages/dashboard-page.tsx` (modified - integrated PopularSearchesWidget)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **SearchLog model**: Tracks query, resultsCount, ipAddress, userAgent, createdAt
+  - **Non-blocking logging**: Search API logs queries without affecting response time
+  - **Analytics endpoint**: GET /api/analytics/search with date range filtering
+  - **Summary stats**: totalSearches, successRate, zeroResultSearches
+  - **Popular searches**: Grouped by query with count and avgResults
+  - **Zero-result queries**: Highlights searches returning no results for product opportunities
+  - **Dashboard widget**: Shows summary, popular searches, and zero-result warnings
+- **Learnings for future iterations**:
+  - Non-blocking logging pattern: `prisma.create().catch()` for fire-and-forget DB writes
+  - Prisma groupBy with aggregations: `_count`, `_avg` for analytics queries
+  - Raw SQL for complex date groupings: `prisma.$queryRaw` with DATE() function
+  - Admin widgets should be self-contained with their own data fetching via hooks
+  - Layout pattern: Use grid with `lg:col-span-1` and `lg:col-span-2` for asymmetric layouts
+---

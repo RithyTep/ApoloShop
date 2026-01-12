@@ -137,8 +137,8 @@
         "Build passes: bun run build"
       ],
       "priority": 9,
-      "passes": false,
-      "notes": "Helps shop owners understand customer search behavior"
+      "passes": true,
+      "notes": "Implemented SearchLog model, logging in search API, analytics endpoint with popular/zero-result queries, and PopularSearchesWidget in dashboard"
     },
     {
       "id": "US-010",
@@ -461,6 +461,326 @@
       "priority": 30,
       "passes": false,
       "notes": "Improved mobile UX, especially in Cambodia with spotty internet"
+    },
+    {
+      "id": "US-031",
+      "title": "JWT token authentication",
+      "description": "Replace session-based auth with JWT tokens for better scalability",
+      "acceptanceCriteria": [
+        "Generate JWT access token (15min expiry) and refresh token (7 days)",
+        "Store refresh token in httpOnly cookie",
+        "Create POST /api/auth/refresh endpoint",
+        "Add JWT verification middleware for protected routes",
+        "Include user role and permissions in token payload",
+        "Build passes: bun run build"
+      ],
+      "priority": 31,
+      "passes": false,
+      "notes": "Stateless auth for better horizontal scaling"
+    },
+    {
+      "id": "US-032",
+      "title": "Role-based access control (RBAC)",
+      "description": "Granular permissions system for admin users",
+      "acceptanceCriteria": [
+        "Define roles: super_admin, admin, manager, staff",
+        "Create Permission model: id, name, description",
+        "Create RolePermission junction table",
+        "Add middleware to check permissions on API routes",
+        "Create admin UI to manage role permissions",
+        "Build passes: bun run build"
+      ],
+      "priority": 32,
+      "passes": false,
+      "notes": "Fine-grained access control for enterprise clients"
+    },
+    {
+      "id": "US-033",
+      "title": "Two-factor authentication (2FA)",
+      "description": "Optional 2FA for admin accounts using TOTP",
+      "acceptanceCriteria": [
+        "Add twoFactorSecret and twoFactorEnabled to User model",
+        "Create POST /api/auth/2fa/setup endpoint returning QR code",
+        "Create POST /api/auth/2fa/verify endpoint",
+        "Prompt for 2FA code on login if enabled",
+        "Recovery codes for backup access",
+        "Build passes: bun run build"
+      ],
+      "priority": 33,
+      "passes": false,
+      "notes": "Critical security for admin accounts"
+    },
+    {
+      "id": "US-034",
+      "title": "Password security enhancements",
+      "description": "Stronger password policies and secure handling",
+      "acceptanceCriteria": [
+        "Minimum 8 chars, require uppercase, lowercase, number, special char",
+        "Use bcrypt with cost factor 12 for hashing",
+        "Prevent reuse of last 5 passwords (store password history)",
+        "Password expiry reminder after 90 days",
+        "Real-time password strength indicator on forms",
+        "Build passes: bun run build"
+      ],
+      "priority": 34,
+      "passes": false,
+      "notes": "OWASP recommended password practices"
+    },
+    {
+      "id": "US-035",
+      "title": "Account lockout protection",
+      "description": "Prevent brute force attacks with account lockout",
+      "acceptanceCriteria": [
+        "Lock account after 5 failed login attempts",
+        "Lockout duration: 15 minutes (configurable)",
+        "Email notification on lockout",
+        "Admin can manually unlock accounts",
+        "Track failed attempts with IP address",
+        "Build passes: bun run build"
+      ],
+      "priority": 35,
+      "passes": false,
+      "notes": "Essential brute force protection"
+    },
+    {
+      "id": "US-036",
+      "title": "Session management",
+      "description": "Track and manage active user sessions",
+      "acceptanceCriteria": [
+        "Add Session model: userId, token, device, ipAddress, lastActive, createdAt",
+        "Show active sessions in user profile",
+        "Allow user to revoke individual sessions",
+        "'Log out all devices' functionality",
+        "Auto-expire sessions after 30 days inactive",
+        "Build passes: bun run build"
+      ],
+      "priority": 36,
+      "passes": false,
+      "notes": "Users control their active sessions"
+    },
+    {
+      "id": "US-037",
+      "title": "Security headers middleware",
+      "description": "Add security headers to all responses",
+      "acceptanceCriteria": [
+        "Content-Security-Policy header (CSP)",
+        "X-Content-Type-Options: nosniff",
+        "X-Frame-Options: DENY",
+        "Strict-Transport-Security (HSTS)",
+        "X-XSS-Protection header",
+        "Permissions-Policy header",
+        "Build passes: bun run build"
+      ],
+      "priority": 37,
+      "passes": false,
+      "notes": "Defense in depth against common attacks"
+    },
+    {
+      "id": "US-038",
+      "title": "CSRF protection",
+      "description": "Cross-Site Request Forgery protection for forms",
+      "acceptanceCriteria": [
+        "Generate CSRF token per session",
+        "Include token in all state-changing forms",
+        "Validate token on POST/PUT/DELETE requests",
+        "Automatic token refresh mechanism",
+        "Build passes: bun run build"
+      ],
+      "priority": 38,
+      "passes": false,
+      "notes": "Prevents unauthorized actions from malicious sites"
+    },
+    {
+      "id": "US-039",
+      "title": "API key authentication",
+      "description": "API keys for third-party integrations",
+      "acceptanceCriteria": [
+        "Add ApiKey model: id, clientId, key (hashed), name, scopes, expiresAt",
+        "Create POST /api/keys endpoint to generate keys",
+        "Support scope-based permissions (read:products, write:orders, etc.)",
+        "Rate limiting per API key",
+        "Key rotation without downtime",
+        "Build passes: bun run build"
+      ],
+      "priority": 39,
+      "passes": false,
+      "notes": "Secure third-party integrations"
+    },
+    {
+      "id": "US-040",
+      "title": "OAuth2 social login",
+      "description": "Login with Google and Facebook for customers",
+      "acceptanceCriteria": [
+        "Integrate Google OAuth2 provider",
+        "Integrate Facebook Login provider",
+        "Link social accounts to existing email accounts",
+        "Create account if email doesn't exist",
+        "Store provider tokens for future use",
+        "Build passes: bun run build"
+      ],
+      "priority": 40,
+      "passes": false,
+      "notes": "Easier signup/login for customers"
+    },
+    {
+      "id": "US-041",
+      "title": "Password reset flow",
+      "description": "Secure password reset via email",
+      "acceptanceCriteria": [
+        "Create POST /api/auth/forgot-password endpoint",
+        "Generate time-limited reset token (1 hour)",
+        "Send reset link via email",
+        "Create POST /api/auth/reset-password endpoint",
+        "Invalidate token after use",
+        "Rate limit reset requests (3 per hour per email)",
+        "Build passes: bun run build"
+      ],
+      "priority": 41,
+      "passes": false,
+      "notes": "Secure self-service password recovery"
+    },
+    {
+      "id": "US-042",
+      "title": "Email verification",
+      "description": "Verify customer email addresses",
+      "acceptanceCriteria": [
+        "Add emailVerified and emailVerifyToken to User/Customer model",
+        "Send verification email on signup",
+        "Create GET /api/auth/verify-email endpoint",
+        "Resend verification option",
+        "Restrict certain actions until email verified",
+        "Build passes: bun run build"
+      ],
+      "priority": 42,
+      "passes": false,
+      "notes": "Ensures valid customer emails"
+    },
+    {
+      "id": "US-043",
+      "title": "Login activity notifications",
+      "description": "Alert users of new login activity",
+      "acceptanceCriteria": [
+        "Send email on login from new device/location",
+        "Include device info, IP, location, timestamp",
+        "Option to mark as 'not me' to trigger security review",
+        "User preference to enable/disable notifications",
+        "Build passes: bun run build"
+      ],
+      "priority": 43,
+      "passes": false,
+      "notes": "Early detection of account compromise"
+    },
+    {
+      "id": "US-044",
+      "title": "IP whitelisting for admin",
+      "description": "Restrict admin access to specific IP addresses",
+      "acceptanceCriteria": [
+        "Add allowedIPs field to User model (for admins)",
+        "Middleware to check IP on admin routes",
+        "Support CIDR notation for IP ranges",
+        "Super admin can bypass IP restrictions",
+        "Logging of blocked access attempts",
+        "Build passes: bun run build"
+      ],
+      "priority": 44,
+      "passes": false,
+      "notes": "Extra layer of admin protection"
+    },
+    {
+      "id": "US-045",
+      "title": "Security event logging",
+      "description": "Comprehensive security event audit trail",
+      "acceptanceCriteria": [
+        "Add SecurityLog model: event, userId, ipAddress, userAgent, details, timestamp",
+        "Log: logins, failed logins, password changes, 2FA events, permission changes",
+        "Create GET /api/security-logs endpoint (super admin only)",
+        "Alerting for suspicious patterns (optional)",
+        "90-day retention policy",
+        "Build passes: bun run build"
+      ],
+      "priority": 45,
+      "passes": false,
+      "notes": "Forensics and compliance requirements"
+    },
+    {
+      "id": "US-046",
+      "title": "Data encryption at rest",
+      "description": "Encrypt sensitive data in database",
+      "acceptanceCriteria": [
+        "Encrypt PII fields: phone, address, payment details",
+        "Use AES-256 encryption with key from env variable",
+        "Create encryption/decryption utility functions",
+        "Transparent encryption in Prisma middleware",
+        "Key rotation capability",
+        "Build passes: bun run build"
+      ],
+      "priority": 46,
+      "passes": false,
+      "notes": "Protects data if database is compromised"
+    },
+    {
+      "id": "US-047",
+      "title": "API rate limiting",
+      "description": "Global rate limiting for all API endpoints",
+      "acceptanceCriteria": [
+        "Default limit: 100 requests per minute per IP",
+        "Configurable limits per endpoint",
+        "Higher limits for authenticated users",
+        "Return 429 with Retry-After header when exceeded",
+        "Redis-based rate limiting for distributed deployments",
+        "Build passes: bun run build"
+      ],
+      "priority": 47,
+      "passes": false,
+      "notes": "Prevents API abuse and DoS"
+    },
+    {
+      "id": "US-048",
+      "title": "Input validation middleware",
+      "description": "Centralized request validation using Zod",
+      "acceptanceCriteria": [
+        "Create validation schemas for all API endpoints",
+        "Validate request body, query params, and path params",
+        "Return detailed validation errors (400 response)",
+        "Sanitize string inputs to prevent XSS",
+        "Type-safe validated data in route handlers",
+        "Build passes: bun run build"
+      ],
+      "priority": 48,
+      "passes": false,
+      "notes": "Prevents injection attacks and invalid data"
+    },
+    {
+      "id": "US-049",
+      "title": "Secure file upload",
+      "description": "Security measures for file uploads",
+      "acceptanceCriteria": [
+        "Validate file type by magic bytes (not just extension)",
+        "Max file size limit (5MB default, configurable)",
+        "Scan for malware using ClamAV (optional)",
+        "Store files with random UUID names",
+        "Serve files through signed URLs with expiry",
+        "Build passes: bun run build"
+      ],
+      "priority": 49,
+      "passes": false,
+      "notes": "Prevents malicious file uploads"
+    },
+    {
+      "id": "US-050",
+      "title": "Admin security dashboard",
+      "description": "Real-time security monitoring dashboard",
+      "acceptanceCriteria": [
+        "Show recent login activity (success/failed)",
+        "Active sessions count and list",
+        "Failed login attempt trends chart",
+        "Suspicious activity alerts",
+        "Quick actions: force logout, lock account",
+        "Build passes: bun run build"
+      ],
+      "priority": 50,
+      "passes": false,
+      "notes": "Central security monitoring for admins"
     }
   ]
 }
