@@ -2170,3 +2170,35 @@ Project: ApoloShop - Product Search Feature
   - Test event codes allow testing without affecting live data
   - Pattern follows GA4 integration: helper lib + provider + settings UI
 ---
+
+## 2026-01-13 - US-070
+- **Implemented**: WCAG accessibility compliance
+- **Files changed**:
+  - `components/shop-app.tsx` (modified - added skip-to-content link, main landmark with id)
+  - `components/header.tsx` (modified - added ARIA labels, roles, focus styles, keyboard nav)
+  - `components/product-grid.tsx` (modified - added semantic HTML, ARIA labels, focus styles)
+  - `components/search-dropdown.tsx` (modified - added listbox role, ARIA attributes)
+  - `app/globals.css` (modified - added focus-visible, reduced motion, high contrast styles)
+  - `lib/i18n.ts` (modified - added accessibility translations for EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Skip to main content**: Hidden link visible on focus, bilingual (EN/KH)
+  - **ARIA labels and roles**: role="banner" on header, role="search" on search, role="navigation" on categories, role="listbox" on search dropdown, role="option" on results
+  - **Semantic HTML**: main landmark with id, section for products, nav for categories, ul/li for product list
+  - **Focus visibility**: Global focus-visible styles with ring offset, per-element focus styles
+  - **Screen reader support**: Descriptive aria-labels on all interactive elements, aria-hidden on decorative icons, aria-live regions for dynamic content
+  - **Keyboard navigation**: Focus ring styles, tabIndex management, Enter/Space key handlers
+  - **Color contrast**: High contrast mode media query support
+  - **Reduced motion**: prefers-reduced-motion media query disables animations
+  - **Bilingual a11y translations**: Added accessibility section in i18n.ts for EN/KH
+- **Learnings for future iterations**:
+  - WCAG 2.4.1 requires bypass blocks (skip links) for keyboard users
+  - Use role="main" with aria-label for main content landmark
+  - aria-pressed for toggle buttons (language/currency switches)
+  - aria-expanded and aria-controls for expandable search dropdown
+  - Product cards use role="article" with full aria-label including name, price, stock
+  - Search results use role="listbox" with role="option" children
+  - focus-visible pseudo-class targets keyboard focus, not mouse clicks
+  - prefers-reduced-motion and prefers-contrast for user preferences
+  - Decorative images get aria-hidden="true" and empty alt=""
+---

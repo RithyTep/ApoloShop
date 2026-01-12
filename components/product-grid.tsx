@@ -163,17 +163,23 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
 
       {/* Category Filter - Sticky on scroll */}
       {categories.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-8 sticky top-[73px] bg-background/95 backdrop-blur-sm py-3 -mx-4 px-4 z-30">
+        <nav
+          className="flex flex-wrap gap-2 mb-8 sticky top-[73px] bg-background/95 backdrop-blur-sm py-3 -mx-4 px-4 z-30"
+          role="navigation"
+          aria-label={language === "EN" ? "Product categories" : "ប្រភេទផលិតផល"}
+        >
           <Button
             variant={categoryFilter === "" ? "default" : "outline"}
             size="sm"
             onClick={() => handleCategoryChange("")}
             className={cn(
-              "transition-all duration-200",
+              "transition-all duration-200 focus:ring-2 focus:ring-ring focus:ring-offset-2",
               categoryFilter === ""
                 ? "bg-primary text-primary-foreground shadow-md scale-105"
                 : "bg-transparent hover:scale-105"
             )}
+            aria-pressed={categoryFilter === ""}
+            aria-label={language === "EN" ? "Show all products" : "បង្ហាញផលិតផលទាំងអស់"}
           >
             {language === "EN" ? "All" : "ទាំងអស់"}
           </Button>
@@ -184,27 +190,32 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
               size="sm"
               onClick={() => handleCategoryChange(cat.id)}
               className={cn(
-                "transition-all duration-200",
+                "transition-all duration-200 focus:ring-2 focus:ring-ring focus:ring-offset-2",
                 categoryFilter === cat.id
                   ? "bg-primary text-primary-foreground shadow-md scale-105"
                   : "bg-transparent hover:scale-105"
               )}
+              aria-pressed={categoryFilter === cat.id}
+              aria-label={language === "EN" ? `Show ${cat.nameEn} products` : `បង្ហាញផលិតផល${cat.nameKh}`}
             >
               {language === "EN" ? cat.nameEn : cat.nameKh}
             </Button>
           ))}
-        </div>
+        </nav>
       )}
 
       {/* Products Grid with smooth transition */}
-      <div
+      <section
         className={cn(
           "transition-all duration-200 ease-out",
           (isAnimating || isPending) ? "opacity-50 scale-[0.99]" : "opacity-100 scale-100"
         )}
+        aria-label={language === "EN" ? "Product listing" : "បញ្ជីផលិតផល"}
+        aria-busy={isAnimating || isPending}
+        aria-live="polite"
       >
         {products.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+          <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 list-none p-0 m-0" role="list">
             {products.map((product, index) => {
               const inStock = (product.inventory?.quantity || 0) > 0
               const flashSale = flashSalesData?.[product.id]
@@ -212,22 +223,27 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
               // Use flash sale price if active
               const displayPriceUsd = hasFlashSale ? flashSale.salePriceUsd : product.priceUsd
               const displayPriceKhr = hasFlashSale ? flashSale.salePriceKhr : product.priceKhr
+              const productName = language === "EN" ? product.nameEn : product.nameKh
+              const priceDisplay = currency === "USD" ? `$${Number(displayPriceUsd).toFixed(2)}` : `${Number(displayPriceKhr).toLocaleString()} Riel`
+              const stockStatus = inStock ? (language === "EN" ? "In Stock" : "មាននៅក្នុងស្តុក") : (language === "EN" ? "Out of Stock" : "អស់ស្តុក")
 
               return (
-                <div
+                <li
                   key={product.id}
                   className={cn(
                     "bg-card border border-border flex flex-col group animate-in fade-in-0 slide-in-from-bottom-2",
                     hasFlashSale && "ring-2 ring-orange-500/50"
                   )}
                   style={{ animationDelay: `${index * 30}ms`, animationDuration: "300ms" }}
+                  role="article"
+                  aria-label={`${productName}, ${priceDisplay}, ${stockStatus}`}
                 >
                   {/* Image with Quick View on hover */}
                   <div className="relative">
                     <div className="aspect-square overflow-hidden bg-muted">
                       <img
                         src={product.imageUrl || "/placeholder.svg"}
-                        alt={product.nameEn}
+                        alt={`${productName} - ${product.descriptionEn?.slice(0, 50) || (language === "EN" ? "Product image" : "រូបភាពផលិតផល")}`}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading={index < 8 ? "eager" : "lazy"}
                       />
@@ -325,24 +341,25 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
                       onClick={() => onAddToCart(product.id, product.nameEn, Number(displayPriceUsd), product.imageUrl || "")}
                       disabled={!inStock}
                       className={cn(
-                        "w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-auto transition-transform active:scale-95",
+                        "w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-auto transition-transform active:scale-95 focus:ring-2 focus:ring-ring focus:ring-offset-2",
                         hasFlashSale && "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
                       )}
+                      aria-label={language === "EN" ? `Add ${productName} to cart` : `បន្ថែម${productName}ទៅរទេះ`}
                     >
-                      <ShoppingCart size={16} />
+                      <ShoppingCart size={16} aria-hidden="true" />
                       <span className="text-sm sm:text-base">{language === "EN" ? "Add to Cart" : "បន្ថែមទៅរទុក"}</span>
                     </Button>
                   </div>
-                </div>
+                </li>
               )
             })}
-          </div>
+          </ul>
         ) : (
-          <div className="py-12 text-center text-muted-foreground">
+          <div className="py-12 text-center text-muted-foreground" role="status" aria-live="polite">
             {language === "EN" ? "No products available" : "មិនមានផលិតផលទេ"}
           </div>
         )}
-      </div>
+      </section>
 
       {/* Product Quick View Modal */}
       {selectedProduct && (

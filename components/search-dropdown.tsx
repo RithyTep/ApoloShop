@@ -175,19 +175,23 @@ export function SearchDropdown({
   return (
     <div
       ref={dropdownRef}
+      id="search-results"
       className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-lg shadow-lg z-50 overflow-hidden"
       style={dropdownStyles}
+      role="listbox"
+      aria-label={language === "EN" ? "Search results" : "លទ្ធផលស្វែងរក"}
+      aria-live="polite"
     >
       {isLoading ? (
-        <div className="p-3 space-y-2">
-          <div className="flex items-center gap-3">
+        <div className="p-3 space-y-2" role="status" aria-label={searchingText}>
+          <div className="flex items-center gap-3" aria-hidden="true">
             <Skeleton className="w-10 h-10 rounded" />
             <div className="flex-1 space-y-1">
               <Skeleton className="h-4 w-3/4" />
               <Skeleton className="h-3 w-1/4" />
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3" aria-hidden="true">
             <Skeleton className="w-10 h-10 rounded" />
             <div className="flex-1 space-y-1">
               <Skeleton className="h-4 w-2/3" />
@@ -197,42 +201,56 @@ export function SearchDropdown({
           <p className="text-xs text-muted-foreground text-center pt-1">{searchingText}</p>
         </div>
       ) : results && results.products.length === 0 ? (
-        <div className="p-4 text-center text-muted-foreground text-sm">
+        <div className="p-4 text-center text-muted-foreground text-sm" role="status">
           {noResultsText}
         </div>
       ) : results && results.products.length > 0 ? (
-        <div className="py-1">
+        <div className="py-1" role="group" aria-label={language === "EN" ? `${results.products.length} results found` : `រកឃើញ ${results.products.length} លទ្ធផល`}>
           {results.products.map((product, index) => {
             const isHighlighted = index === highlightedIndex
             const highlightStyle = getHighlightStyle(isHighlighted)
             const hasCustomHighlight = isHighlighted && branding?.primaryColor
+            const productName = getProductName(product)
+            const price = formatPrice(product)
 
             return (
               <div
                 key={product.id}
+                id={`search-result-${product.id}`}
                 onClick={() => handleProductSelect(product)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault()
+                    handleProductSelect(product)
+                  }
+                }}
                 className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors ${
                   !hasCustomHighlight && isHighlighted ? "bg-muted" : ""
                 } ${!hasCustomHighlight && !isHighlighted ? "hover:bg-muted" : ""}`}
                 style={highlightStyle}
+                role="option"
+                aria-selected={isHighlighted}
+                aria-label={`${productName}, ${price}`}
+                tabIndex={isHighlighted ? 0 : -1}
               >
                 {product.imageUrl ? (
                   <img
                     src={product.imageUrl}
-                    alt={getProductName(product)}
+                    alt=""
                     className="w-10 h-10 rounded object-cover"
+                    aria-hidden="true"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
+                  <div className="w-10 h-10 rounded bg-muted flex items-center justify-center" aria-hidden="true">
                     <span className="text-xs text-muted-foreground">N/A</span>
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{getProductName(product)}</p>
+                  <p className="text-sm font-medium truncate">{productName}</p>
                   <p
                     className={hasCustomHighlight ? "text-xs opacity-80" : "text-xs text-muted-foreground"}
                   >
-                    {formatPrice(product)}
+                    {price}
                   </p>
                 </div>
               </div>

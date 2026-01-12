@@ -173,6 +173,14 @@ export function ShopApp() {
       className="min-h-screen bg-background max-w-[1280px] mx-auto"
       style={themeStyles as React.CSSProperties}
     >
+      {/* Skip to main content link - WCAG 2.4.1 */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+      >
+        {language === "EN" ? "Skip to main content" : "រំលងទៅខ្លឹមសារសំខាន់"}
+      </a>
+
       {/* Announcement Banner */}
       {config?.announcement && (
         <AnnouncementBanner
@@ -203,7 +211,7 @@ export function ShopApp() {
       />
 
       {currentPage === "shop" ? (
-        <main className="pt-20">
+        <main id="main-content" className="pt-20" role="main" aria-label={language === "EN" ? "Shop products" : "ផលិតផលហាង"}>
           {/* Render customized sections */}
           {sections.length > 0 ? (
             sections.map((section) => {

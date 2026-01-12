@@ -1098,8 +1098,8 @@
         "Build passes: bun run build"
       ],
       "priority": 70,
-      "passes": false,
-      "notes": "Legal requirement in many jurisdictions, good for SEO"
+      "passes": true,
+      "notes": "Implemented skip-to-content link, ARIA labels/roles on header/search/products, keyboard navigation with focus-visible styles, screen reader friendly product descriptions with price/stock info, reduced motion and high contrast media queries, bilingual accessibility translations (EN/KH)"
     },
     {
       "id": "US-071",
