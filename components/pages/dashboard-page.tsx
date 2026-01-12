@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useDashboardStats } from "@/lib/api-hooks"
 import { TrendingUp, TrendingDown, Package, DollarSign, Clock, AlertTriangle } from "lucide-react"
+import { PopularSearchesWidget } from "@/components/popular-searches-widget"
 
 export function DashboardPage() {
   const { data, isLoading, error } = useDashboardStats()
@@ -182,9 +183,16 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      {/* Recent Orders Table */}
-      <Card className="p-6">
-        <h2 className="text-lg font-bold text-foreground mb-4">Recent Orders</h2>
+      {/* Search Analytics & Recent Orders */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Popular Searches Widget */}
+        <div className="lg:col-span-1">
+          <PopularSearchesWidget limit={10} />
+        </div>
+
+        {/* Recent Orders Table */}
+        <Card className="p-6 lg:col-span-2">
+          <h2 className="text-lg font-bold text-foreground mb-4">Recent Orders</h2>
         <div className="overflow-x-auto">
           {recentOrders.length > 0 ? (
             <Table>
@@ -221,7 +229,8 @@ export function DashboardPage() {
             </div>
           )}
         </div>
-      </Card>
+        </Card>
+      </div>
     </div>
   )
 }

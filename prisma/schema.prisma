@@ -391,6 +391,24 @@ model ShopCustomization {
 }
 
 // ============================================
+// SEARCH ANALYTICS
+// ============================================
+
+model SearchLog {
+  id           String   @id @default(cuid())
+  query        String
+  resultsCount Int      @map("results_count")
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent") @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([query])
+  @@map("search_logs")
+  @@schema("apolo")
+}
+
+// ============================================
 // DEVELOPER BACKLOG (Dev Only)
 // ============================================
 

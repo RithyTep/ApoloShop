@@ -1140,3 +1140,59 @@ export function useDeleteBacklogItem() {
     },
   });
 }
+
+// ============================================
+// SEARCH ANALYTICS
+// ============================================
+
+export interface SearchAnalyticsSummary {
+  totalSearches: number;
+  searchesWithResults: number;
+  zeroResultSearches: number;
+  successRate: number;
+  dateRange: {
+    start: string;
+    end: string;
+  };
+}
+
+export interface PopularSearch {
+  query: string;
+  count: number;
+  avgResults: number;
+}
+
+export interface RecentSearch {
+  id: string;
+  query: string;
+  resultsCount: number;
+  createdAt: string;
+}
+
+export interface DailySearchStat {
+  date: string;
+  searches: number;
+  avgResults: number;
+}
+
+export interface SearchAnalyticsData {
+  summary: SearchAnalyticsSummary;
+  popularSearches: PopularSearch[];
+  zeroResultQueries: { query: string; count: number }[];
+  recentSearches: RecentSearch[];
+  dailyStats: DailySearchStat[];
+}
+
+export function useSearchAnalytics(options?: { startDate?: string; endDate?: string; limit?: number }) {
+  const params = new URLSearchParams();
+  if (options?.startDate) params.set("startDate", options.startDate);
+  if (options?.endDate) params.set("endDate", options.endDate);
+  if (options?.limit) params.set("limit", options.limit.toString());
+
+  return useQuery({
+    queryKey: ["search-analytics", options],
+    queryFn: () =>
+      fetchAPI<SearchAnalyticsData>(`/api/analytics/search?${params.toString()}`),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}

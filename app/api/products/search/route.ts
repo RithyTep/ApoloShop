@@ -188,11 +188,28 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "desc" },
     })
 
+    const resultsCount = products.length
+
+    // Log search query to database for analytics (non-blocking)
+    const userAgent = request.headers.get("user-agent") || undefined
+    prisma.searchLog
+      .create({
+        data: {
+          query,
+          resultsCount,
+          ipAddress: clientIp !== "unknown" ? clientIp : undefined,
+          userAgent,
+        },
+      })
+      .catch((err) => {
+        console.error("Failed to log search query:", err)
+      })
+
     return NextResponse.json(
       {
         products,
         query,
-        total: products.length,
+        total: resultsCount,
       },
       { headers: rateLimitHeaders }
     )
