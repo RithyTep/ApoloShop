@@ -1011,3 +1011,172 @@ export async function updateUserAllowedIPs(
     return false
   }
 }
+
+// ============================================
+// GLOBAL RATE LIMITING MIDDLEWARE
+// ============================================
+
+import {
+  checkRateLimit as checkGlobalRateLimit,
+  extractClientIP,
+  getUserTypeFromRole,
+  RateLimitResult,
+  RateLimitConfig,
+  RATE_LIMITS,
+  ENDPOINT_RATE_LIMITS,
+} from "./rate-limiter"
+
+/**
+ * Rate limit error code
+ */
+export const RATE_LIMIT_ERROR_CODE = "RATE_LIMITED" as const
+
+/**
+ * Higher-order function to add rate limiting to API routes
+ * Automatically detects user type and applies appropriate limits
+ *
+ * Usage:
+ * - For anonymous endpoints: withRateLimit(handler)
+ * - For auth endpoints: withAuth(withRateLimit(handler))
+ */
+export function withRateLimit(
+  handler: (request: NextRequest) => Promise<NextResponse>,
+  customConfig?: Partial<RateLimitConfig>
+) {
+  return async (request: NextRequest) => {
+    const clientIP = extractClientIP(request.headers)
+    const endpoint = request.nextUrl.pathname
+
+    // Determine user type from request
+    // Check if user is attached (from withAuth middleware)
+    const authenticatedRequest = request as AuthenticatedRequest
+    const user = authenticatedRequest.user
+
+    // Get appropriate rate limit based on user type
+    const userType = user ? getUserTypeFromRole(user.role) : "anonymous"
+    const identifier = user ? user.id : clientIP
+
+    // Check rate limit
+    const result = await checkGlobalRateLimit(
+      identifier,
+      userType,
+      endpoint,
+      customConfig
+    )
+
+    // If rate limit exceeded, return 429
+    if (!result.allowed) {
+      return createRateLimitResponse(result, endpoint)
+    }
+
+    // Call handler and add rate limit headers to response
+    const response = await handler(request)
+    addRateLimitHeaders(response, result)
+
+    return response
+  }
+}
+
+/**
+ * Rate limiting middleware specifically for authenticated routes
+ * Use after withAuth to get user-specific rate limits
+ */
+export function withAuthAndRateLimit(
+  handler: (request: AuthenticatedRequest) => Promise<NextResponse>,
+  customConfig?: Partial<RateLimitConfig>
+) {
+  return withAuth(
+    withRateLimit(
+      handler as (request: NextRequest) => Promise<NextResponse>,
+      customConfig
+    ) as (request: AuthenticatedRequest) => Promise<NextResponse>
+  )
+}
+
+/**
+ * Rate limiting middleware with CSRF protection
+ * For public endpoints that modify state
+ */
+export function withRateLimitAndCSRF(
+  handler: (request: NextRequest) => Promise<NextResponse>,
+  customConfig?: Partial<RateLimitConfig>
+) {
+  return withRateLimit(withCSRF(handler), customConfig)
+}
+
+/**
+ * Full protection: Auth + Rate Limit + CSRF
+ * For protected state-changing endpoints
+ */
+export function withAuthRateLimitAndCSRF(
+  handler: (request: AuthenticatedRequest) => Promise<NextResponse>,
+  customConfig?: Partial<RateLimitConfig>
+) {
+  return withAuth(
+    withRateLimit(
+      withCSRF(handler as (request: NextRequest) => Promise<NextResponse>),
+      customConfig
+    ) as (request: AuthenticatedRequest) => Promise<NextResponse>
+  )
+}
+
+/**
+ * Create a 429 rate limit exceeded response
+ */
+function createRateLimitResponse(
+  result: RateLimitResult,
+  endpoint: string
+): NextResponse {
+  const retryAfter = result.retryAfter || 60
+
+  const response = NextResponse.json(
+    {
+      error: "Too many requests. Please try again later.",
+      code: RATE_LIMIT_ERROR_CODE,
+      retryAfter,
+      limit: result.limit,
+      endpoint,
+    },
+    { status: 429 }
+  )
+
+  // Add standard rate limit headers
+  response.headers.set("Retry-After", retryAfter.toString())
+  addRateLimitHeaders(response, result)
+
+  return response
+}
+
+/**
+ * Add rate limit headers to a response
+ */
+function addRateLimitHeaders(response: NextResponse, result: RateLimitResult): void {
+  response.headers.set("X-RateLimit-Limit", result.limit.toString())
+  response.headers.set("X-RateLimit-Remaining", result.remaining.toString())
+  response.headers.set(
+    "X-RateLimit-Reset",
+    Math.ceil(result.resetAt / 1000).toString()
+  )
+}
+
+/**
+ * Get rate limit configuration for an endpoint
+ * Useful for displaying limits in API documentation
+ */
+export function getEndpointRateLimit(endpoint: string): RateLimitConfig {
+  return ENDPOINT_RATE_LIMITS[endpoint] || RATE_LIMITS.anonymous
+}
+
+/**
+ * Get all endpoint-specific rate limits
+ */
+export function getAllEndpointRateLimits(): Record<string, RateLimitConfig> {
+  return { ...ENDPOINT_RATE_LIMITS }
+}
+
+/**
+ * Get rate limits by user type
+ */
+export function getRateLimitsByUserType(): typeof RATE_LIMITS {
+  return { ...RATE_LIMITS }
+}
