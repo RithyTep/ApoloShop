@@ -2735,3 +2735,104 @@ export function useDeleteApiKey() {
     },
   });
 }
+
+// ============================================
+// OAUTH / SOCIAL ACCOUNTS
+// ============================================
+
+export interface SocialAccount {
+  id: string;
+  provider: "google" | "facebook";
+  providerUserId: string;
+  email: string | null;
+  name: string | null;
+  avatarUrl: string | null;
+  connectedAt: string;
+}
+
+export interface OAuthProvider {
+  provider: "google" | "facebook";
+  enabled: boolean;
+  displayName: string;
+  icon: string;
+}
+
+export interface SocialAccountsResponse {
+  accounts: SocialAccount[];
+  availableProviders: string[];
+}
+
+export interface OAuthProvidersResponse {
+  providers: OAuthProvider[];
+  allProviders: OAuthProvider[];
+}
+
+/**
+ * Hook to get available OAuth providers
+ */
+export function useOAuthProviders() {
+  return useQuery({
+    queryKey: ["oauth-providers"],
+    queryFn: () => fetchAPI<OAuthProvidersResponse>("/api/auth/oauth"),
+  });
+}
+
+/**
+ * Hook to get linked social accounts for current user
+ */
+export function useSocialAccounts(customerId?: string) {
+  return useQuery({
+    queryKey: ["social-accounts", customerId],
+    queryFn: () =>
+      fetchAPI<SocialAccountsResponse>(
+        `/api/auth/social-accounts${customerId ? `?customerId=${customerId}` : ""}`
+      ),
+  });
+}
+
+/**
+ * Hook to unlink a social account
+ */
+export function useUnlinkSocialAccount() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      provider,
+      customerId,
+    }: {
+      provider: "google" | "facebook";
+      customerId?: string;
+    }) =>
+      fetchAPI<{ success: boolean; message: string }>("/api/auth/social-accounts", {
+        method: "DELETE",
+        body: JSON.stringify({ provider, customerId }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["social-accounts"] });
+    },
+  });
+}
+
+/**
+ * Helper to initiate OAuth login
+ */
+export function initiateOAuthLogin(
+  provider: "google" | "facebook",
+  options?: {
+    returnUrl?: string;
+    linkUserId?: string;
+    linkCustomerId?: string;
+  }
+): void {
+  const params = new URLSearchParams();
+  if (options?.returnUrl) params.set("returnUrl", options.returnUrl);
+  if (options?.linkUserId) params.set("linkUserId", options.linkUserId);
+  if (options?.linkCustomerId) params.set("linkCustomerId", options.linkCustomerId);
+
+  const queryString = params.toString();
+  const url = `/api/auth/oauth/${provider}${queryString ? `?${queryString}` : ""}`;
+
+  // Navigate to OAuth initiation URL (will redirect to provider)
+  window.location.href = url;
+}

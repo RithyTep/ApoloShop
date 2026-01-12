@@ -36,6 +36,7 @@ model User {
 
   sessions         Session[]
   passwordHistory  PasswordHistory[]
+  socialAccounts   SocialAccount[]
 
   @@map("users")
   @@schema("apolo")
@@ -171,6 +172,46 @@ model AccountLockout {
 }
 
 // ============================================
+// SOCIAL ACCOUNTS (OAuth)
+// ============================================
+
+enum OAuthProvider {
+  GOOGLE
+  FACEBOOK
+
+  @@schema("apolo")
+}
+
+model SocialAccount {
+  id              String        @id @default(cuid())
+  userId          String?       @map("user_id") // Linked admin user (optional)
+  user            User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customerId      String?       @map("customer_id") // Linked customer (optional)
+  customer        Customer?     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  provider        OAuthProvider
+  providerUserId  String        @map("provider_user_id") // ID from OAuth provider
+  email           String?       // Email from OAuth provider
+  name            String?       // Display name from OAuth provider
+  avatarUrl       String?       @map("avatar_url")
+  // Token storage (encrypted)
+  accessToken     String?       @map("access_token") @db.Text
+  refreshToken    String?       @map("refresh_token") @db.Text
+  tokenExpiresAt  DateTime?     @map("token_expires_at")
+  // Metadata
+  rawProfile      Json?         @map("raw_profile") // Full profile data from provider
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  @@unique([provider, providerUserId]) // One account per provider per user
+  @@index([userId])
+  @@index([customerId])
+  @@index([provider])
+  @@index([email])
+  @@map("social_accounts")
+  @@schema("apolo")
+}
+
+// ============================================
 // PRODUCT CATALOG
 // ============================================
 
@@ -254,6 +295,7 @@ model Customer {
   wishlists               Wishlist[]
   reviews                 Review[]
   notificationPreferences NotificationPreference[]
+  socialAccounts          SocialAccount[]
 
   @@index([clientId])
   @@index([phone])
