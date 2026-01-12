@@ -8,6 +8,7 @@ import {
 } from "@/lib/jwt"
 import { decryptSecret, verifyTOTP, verifyRecoveryCode } from "@/lib/totp"
 import { createSession, extractIpAddress } from "@/lib/session-service"
+import { processLoginActivity } from "@/lib/login-activity"
 
 const verifySchema = z.object({
   // Pending auth token from initial login (before 2FA)
@@ -130,11 +131,25 @@ export async function POST(request: NextRequest) {
     const ipAddress = extractIpAddress(request.headers)
     const userAgent = request.headers.get("user-agent") || undefined
 
-    await createSession({
+    const session = await createSession({
       userId: user.id,
       token: legacyToken,
       ipAddress,
       userAgent,
+    })
+
+    // Track login activity and send notification if new device/location
+    // Fire and forget - don't block the response
+    processLoginActivity({
+      userId: user.id,
+      sessionId: session.id,
+      ipAddress: ipAddress || "unknown",
+      userAgent,
+      userName: user.name,
+      userEmail: user.email,
+      loginNotificationsEnabled: user.loginNotificationsEnabled ?? true,
+    }).catch((err) => {
+      console.error("[2FA Verify] Failed to process login activity:", err)
     })
 
     // Build response

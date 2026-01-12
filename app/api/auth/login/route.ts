@@ -21,7 +21,9 @@ import {
 import {
   createSession,
   parseUserAgent,
+  extractIpAddress as extractSessionIpAddress,
 } from "@/lib/session-service"
+import { processLoginActivity } from "@/lib/login-activity"
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -147,6 +149,20 @@ export async function POST(request: NextRequest) {
 
     // Record successful login and clear any lockout
     await handleSuccessfulLogin(email, user.id, ipAddress, userAgent)
+
+    // Track login activity and send notification if new device/location
+    // Fire and forget - don't block the login response
+    processLoginActivity({
+      userId: user.id,
+      sessionId: session.id,
+      ipAddress: ipAddress || "unknown",
+      userAgent,
+      userName: user.name,
+      userEmail: user.email,
+      loginNotificationsEnabled: user.loginNotificationsEnabled ?? true,
+    }).catch((err) => {
+      console.error("[Login] Failed to process login activity:", err)
+    })
 
     // Check password expiry warning
     const expiryWarning = shouldShowExpiryWarning(user.passwordChangedAt)

@@ -34,6 +34,8 @@ model User {
   recoveryCodes    Json?     @map("recovery_codes") // Array of hashed recovery codes
   // Password security fields
   passwordChangedAt DateTime? @map("password_changed_at") // For password expiry reminders
+  // Login notification preferences
+  loginNotificationsEnabled Boolean @default(true) @map("login_notifications_enabled")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
@@ -905,6 +907,46 @@ model ApiKeyUsageLog {
   @@index([createdAt])
   @@index([apiKeyId, createdAt])
   @@map("api_key_usage_logs")
+  @@schema("apolo")
+}
+
+// ============================================
+// LOGIN ACTIVITY & SECURITY
+// ============================================
+
+// Login activity for tracking and notifying users of new logins
+model LoginActivity {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  sessionId    String?  @map("session_id") // Reference to the session created
+  // Device information
+  deviceName   String?  @map("device_name") // e.g., "Chrome on Windows"
+  deviceType   String?  @map("device_type") // "desktop", "mobile", "tablet"
+  browser      String?  // Browser name
+  os           String?  // Operating system
+  // Location information
+  ipAddress    String   @map("ip_address")
+  country      String?  // Country from IP geolocation
+  city         String?  // City from IP geolocation
+  region       String?  // Region/state from IP geolocation
+  // Tracking
+  isNewDevice  Boolean  @default(false) @map("is_new_device")
+  isNewLocation Boolean @default(false) @map("is_new_location")
+  notificationSent Boolean @default(false) @map("notification_sent")
+  // Security review
+  markedSuspicious Boolean @default(false) @map("marked_suspicious")
+  suspiciousAt DateTime? @map("suspicious_at")
+  reviewedAt   DateTime? @map("reviewed_at")
+  reviewNotes  String?   @map("review_notes") @db.Text
+  // Timestamps
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([ipAddress])
+  @@index([deviceName])
+  @@index([createdAt])
+  @@index([markedSuspicious])
+  @@map("login_activities")
   @@schema("apolo")
 }
 
