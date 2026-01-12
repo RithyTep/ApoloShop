@@ -464,3 +464,30 @@ Project: ApoloShop - Product Search Feature
   - Wishlist API returns filtered products (only isActive=true)
   - guestId stored in separate localStorage key for consistent identification
 ---
+
+## 2026-01-12 - US-021
+- **Implemented**: Product quick view modal
+- **Files changed**:
+  - `components/product-quick-view.tsx` (new file - modal and button components)
+  - `components/product-grid.tsx` (modified - integrated quick view)
+  - `components/shop/products-section.tsx` (modified - integrated quick view)
+  - `lib/i18n.ts` (modified - added quickView translations EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **ProductQuickView modal**: Shows product image, name, price, description, add to cart button
+  - **Image gallery**: Main image with thumbnail strip, left/right navigation arrows
+  - **QuickViewButton component**: Eye icon button that appears on product card hover
+  - **Quantity selector**: Respects stock limits, increment/decrement buttons
+  - **Stock status display**: Shows "In Stock" badge with quantity available
+  - **Out of stock overlay**: Dimmed overlay with badge when product is unavailable
+  - **Category badge**: Shows product category in modal
+  - **Bilingual support**: All UI text in English and Khmer
+  - **Wishlist integration**: Heart button in modal header
+- **Learnings for future iterations**:
+  - Product type already has `images?: string[]` array for multiple product images
+  - Existing Dialog component from Shadcn works well as base for modals
+  - Use `pointer-events-none` on overlay container and `pointer-events-auto` on button for click-through behavior
+  - Image gallery pattern: combine imageUrl (primary) with images array (additional)
+  - Replaced old inline Dialog in product-grid.tsx with reusable ProductQuickView component
+  - QuickViewButton uses `e.preventDefault()` and `e.stopPropagation()` to prevent card click propagation
+---
