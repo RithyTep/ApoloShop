@@ -25,6 +25,10 @@ model User {
   roleId       String    @map("role_id")
   role         Role      @relation(fields: [roleId], references: [id])
   isActive     Boolean   @default(true) @map("is_active")
+  // Two-Factor Authentication (2FA) fields
+  twoFactorEnabled Boolean   @default(false) @map("two_factor_enabled")
+  twoFactorSecret  String?   @map("two_factor_secret") // Encrypted TOTP secret
+  recoveryCodes    Json?     @map("recovery_codes") // Array of hashed recovery codes
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 

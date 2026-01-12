@@ -10,7 +10,11 @@ export const ACCESS_TOKEN_EXPIRY_MS = 15 * 60 * 1000 // 15 minutes in ms
 export const REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000 // 7 days in ms
 
 // Token types
-export type TokenType = "access" | "refresh"
+export type TokenType = "access" | "refresh" | "pending_2fa"
+
+// Pending 2FA token expiry (5 minutes - user has this long to complete 2FA)
+export const PENDING_2FA_TOKEN_EXPIRY = "5m"
+export const PENDING_2FA_TOKEN_EXPIRY_MS = 5 * 60 * 1000
 
 // Base payload interface
 export interface TokenPayload {
@@ -33,8 +37,15 @@ export interface RefreshTokenPayload {
   tokenVersion?: number // For token revocation support
 }
 
+// Pending 2FA token payload (issued after password verification, before 2FA)
+export interface Pending2FATokenPayload {
+  userId: string
+  email: string
+  type: "pending_2fa"
+}
+
 // Combined decoded token type
-export type DecodedToken = (AccessTokenPayload | RefreshTokenPayload) & JwtPayload
+export type DecodedToken = (AccessTokenPayload | RefreshTokenPayload | Pending2FATokenPayload) & JwtPayload
 
 // Token pair for login response
 export interface TokenPair {
@@ -75,6 +86,32 @@ export function signRefreshToken(userId: string, tokenVersion?: number): string 
     tokenVersion,
   }
   return jwt.sign(tokenPayload, JWT_REFRESH_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRY })
+}
+
+/**
+ * Sign a pending 2FA token (issued after password verification)
+ * This token is short-lived and can only be used to complete 2FA verification
+ */
+export function signPendingToken(userId: string, email: string): string {
+  const tokenPayload: Pending2FATokenPayload = {
+    userId,
+    email,
+    type: "pending_2fa",
+  }
+  return jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: PENDING_2FA_TOKEN_EXPIRY })
+}
+
+/**
+ * Verify a pending 2FA token
+ * @throws TokenExpiredError if token is expired
+ * @throws JsonWebTokenError if token is invalid
+ */
+export function verifyPendingToken(token: string): Pending2FATokenPayload & JwtPayload {
+  const decoded = jwt.verify(token, JWT_SECRET) as Pending2FATokenPayload & JwtPayload
+  if (decoded.type !== "pending_2fa") {
+    throw new Error("Invalid token type: expected pending_2fa token")
+  }
+  return decoded
 }
 
 /**

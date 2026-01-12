@@ -5,8 +5,9 @@ import { prisma } from "@/lib/prisma"
 import {
   generateTokenPair,
   signToken,
-  REFRESH_TOKEN_EXPIRY_MS,
+  signPendingToken,
   ACCESS_TOKEN_EXPIRY_MS,
+  PENDING_2FA_TOKEN_EXPIRY_MS,
 } from "@/lib/jwt"
 
 const loginSchema = z.object({
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     const { email, password } = result.data
 
-    // Find user
+    // Find user with 2FA fields
     const user = await prisma.user.findUnique({
       where: { email },
       include: { role: true },
@@ -45,7 +46,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
-    // Parse permissions from role
+    // Check if 2FA is enabled
+    if (user.twoFactorEnabled && user.twoFactorSecret) {
+      // Generate a pending token for 2FA verification
+      const pendingToken = signPendingToken(user.id, user.email)
+
+      return NextResponse.json({
+        requires2FA: true,
+        pendingToken,
+        expiresIn: Math.floor(PENDING_2FA_TOKEN_EXPIRY_MS / 1000), // seconds
+        message: "Two-factor authentication required. Enter the code from your authenticator app.",
+      })
+    }
+
+    // No 2FA - proceed with normal login
     const permissions = (user.role.permissions as Record<string, string[]>) || {}
 
     // Generate JWT token pair (access + refresh)
@@ -58,7 +72,6 @@ export async function POST(request: NextRequest) {
     })
 
     // Store refresh token in session for tracking/revocation
-    // Also store access token for legacy compatibility with session-based validation
     const legacyToken = signToken({
       userId: user.id,
       roleId: user.roleId,
@@ -81,12 +94,13 @@ export async function POST(request: NextRequest) {
         name: user.name,
         role: user.role.name,
         permissions,
+        twoFactorEnabled: false,
       },
       accessToken: tokenPair.accessToken,
       expiresIn: Math.floor(ACCESS_TOKEN_EXPIRY_MS / 1000), // seconds
     })
 
-    // Set refresh token as httpOnly cookie (secure, cannot be accessed by JS)
+    // Set refresh token as httpOnly cookie
     response.cookies.set("refresh-token", tokenPair.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

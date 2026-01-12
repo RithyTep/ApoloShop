@@ -824,3 +824,67 @@ Project: ApoloShop - Product Search Feature
   - SameSite: "strict" for refresh token cookie, "lax" for legacy auth-token
   - Keep legacy auth flow for backwards compatibility with existing sessions
 ---
+
+## 2026-01-12 - US-032
+- **Implemented**: Role-based access control (RBAC) with granular permissions
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added Permission, RolePermission models, updated Role model)
+  - `lib/rbac.ts` (new file - RBAC configuration and helpers)
+  - `lib/auth-middleware.ts` (modified - added RBAC middleware functions)
+  - `app/api/permissions/route.ts` (new file - GET/POST for permissions)
+  - `app/api/roles/route.ts` (modified - enhanced with permission management)
+  - `lib/api-hooks.ts` (modified - added Permission types and hooks)
+  - `components/pages/role-permissions-page.tsx` (new file - admin UI for role permissions)
+  - `components/sidebar.tsx` (modified - added role-permissions nav item)
+  - `components/admin-dashboard.tsx` (modified - integrated RolePermissionsPage)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Permission model**: id, name (e.g., "products:read"), resource, action, displayName, description
+  - **RolePermission junction table**: roleId, permissionId with cascade delete
+  - **Role model enhancements**: displayName, description, isSystem, rolePermissions relation
+  - **System roles**: super_admin (all permissions), admin (most permissions), manager (operational), staff (limited)
+  - **42 granular permissions** across 15 resources: products, orders, customers, inventory, promotions, content, users, roles, settings, reports, categories, payments, reviews, audit_logs, clients
+  - **Permission actions**: read, write, delete, export, manage
+  - **lib/rbac.ts exports**:
+    - SystemRoles, Resources, Actions constants
+    - permissionDefinitions with displayName and descriptions
+    - defaultRolePermissions for each system role
+    - checkPermission, checkAnyPermission, checkAllPermissions helpers
+    - convertLegacyPermissions/convertToLegacyFormat for backwards compatibility
+    - isSuperAdmin, isSystemRole, getRoleLevel, hasHigherOrEqualRole helpers
+  - **New middleware functions** in auth-middleware.ts:
+    - requireResourcePermission(resource, action) - checks specific permission
+    - requireAnyPermission([...permissions]) - checks any of multiple permissions
+    - requireAllPermissions([...permissions]) - checks all permissions
+    - requireRole(role) - checks role hierarchy
+    - requireSuperAdmin() - super admin only
+    - canAccess(user, resource, action) - inline permission check
+    - getUserPermissionsArray(user) - converts to array format
+  - **GET /api/permissions**: Lists all permissions with byResource grouping
+  - **POST /api/permissions**: Seeds permissions from definitions
+  - **Enhanced /api/roles**:
+    - ?includePermissions=true returns rolePermissions with permission details
+    - POST { seed: true } creates system roles with default permissions
+    - PUT supports permissionNames array for updating role permissions
+    - Protected against deleting/renaming system roles
+  - **RolePermissionsPage UI**:
+    - Role list with color-coded cards and system badge
+    - Permission matrix with collapsible resource sections
+    - Toggle all permissions per resource
+    - List view of enabled permissions
+    - "Seed System Roles" button for initial setup
+    - Reset to default permissions for system roles
+    - Create custom role dialog
+    - Unsaved changes warning
+  - **Super admin bypass**: All permission checks return true for super_admin role
+  - **Legacy format support**: Converts between object format ({"products": ["read"]}) and array format (["products:read"])
+- **Learnings for future iterations**:
+  - Junction table (RolePermission) enables many-to-many with full CRUD on the relationship
+  - Dual permission format support (legacy object + new array) ensures backwards compatibility
+  - Super admin bypass at middleware level simplifies permission logic
+  - System roles (isSystem: true) protected from deletion and renaming
+  - Permission seeding can be triggered via API for initial setup or after adding new permissions
+  - Role hierarchy (getRoleLevel) enables "can manage users of lower role" logic
+  - Permission matrix UI uses Set for efficient toggle operations
+  - Collapsible sections improve UX when many resources exist
+---

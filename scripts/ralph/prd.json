@@ -491,8 +491,8 @@
         "Build passes: bun run build"
       ],
       "priority": 32,
-      "passes": false,
-      "notes": "Fine-grained access control for enterprise clients"
+      "passes": true,
+      "notes": "Implemented Permission/RolePermission models in Prisma, lib/rbac.ts with 4 system roles and 42 granular permissions across 15 resources, requireResourcePermission/requireRole/requireSuperAdmin middleware, /api/permissions and enhanced /api/roles endpoints, RolePermissionsPage admin UI with permission matrix editor and role seeding"
     },
     {
       "id": "US-033",
