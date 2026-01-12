@@ -1196,3 +1196,43 @@ export function useSearchAnalytics(options?: { startDate?: string; endDate?: str
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
+
+// ============================================
+// COMPONENT REGISTRY
+// ============================================
+
+export interface ComponentStateConfig {
+  id: string;
+  enabled: boolean;
+  order?: number;
+  config?: Record<string, unknown>;
+}
+
+export interface ComponentRegistryConfigData {
+  components: Record<string, ComponentStateConfig>;
+  version: number;
+}
+
+export function useComponentRegistry() {
+  return useQuery({
+    queryKey: ["component-registry"],
+    queryFn: () =>
+      fetchAPI<{ config: ComponentRegistryConfigData }>("/api/settings?key=componentRegistry"),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useUpdateComponentRegistry() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (config: ComponentRegistryConfigData) =>
+      fetchAPI<{ success: boolean }>("/api/settings", {
+        method: "PUT",
+        body: JSON.stringify({ settings: { componentRegistry: config } }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["component-registry"] });
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+    },
+  });
+}

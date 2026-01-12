@@ -8,13 +8,19 @@ import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { useSettings, useUpdateSettings } from "@/lib/api-hooks"
+import { useSettings, useUpdateSettings, useComponentRegistry, useUpdateComponentRegistry, ComponentRegistryConfigData } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
+import { getAllComponents, getDefaultConfig, mergeWithDefaults, type ComponentRegistration } from "@/lib/component-registry"
 
 export function SettingsPage() {
   const { toast } = useToast()
   const { data, isLoading } = useSettings()
   const updateMutation = useUpdateSettings()
+  const { data: registryData } = useComponentRegistry()
+  const updateRegistryMutation = useUpdateComponentRegistry()
+
+  // Get all registered components for display
+  const registeredComponents = getAllComponents()
 
   const [shopInfo, setShopInfo] = useState({
     shopName: "",
@@ -31,6 +37,16 @@ export function SettingsPage() {
     enableKhr: true,
     enableUsd: true,
   })
+
+  // Component registry state
+  const [componentConfig, setComponentConfig] = useState<ComponentRegistryConfigData>(() => getDefaultConfig())
+
+  // Load component registry config when available
+  useEffect(() => {
+    if (registryData?.config) {
+      setComponentConfig(mergeWithDefaults(registryData.config))
+    }
+  }, [registryData])
 
   // Load settings when data is available
   useEffect(() => {
@@ -80,6 +96,29 @@ export function SettingsPage() {
         enableUsd: currencySettings.enableUsd,
       })
       toast({ title: "Currency settings saved successfully" })
+    } catch (error) {
+      toast({ title: "Error", description: (error as Error).message, variant: "destructive" })
+    }
+  }
+
+  const handleToggleComponent = (componentId: string, enabled: boolean) => {
+    setComponentConfig((prev) => ({
+      ...prev,
+      components: {
+        ...prev.components,
+        [componentId]: {
+          ...prev.components[componentId],
+          id: componentId,
+          enabled,
+        },
+      },
+    }))
+  }
+
+  const handleSaveComponents = async () => {
+    try {
+      await updateRegistryMutation.mutateAsync(componentConfig)
+      toast({ title: "Component settings saved successfully" })
     } catch (error) {
       toast({ title: "Error", description: (error as Error).message, variant: "destructive" })
     }
@@ -237,6 +276,57 @@ export function SettingsPage() {
             {updateMutation.isPending ? "Saving..." : "Save Changes"}
           </Button>
         </div>
+      </Card>
+
+      {/* Component Settings */}
+      <Card className="p-6">
+        <h2 className="text-lg font-bold text-foreground mb-4">Component Settings</h2>
+        <p className="text-muted-foreground text-sm mb-4">
+          Enable or disable shop components. Changes will apply to the storefront.
+        </p>
+        {registeredComponents.length > 0 ? (
+          <div className="space-y-4">
+            <div className="space-y-3">
+              {registeredComponents.map((component) => {
+                const state = componentConfig.components[component.id]
+                const isEnabled = state?.enabled ?? component.defaultEnabled
+                return (
+                  <div
+                    key={component.id}
+                    className="flex items-center justify-between p-3 rounded-lg border border-border"
+                  >
+                    <div className="flex-1">
+                      <div className="font-medium text-foreground">{component.name}</div>
+                      {component.description && (
+                        <div className="text-sm text-muted-foreground">{component.description}</div>
+                      )}
+                      {component.category && (
+                        <span className="inline-block mt-1 px-2 py-0.5 text-xs rounded-full bg-muted text-muted-foreground">
+                          {component.category}
+                        </span>
+                      )}
+                    </div>
+                    <Switch
+                      checked={isEnabled}
+                      onCheckedChange={(checked) => handleToggleComponent(component.id, checked)}
+                    />
+                  </div>
+                )
+              })}
+            </div>
+            <Button
+              onClick={handleSaveComponents}
+              disabled={updateRegistryMutation.isPending}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {updateRegistryMutation.isPending ? "Saving..." : "Save Component Settings"}
+            </Button>
+          </div>
+        ) : (
+          <p className="text-muted-foreground text-sm">
+            No components have been registered yet. Components will appear here when they are added to the registry.
+          </p>
+        )}
       </Card>
     </div>
   )

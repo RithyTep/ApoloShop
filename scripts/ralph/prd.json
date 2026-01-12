@@ -152,8 +152,8 @@
         "Build passes: bun run build"
       ],
       "priority": 10,
-      "passes": false,
-      "notes": "Foundation for dynamic modular components"
+      "passes": true,
+      "notes": "Implemented ComponentRegistry with types, register/get functions, lazy loading support via registerLazyComponent, and admin toggle in Settings page"
     },
     {
       "id": "US-011",
@@ -781,6 +781,485 @@
       "priority": 50,
       "passes": false,
       "notes": "Central security monitoring for admins"
+    },
+    {
+      "id": "US-051",
+      "title": "Multiple payment gateways",
+      "description": "Support various payment methods for Cambodian market",
+      "acceptanceCriteria": [
+        "Integrate ABA PayWay (most popular in Cambodia)",
+        "Integrate Wing mobile payment",
+        "Integrate KHQR standard (already partial)",
+        "Cash on Delivery option with order confirmation",
+        "Payment method selection at checkout",
+        "Build passes: bun run build"
+      ],
+      "priority": 51,
+      "passes": false,
+      "notes": "Critical for Cambodian market - ABA and Wing are dominant"
+    },
+    {
+      "id": "US-052",
+      "title": "Checkout optimization",
+      "description": "Streamlined checkout experience to reduce cart abandonment",
+      "acceptanceCriteria": [
+        "Guest checkout without account creation",
+        "One-page checkout with all steps visible",
+        "Save shipping address for returning customers",
+        "Order summary sidebar with easy quantity edit",
+        "Express checkout for saved payment methods",
+        "Build passes: bun run build"
+      ],
+      "priority": 52,
+      "passes": false,
+      "notes": "Reduce friction to increase conversion rate"
+    },
+    {
+      "id": "US-053",
+      "title": "Coupon and discount system",
+      "description": "Flexible promotional codes and discounts",
+      "acceptanceCriteria": [
+        "Add Coupon model: code, type (percent/fixed), value, minOrder, maxUses, expiresAt",
+        "Create CRUD /api/coupons endpoint",
+        "Apply coupon at checkout with validation",
+        "Support: percentage off, fixed amount, free shipping, BOGO",
+        "Usage tracking and limit enforcement",
+        "Build passes: bun run build"
+      ],
+      "priority": 53,
+      "passes": false,
+      "notes": "Essential marketing tool for promotions"
+    },
+    {
+      "id": "US-054",
+      "title": "Flash sales and time-limited deals",
+      "description": "Create urgency with time-limited promotions",
+      "acceptanceCriteria": [
+        "Add FlashSale model: productId, salePrice, startTime, endTime, quantity",
+        "Countdown timer on product cards and detail page",
+        "Homepage banner for active flash sales",
+        "Auto-revert price when sale ends",
+        "Admin calendar view for scheduling sales",
+        "Build passes: bun run build"
+      ],
+      "priority": 54,
+      "passes": false,
+      "notes": "Drives urgency and increases conversions"
+    },
+    {
+      "id": "US-055",
+      "title": "Customer loyalty program",
+      "description": "Points-based rewards system",
+      "acceptanceCriteria": [
+        "Add LoyaltyPoints model: customerId, points, transactions",
+        "Earn points on purchases (1 point per $1)",
+        "Redeem points for discounts at checkout",
+        "Loyalty tiers: Bronze, Silver, Gold with multipliers",
+        "Points expiry after 12 months",
+        "Build passes: bun run build"
+      ],
+      "priority": 55,
+      "passes": false,
+      "notes": "Increases customer retention and repeat purchases"
+    },
+    {
+      "id": "US-056",
+      "title": "Email marketing integration",
+      "description": "Automated email campaigns and newsletters",
+      "acceptanceCriteria": [
+        "Newsletter subscription form on shop",
+        "Abandoned cart recovery emails (1hr, 24hr, 72hr)",
+        "Order confirmation and shipping notification emails",
+        "Welcome email series for new customers",
+        "Integration with Mailchimp or SendGrid",
+        "Build passes: bun run build"
+      ],
+      "priority": 56,
+      "passes": false,
+      "notes": "Email remains highest ROI marketing channel"
+    },
+    {
+      "id": "US-057",
+      "title": "SEO optimization",
+      "description": "Search engine optimization for better visibility",
+      "acceptanceCriteria": [
+        "Dynamic meta tags (title, description, OG) per page",
+        "Generate sitemap.xml automatically",
+        "Structured data (JSON-LD) for products",
+        "Canonical URLs for duplicate content",
+        "SEO-friendly URL slugs for products/categories",
+        "Build passes: bun run build"
+      ],
+      "priority": 57,
+      "passes": false,
+      "notes": "Organic traffic is free and sustainable"
+    },
+    {
+      "id": "US-058",
+      "title": "Image optimization pipeline",
+      "description": "Automatic image optimization for performance",
+      "acceptanceCriteria": [
+        "Auto-resize uploaded images to multiple sizes",
+        "Convert to WebP format with fallback",
+        "Lazy loading with blur placeholder",
+        "CDN integration for faster delivery",
+        "Image compression without quality loss",
+        "Build passes: bun run build"
+      ],
+      "priority": 58,
+      "passes": false,
+      "notes": "Images are #1 cause of slow page loads"
+    },
+    {
+      "id": "US-059",
+      "title": "Performance monitoring",
+      "description": "Track and optimize application performance",
+      "acceptanceCriteria": [
+        "Integrate Core Web Vitals monitoring",
+        "API response time tracking",
+        "Database query performance logging",
+        "Error tracking with Sentry integration",
+        "Performance dashboard in admin",
+        "Build passes: bun run build"
+      ],
+      "priority": 59,
+      "passes": false,
+      "notes": "Can't improve what you don't measure"
+    },
+    {
+      "id": "US-060",
+      "title": "Live chat support",
+      "description": "Real-time customer support chat",
+      "acceptanceCriteria": [
+        "Chat widget on shop pages",
+        "Admin chat dashboard to respond",
+        "Canned responses for common questions",
+        "Chat history stored per customer",
+        "Offline message form when no agents online",
+        "Build passes: bun run build"
+      ],
+      "priority": 60,
+      "passes": false,
+      "notes": "Instant support increases trust and conversions"
+    },
+    {
+      "id": "US-061",
+      "title": "Help center and FAQ",
+      "description": "Self-service knowledge base",
+      "acceptanceCriteria": [
+        "Create HelpArticle model: title, content, category, views",
+        "Searchable FAQ page",
+        "Category-organized articles",
+        "Article view tracking for popular topics",
+        "Admin editor for creating/editing articles",
+        "Build passes: bun run build"
+      ],
+      "priority": 61,
+      "passes": false,
+      "notes": "Reduces support load with self-service"
+    },
+    {
+      "id": "US-062",
+      "title": "Shipping zone configuration",
+      "description": "Flexible shipping rates by location",
+      "acceptanceCriteria": [
+        "Add ShippingZone model: name, regions, rates",
+        "Flat rate, weight-based, and free shipping options",
+        "Free shipping threshold (e.g., free over $50)",
+        "Province/district level zones for Cambodia",
+        "Estimated delivery time per zone",
+        "Build passes: bun run build"
+      ],
+      "priority": 62,
+      "passes": false,
+      "notes": "Shipping costs affect cart abandonment"
+    },
+    {
+      "id": "US-063",
+      "title": "Order tracking system",
+      "description": "Real-time order and delivery tracking",
+      "acceptanceCriteria": [
+        "Order status timeline visualization",
+        "Tracking number input for shipped orders",
+        "Integration with local couriers (J&T, Ninja Van Cambodia)",
+        "Customer-facing tracking page",
+        "SMS/Telegram updates on status changes",
+        "Build passes: bun run build"
+      ],
+      "priority": 63,
+      "passes": false,
+      "notes": "Transparency reduces 'where is my order' inquiries"
+    },
+    {
+      "id": "US-064",
+      "title": "Product variants and options",
+      "description": "Support for size, color, and other product variations",
+      "acceptanceCriteria": [
+        "Add ProductVariant model: productId, sku, options, price, stock",
+        "Multiple variant types: size, color, material, etc.",
+        "Variant-specific pricing and inventory",
+        "Visual variant selector on product page",
+        "Variant images linked to options",
+        "Build passes: bun run build"
+      ],
+      "priority": 64,
+      "passes": false,
+      "notes": "Essential for clothing, accessories, and many product types"
+    },
+    {
+      "id": "US-065",
+      "title": "Barcode and SKU management",
+      "description": "Inventory identification system",
+      "acceptanceCriteria": [
+        "Auto-generate SKU based on category/product name",
+        "Support for barcode scanning (camera-based)",
+        "Barcode label printing for products",
+        "Scan-to-add for quick inventory updates",
+        "SKU search in admin product list",
+        "Build passes: bun run build"
+      ],
+      "priority": 65,
+      "passes": false,
+      "notes": "Streamlines inventory management for physical stores"
+    },
+    {
+      "id": "US-066",
+      "title": "Stock alerts and reorder points",
+      "description": "Automated inventory replenishment notifications",
+      "acceptanceCriteria": [
+        "Set reorder point per product",
+        "Email/Telegram alert when stock hits reorder point",
+        "Suggested reorder quantity based on sales velocity",
+        "Supplier contact info linked to products",
+        "Purchase order generation (basic)",
+        "Build passes: bun run build"
+      ],
+      "priority": 66,
+      "passes": false,
+      "notes": "Prevents stockouts and lost sales"
+    },
+    {
+      "id": "US-067",
+      "title": "Advanced analytics dashboard",
+      "description": "Business intelligence and insights",
+      "acceptanceCriteria": [
+        "Revenue trends with comparison periods",
+        "Conversion funnel visualization",
+        "Product performance matrix (revenue vs margin)",
+        "Customer cohort analysis",
+        "Export reports to PDF",
+        "Build passes: bun run build"
+      ],
+      "priority": 67,
+      "passes": false,
+      "notes": "Data-driven decision making for shop owners"
+    },
+    {
+      "id": "US-068",
+      "title": "Google Analytics 4 integration",
+      "description": "Track user behavior with GA4",
+      "acceptanceCriteria": [
+        "GA4 tracking code injection",
+        "E-commerce events: view_item, add_to_cart, purchase",
+        "Enhanced conversions for better attribution",
+        "Custom events for key actions",
+        "Admin setting to enable/disable and configure ID",
+        "Build passes: bun run build"
+      ],
+      "priority": 68,
+      "passes": false,
+      "notes": "Industry standard for web analytics"
+    },
+    {
+      "id": "US-069",
+      "title": "Facebook Pixel integration",
+      "description": "Track conversions for Facebook/Instagram ads",
+      "acceptanceCriteria": [
+        "Pixel code injection with admin configuration",
+        "Standard events: ViewContent, AddToCart, Purchase",
+        "Custom conversions setup",
+        "Conversions API for server-side tracking",
+        "Build passes: bun run build"
+      ],
+      "priority": 69,
+      "passes": false,
+      "notes": "Essential for Facebook/Instagram ad optimization"
+    },
+    {
+      "id": "US-070",
+      "title": "WCAG accessibility compliance",
+      "description": "Make shop accessible to all users",
+      "acceptanceCriteria": [
+        "Keyboard navigation for all interactive elements",
+        "ARIA labels and roles on components",
+        "Color contrast meeting WCAG AA standards",
+        "Screen reader friendly product descriptions",
+        "Skip to main content link",
+        "Build passes: bun run build"
+      ],
+      "priority": 70,
+      "passes": false,
+      "notes": "Legal requirement in many jurisdictions, good for SEO"
+    },
+    {
+      "id": "US-071",
+      "title": "Multi-language expansion",
+      "description": "Support for additional languages beyond EN/KH",
+      "acceptanceCriteria": [
+        "Add language switcher component",
+        "Support for Thai, Vietnamese, Chinese (regional markets)",
+        "Translation management in admin",
+        "Auto-detect browser language preference",
+        "RTL support for future Arabic/Hebrew",
+        "Build passes: bun run build"
+      ],
+      "priority": 71,
+      "passes": false,
+      "notes": "Expand to regional Southeast Asian markets"
+    },
+    {
+      "id": "US-072",
+      "title": "POS system integration",
+      "description": "Connect with point-of-sale for physical stores",
+      "acceptanceCriteria": [
+        "Sync inventory between online and POS",
+        "Import sales from POS into analytics",
+        "Unified customer database",
+        "Support for popular POS: Square, Loyverse",
+        "Real-time stock updates",
+        "Build passes: bun run build"
+      ],
+      "priority": 72,
+      "passes": false,
+      "notes": "Omnichannel retail support"
+    },
+    {
+      "id": "US-073",
+      "title": "Accounting software export",
+      "description": "Export financial data for accounting",
+      "acceptanceCriteria": [
+        "Export sales data to QuickBooks format",
+        "Export to Excel for local accountants",
+        "Daily/monthly revenue summaries",
+        "Tax report generation",
+        "Invoice PDF generation per order",
+        "Build passes: bun run build"
+      ],
+      "priority": 73,
+      "passes": false,
+      "notes": "Simplifies bookkeeping for shop owners"
+    },
+    {
+      "id": "US-074",
+      "title": "Webhook system for integrations",
+      "description": "Event-driven integrations with external services",
+      "acceptanceCriteria": [
+        "Add Webhook model: url, events, secret, active",
+        "Events: order.created, order.updated, product.updated, customer.created",
+        "HMAC signature for payload verification",
+        "Webhook delivery logs and retry mechanism",
+        "Test webhook functionality in admin",
+        "Build passes: bun run build"
+      ],
+      "priority": 74,
+      "passes": false,
+      "notes": "Enables custom integrations without code changes"
+    },
+    {
+      "id": "US-075",
+      "title": "Product bundling",
+      "description": "Sell products as bundles with discounts",
+      "acceptanceCriteria": [
+        "Add Bundle model: name, products[], discountType, discountValue",
+        "Bundle pricing (sum of products - discount)",
+        "Bundle inventory tracking",
+        "Display savings on bundle page",
+        "'Frequently bought together' suggestions",
+        "Build passes: bun run build"
+      ],
+      "priority": 75,
+      "passes": false,
+      "notes": "Increases average order value"
+    },
+    {
+      "id": "US-076",
+      "title": "Gift cards",
+      "description": "Digital gift card purchase and redemption",
+      "acceptanceCriteria": [
+        "Add GiftCard model: code, balance, purchaserId, recipientEmail",
+        "Purchase gift cards with custom amounts",
+        "Email delivery to recipient",
+        "Redeem at checkout like coupon",
+        "Check balance page",
+        "Build passes: bun run build"
+      ],
+      "priority": 76,
+      "passes": false,
+      "notes": "Popular gift option, brings new customers"
+    },
+    {
+      "id": "US-077",
+      "title": "Abandoned cart recovery",
+      "description": "Win back customers who left items in cart",
+      "acceptanceCriteria": [
+        "Track abandoned carts (cart created, no order)",
+        "Automated email sequence: 1hr, 24hr, 72hr",
+        "Include cart contents and direct link to checkout",
+        "Optional discount in recovery email",
+        "Admin dashboard showing recovery rate",
+        "Build passes: bun run build"
+      ],
+      "priority": 77,
+      "passes": false,
+      "notes": "Recovers 5-15% of abandoned carts typically"
+    },
+    {
+      "id": "US-078",
+      "title": "Customer segmentation",
+      "description": "Group customers for targeted marketing",
+      "acceptanceCriteria": [
+        "Auto-segments: new, active, at-risk, churned, VIP",
+        "Custom segments with filter rules",
+        "Segment-based promotions and emails",
+        "RFM (Recency, Frequency, Monetary) scoring",
+        "Segment size trends over time",
+        "Build passes: bun run build"
+      ],
+      "priority": 78,
+      "passes": false,
+      "notes": "Personalized marketing increases engagement"
+    },
+    {
+      "id": "US-079",
+      "title": "A/B testing framework",
+      "description": "Test variations to optimize conversions",
+      "acceptanceCriteria": [
+        "Create experiments with control and variants",
+        "Traffic splitting (50/50 default, configurable)",
+        "Track conversion metrics per variant",
+        "Statistical significance calculation",
+        "Auto-end experiment when significant",
+        "Build passes: bun run build"
+      ],
+      "priority": 79,
+      "passes": false,
+      "notes": "Data-driven optimization for higher conversions"
+    },
+    {
+      "id": "US-080",
+      "title": "Store locator for multi-location",
+      "description": "Help customers find physical store locations",
+      "acceptanceCriteria": [
+        "Add StoreLocation model: name, address, lat, lng, hours, phone",
+        "Map view with all locations",
+        "Nearest store based on customer location",
+        "Store hours and contact info display",
+        "Click-to-call and directions links",
+        "Build passes: bun run build"
+      ],
+      "priority": 80,
+      "passes": false,
+      "notes": "For businesses with physical retail presence"
     }
   ]
 }
