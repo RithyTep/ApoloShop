@@ -1,0 +1,30 @@
+# Ralph Progress Log
+Started: 2025-01-12
+Project: ApoloShop - Product Search Feature
+
+## Codebase Patterns
+- Components use kebab-case: `shop-header.tsx`
+- UI primitives from Shadcn: `components/ui/`
+- Translations in `lib/i18n.ts` with EN/KH keys
+- API routes: `app/api/*/route.ts` with Prisma
+- Use React Query hooks from `lib/api-hooks.ts`
+- Commit format: `[feat] description` or `[fix] description`
+
+---
+
+## 2026-01-12 - US-001
+- **Implemented**: Search API endpoint GET /api/products/search
+- **Files changed**:
+  - `app/api/products/search/route.ts` (new file)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - Accepts `?q=` query parameter for search term
+  - Searches in nameEn, nameKh, descriptionEn, descriptionKh fields
+  - Returns matching products with category info (id, nameEn, nameKh, slug)
+  - Handles empty query gracefully (returns empty array)
+  - Optional `?limit=` parameter (default 10)
+- **Learnings for future iterations**:
+  - Existing `/api/products` route has a `search` param but only searches name/sku, not description
+  - Prisma `contains` with `mode: "insensitive"` works for case-insensitive search
+  - Only return active products (`isActive: true`) for customer-facing search
+---

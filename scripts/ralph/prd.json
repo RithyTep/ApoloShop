@@ -1,0 +1,83 @@
+{
+  "project": "ApoloShop",
+  "branchName": "Feature/product-search",
+  "description": "Product Search - Add search functionality to the shop frontend",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Add search API endpoint",
+      "description": "Create API endpoint to search products by name (EN/KH) and description",
+      "acceptanceCriteria": [
+        "Create GET /api/products/search endpoint",
+        "Accept query parameter 'q' for search term",
+        "Search in nameEn, nameKh, descriptionEn, descriptionKh fields",
+        "Return matching products with category info",
+        "Handle empty query gracefully",
+        "Build passes: bun run build"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Implemented GET /api/products/search with ?q= parameter"
+    },
+    {
+      "id": "US-002",
+      "title": "Add search input component to shop header",
+      "description": "Add a search input field in the shop header for customers to search products",
+      "acceptanceCriteria": [
+        "Add search input to shop header (components/shop-header.tsx or similar)",
+        "Use Shadcn Input component with Search icon",
+        "Responsive: full width on mobile, fixed width on desktop",
+        "Placeholder text: 'Search products...' (EN) / 'ស្វែងរកផលិតផល...' (KH)",
+        "Build passes: bun run build"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Implement search results dropdown",
+      "description": "Show search results in a dropdown as user types",
+      "acceptanceCriteria": [
+        "Debounce search input (300ms delay)",
+        "Show dropdown with matching products below search input",
+        "Display product image, name, and price in results",
+        "Show 'No results found' message when no matches",
+        "Loading state while searching",
+        "Build passes: bun run build"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Add search result click navigation",
+      "description": "Navigate to product detail page when clicking a search result",
+      "acceptanceCriteria": [
+        "Click on search result navigates to /shop/product/[id]",
+        "Close dropdown after navigation",
+        "Clear search input after navigation",
+        "Keyboard navigation: Enter to select highlighted result",
+        "Build passes: bun run build"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Add search to translations",
+      "description": "Add bilingual support for search UI text",
+      "acceptanceCriteria": [
+        "Add search-related translations to lib/i18n.ts",
+        "Include: placeholder, noResults, searching, viewAll",
+        "Both English and Khmer translations",
+        "Build passes: bun run build"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}
