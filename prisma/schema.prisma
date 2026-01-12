@@ -121,6 +121,41 @@ model PasswordHistory {
   @@schema("apolo")
 }
 
+// Login attempts for brute force protection
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String   // Email attempted (may not correspond to existing user)
+  userId    String?  @map("user_id") // Optional: linked user if email matches
+  ipAddress String   @map("ip_address")
+  userAgent String?  @map("user_agent") @db.Text
+  success   Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([email])
+  @@index([ipAddress])
+  @@index([createdAt])
+  @@index([email, success, createdAt])
+  @@map("login_attempts")
+  @@schema("apolo")
+}
+
+// Account lockout tracking
+model AccountLockout {
+  id           String    @id @default(cuid())
+  userId       String    @unique @map("user_id")
+  lockedAt     DateTime  @default(now()) @map("locked_at")
+  lockedUntil  DateTime  @map("locked_until")
+  failedAttempts Int     @default(5) @map("failed_attempts")
+  ipAddress    String?   @map("ip_address") // IP that triggered the lockout
+  unlockedAt   DateTime? @map("unlocked_at") // Manual unlock timestamp
+  unlockedBy   String?   @map("unlocked_by") // Admin who unlocked
+
+  @@index([userId])
+  @@index([lockedUntil])
+  @@map("account_lockouts")
+  @@schema("apolo")
+}
+
 // ============================================
 // PRODUCT CATALOG
 // ============================================

@@ -10,6 +10,14 @@ import {
   PENDING_2FA_TOKEN_EXPIRY_MS,
 } from "@/lib/jwt"
 import { shouldShowExpiryWarning, PASSWORD_CONFIG } from "@/lib/password-security"
+import {
+  checkLockoutByEmail,
+  handleFailedLogin,
+  handleSuccessfulLogin,
+  sendLockoutNotification,
+  extractIpAddress,
+  LOCKOUT_CONFIG,
+} from "@/lib/account-lockout"
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -30,6 +38,21 @@ export async function POST(request: NextRequest) {
     }
 
     const { email, password } = result.data
+    const ipAddress = extractIpAddress(request.headers)
+    const userAgent = request.headers.get("user-agent") || undefined
+
+    // Check if account is locked before attempting authentication
+    const lockoutCheck = await checkLockoutByEmail(email)
+    if (lockoutCheck.isLocked) {
+      return NextResponse.json(
+        {
+          error: "Account is temporarily locked due to multiple failed login attempts",
+          code: "ACCOUNT_LOCKED",
+          lockedUntilMinutes: lockoutCheck.remainingMinutes,
+        },
+        { status: 423 } // 423 Locked status code
+      )
+    }
 
     // Find user with 2FA fields
     const user = await prisma.user.findUnique({
@@ -38,13 +61,44 @@ export async function POST(request: NextRequest) {
     })
 
     if (!user || !user.isActive) {
+      // Record failed attempt even for non-existent users (to prevent enumeration)
+      await handleFailedLogin(email, null, ipAddress, userAgent)
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
     // Verify password
     const isValid = await bcrypt.compare(password, user.passwordHash)
     if (!isValid) {
-      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
+      // Record failed attempt
+      const failedResult = await handleFailedLogin(email, user.id, ipAddress, userAgent)
+
+      // Check if account should be locked now
+      if (failedResult.shouldLock) {
+        // Send lockout notification email (fire and forget)
+        sendLockoutNotification(
+          email,
+          user.name,
+          ipAddress,
+          LOCKOUT_CONFIG.lockoutDurationMinutes
+        )
+
+        return NextResponse.json(
+          {
+            error: "Account has been locked due to multiple failed login attempts",
+            code: "ACCOUNT_LOCKED",
+            lockedUntilMinutes: LOCKOUT_CONFIG.lockoutDurationMinutes,
+          },
+          { status: 423 }
+        )
+      }
+
+      return NextResponse.json(
+        {
+          error: "Invalid credentials",
+          attemptsRemaining: failedResult.attemptsRemaining,
+        },
+        { status: 401 }
+      )
     }
 
     // Check if 2FA is enabled
@@ -86,6 +140,9 @@ export async function POST(request: NextRequest) {
         expiresAt: tokenPair.refreshTokenExpiresAt,
       },
     })
+
+    // Record successful login and clear any lockout
+    await handleSuccessfulLogin(email, user.id, ipAddress, userAgent)
 
     // Check password expiry warning
     const expiryWarning = shouldShowExpiryWarning(user.passwordChangedAt)
