@@ -71,6 +71,13 @@ export const translations = {
       clear: "Clear",
       noProducts: "No recently viewed products",
     },
+    // Product Recommendations
+    recommendations: {
+      title: "You May Also Like",
+      alsoBought: "Customers Also Bought",
+      similarProducts: "Similar Products",
+      noRecommendations: "No recommendations available",
+    },
   },
   kh: {
     // Order Status
@@ -142,6 +149,13 @@ export const translations = {
       title: "បានមើលថ្មីៗ",
       clear: "សម្អាត",
       noProducts: "មិនមានផលិតផលដែលបានមើលថ្មីៗ",
+    },
+    // Product Recommendations
+    recommendations: {
+      title: "អ្នកក៏អាចចូលចិត្ត",
+      alsoBought: "អតិថិជនក៏បានទិញ",
+      similarProducts: "ផលិតផលស្រដៀងគ្នា",
+      noRecommendations: "មិនមានការណែនាំ",
     },
   },
 }

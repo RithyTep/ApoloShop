@@ -13,6 +13,7 @@ import { ArrowLeft, Minus, Plus, ShoppingCart, Package } from "lucide-react"
 import { Product } from "@/lib/api-hooks"
 import { useRecentlyViewed } from "@/lib/use-recently-viewed"
 import { RecentlyViewed } from "@/components/recently-viewed"
+import { ProductRecommendations } from "@/components/product-recommendations"
 
 interface ProductDetailProps {
   language?: "EN" | "KH"
@@ -309,6 +310,14 @@ export default function ProductDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Product Recommendations */}
+        <ProductRecommendations
+          productId={productId}
+          language={language}
+          currency={currency}
+          maxDisplay={4}
+        />
 
         {/* Recently Viewed Products */}
         <RecentlyViewed

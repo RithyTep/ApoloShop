@@ -1589,3 +1589,52 @@ export function useUpdateClientTheme() {
     },
   });
 }
+
+// ============================================
+// PRODUCT RECOMMENDATIONS
+// ============================================
+
+export interface RecommendedProduct {
+  id: string;
+  nameEn: string;
+  nameKh: string;
+  priceUsd: number;
+  priceKhr: number;
+  imageUrl: string | null;
+  category: {
+    id: string;
+    nameEn: string;
+    nameKh: string;
+    slug: string;
+  } | null;
+  inventory: {
+    quantity: number;
+  } | null;
+  recommendationType: "also_bought" | "same_category";
+}
+
+export interface ProductRecommendationsResponse {
+  productId: string;
+  recommendations: RecommendedProduct[];
+  meta: {
+    total: number;
+    alsoBoughtCount: number;
+    sameCategoryCount: number;
+  };
+}
+
+/**
+ * Hook to fetch product recommendations
+ * Returns products frequently bought together and from the same category
+ */
+export function useProductRecommendations(productId: string, limit = 8) {
+  return useQuery({
+    queryKey: ["product-recommendations", productId, limit],
+    queryFn: () =>
+      fetchAPI<ProductRecommendationsResponse>(
+        `/api/products/${productId}/recommendations?limit=${limit}`
+      ),
+    enabled: !!productId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
