@@ -18,6 +18,15 @@ import {
   convertLegacyPermissions,
 } from "./rbac"
 import { touchSession } from "./session-service"
+import {
+  validateCSRFRequest,
+  requiresCSRFValidation,
+  generateCSRFToken,
+  generateCSRFCookieHeader,
+  extractSessionId,
+  CSRF_CONFIG,
+  CSRFValidationResult,
+} from "./csrf"
 
 // User context type
 export interface AuthUser {
@@ -40,6 +49,9 @@ export const AUTH_ERROR_CODES = {
   SESSION_EXPIRED: "SESSION_EXPIRED",
   ACCOUNT_DISABLED: "ACCOUNT_DISABLED",
   INSUFFICIENT_PERMISSIONS: "INSUFFICIENT_PERMISSIONS",
+  CSRF_MISSING: "CSRF_MISSING",
+  CSRF_INVALID: "CSRF_INVALID",
+  CSRF_EXPIRED: "CSRF_EXPIRED",
 } as const
 
 export type AuthErrorCode = (typeof AUTH_ERROR_CODES)[keyof typeof AUTH_ERROR_CODES]
@@ -492,4 +504,123 @@ export async function getOptionalUser(
   } catch {
     return null
   }
+}
+
+// ============================================
+// CSRF PROTECTION MIDDLEWARE
+// ============================================
+
+/**
+ * Higher-order function to protect API routes with CSRF validation
+ * Only validates on state-changing requests (POST, PUT, DELETE, PATCH)
+ * GET, HEAD, OPTIONS requests are allowed without CSRF token
+ */
+export function withCSRF(
+  handler: (request: NextRequest) => Promise<NextResponse>
+) {
+  return async (request: NextRequest) => {
+    // Skip CSRF validation for safe methods
+    if (!requiresCSRFValidation(request.method)) {
+      return handler(request)
+    }
+
+    // Validate CSRF token
+    const result = validateCSRFRequest(request.headers, request.cookies)
+
+    if (!result.valid) {
+      const errorCode = getCSRFErrorCode(result)
+      // Use 419 for expired tokens (Laravel convention) or 403 for other errors
+      const status = result.errorCode === "TOKEN_EXPIRED" ? 419 : 403
+
+      return NextResponse.json(
+        {
+          error: result.error,
+          code: errorCode,
+        },
+        { status }
+      )
+    }
+
+    // Call the handler
+    const response = await handler(request)
+
+    // If token should be refreshed, add new token to response
+    if (result.shouldRefresh && result.newToken) {
+      const isProduction = process.env.NODE_ENV === "production"
+      response.headers.set(
+        "Set-Cookie",
+        generateCSRFCookieHeader(result.newToken.token, isProduction)
+      )
+      // Also include in response header for AJAX clients
+      response.headers.set("X-CSRF-Token-Refresh", result.newToken.token)
+      response.headers.set(
+        "X-CSRF-Token-Expires",
+        result.newToken.expiresAt.toString()
+      )
+    }
+
+    return response
+  }
+}
+
+/**
+ * Combined withAuth and withCSRF middleware
+ * Use this for protected routes that need both authentication and CSRF protection
+ */
+export function withAuthAndCSRF(
+  handler: (request: AuthenticatedRequest) => Promise<NextResponse>
+) {
+  return withAuth(
+    withCSRF(handler as (request: NextRequest) => Promise<NextResponse>) as (
+      request: AuthenticatedRequest
+    ) => Promise<NextResponse>
+  )
+}
+
+/**
+ * Map CSRF validation result to AUTH_ERROR_CODES
+ */
+function getCSRFErrorCode(result: CSRFValidationResult): AuthErrorCode {
+  if (result.errorCode === "MISSING_TOKEN") {
+    return AUTH_ERROR_CODES.CSRF_MISSING
+  }
+  if (result.errorCode === "TOKEN_EXPIRED") {
+    return AUTH_ERROR_CODES.CSRF_EXPIRED
+  }
+  return AUTH_ERROR_CODES.CSRF_INVALID
+}
+
+/**
+ * Validate CSRF token manually within a route handler
+ * Returns validation result that can be used for custom error handling
+ */
+export function validateCSRF(request: NextRequest): CSRFValidationResult {
+  return validateCSRFRequest(request.headers, request.cookies)
+}
+
+/**
+ * Generate a new CSRF token for the current session
+ * Useful for including in initial page load or after login
+ */
+export function getCSRFToken(request: NextRequest): {
+  token: string
+  expiresAt: number
+} | null {
+  const sessionId = extractSessionId(request.headers, request.cookies)
+
+  if (!sessionId) {
+    return null
+  }
+
+  return generateCSRFToken(sessionId)
+}
+
+/**
+ * Skip CSRF validation for specific routes or conditions
+ * Use as a wrapper around handlers that shouldn't require CSRF
+ */
+export function withoutCSRF(
+  handler: (request: NextRequest) => Promise<NextResponse>
+) {
+  return handler
 }

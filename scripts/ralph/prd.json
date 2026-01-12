@@ -587,8 +587,8 @@
         "Build passes: bun run build"
       ],
       "priority": 38,
-      "passes": false,
-      "notes": "Prevents unauthorized actions from malicious sites"
+      "passes": true,
+      "notes": "Implemented lib/csrf.ts with HMAC-signed tokens tied to session, GET /api/csrf endpoint, withCSRF/withAuthAndCSRF middleware, auto-refresh when <15min remaining, useCSRF React hook with createCSRFFetch wrapper, bilingual translations (EN/KH)"
     },
     {
       "id": "US-039",

@@ -1093,3 +1093,40 @@ Project: ApoloShop - Product Search Feature
   - frame-ancestors in CSP is modern replacement for X-Frame-Options but both included for compatibility
   - Middleware runs at edge runtime, so keep functions simple (no complex imports)
 ---
+
+## 2026-01-12 - US-038
+- **Implemented**: CSRF protection for forms
+- **Files changed**:
+  - `lib/csrf.ts` (new file - CSRF token generation, validation, and utilities)
+  - `app/api/csrf/route.ts` (new file - GET/POST endpoints for CSRF tokens)
+  - `lib/auth-middleware.ts` (modified - added withCSRF, withAuthAndCSRF, validateCSRF, getCSRFToken)
+  - `lib/use-csrf.ts` (new file - React hook for CSRF token management)
+  - `lib/i18n.ts` (modified - added csrf translations EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **CSRF token generation**: HMAC-SHA256 signed tokens tied to session ID
+  - **Token format**: base64url encoded `{sessionId}:{random}:{timestamp}:{signature}`
+  - **Token expiry**: 1 hour default, configurable via CSRF_CONFIG
+  - **Session binding**: Token tied to first 32 chars of auth token (JWT or session)
+  - **Timing-safe validation**: Prevents timing attacks during signature comparison
+  - **GET /api/csrf**: Returns new token with expiry time, sets HttpOnly=false cookie for JS access
+  - **POST /api/csrf**: Validates token for testing purposes
+  - **withCSRF middleware**: Validates CSRF on POST/PUT/DELETE/PATCH, skips GET/HEAD/OPTIONS
+  - **withAuthAndCSRF middleware**: Combined auth + CSRF validation for protected routes
+  - **Auto-refresh mechanism**: Refreshes token when <15min remaining, returns new token via X-CSRF-Token-Refresh header
+  - **Error codes**: CSRF_MISSING, CSRF_INVALID, CSRF_EXPIRED with appropriate HTTP status (403/419)
+  - **useCSRF React hook**: Token management, auto-fetch, getHeaders(), handleResponse(), invalidate()
+  - **createCSRFFetch wrapper**: Automatically includes CSRF token in requests, handles refreshed tokens
+  - **CSRFError class**: Custom error type for CSRF failures with isCSRFError() type guard
+  - **Form utilities**: addCSRFToFormData(), addCSRFToBody() helpers
+  - **Bilingual support**: EN/KH translations for error messages
+- **Learnings for future iterations**:
+  - CSRF tokens must NOT be HttpOnly - JavaScript needs access to include in AJAX headers
+  - Use SameSite=Strict for CSRF cookie to prevent cross-site submission
+  - Token tied to auth session ensures token changes on login/logout
+  - Timing-safe string comparison prevents attackers from learning signature byte-by-byte
+  - 419 status code (Laravel convention) distinguishes token expiry from other 403 errors
+  - Auto-refresh via response headers allows seamless token rotation without extra requests
+  - Session ID extraction works with both JWT (first 32 chars of Bearer token) and legacy cookies
+  - CSRF_SECRET should be separate from JWT_SECRET but can share as fallback
+---

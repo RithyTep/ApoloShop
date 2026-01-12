@@ -420,6 +420,15 @@ export const translations = {
       installed: "App Installed!",
       installedDescription: "You can now access ApoloShop from your home screen",
     },
+    // CSRF Protection
+    csrf: {
+      error: "Security Error",
+      tokenMissing: "Security token missing. Please refresh the page and try again.",
+      tokenExpired: "Your session security token has expired. Please refresh the page.",
+      tokenInvalid: "Invalid security token. Please refresh the page and try again.",
+      refreshing: "Refreshing security token...",
+      refreshed: "Security token refreshed",
+    },
   },
   kh: {
     // Order Status
@@ -840,6 +849,15 @@ export const translations = {
       connectionRestoredDescription: "ការតភ្ជាប់អ៊ីនធឺណិតរបស់អ្នកបានស្ដារឡើងវិញ",
       installed: "កម្មវិធីបានដំឡើង!",
       installedDescription: "ឥឡូវអ្នកអាចចូលប្រើ ApoloShop ពីអេក្រង់ដើមរបស់អ្នក",
+    },
+    // CSRF Protection
+    csrf: {
+      error: "កំហុសផ្នែកសុវត្ថិភាព",
+      tokenMissing: "គ្មានសញ្ញាសុវត្ថិភាព។ សូមផ្ទុកទំព័រឡើងវិញហើយព្យាយាមម្តងទៀត។",
+      tokenExpired: "សញ្ញាសុវត្ថិភាពវគ្គរបស់អ្នកបានផុតកំណត់។ សូមផ្ទុកទំព័រឡើងវិញ។",
+      tokenInvalid: "សញ្ញាសុវត្ថិភាពមិនត្រឹមត្រូវ។ សូមផ្ទុកទំព័រឡើងវិញហើយព្យាយាមម្តងទៀត។",
+      refreshing: "កំពុងធ្វើឱ្យសញ្ញាសុវត្ថិភាពថ្មី...",
+      refreshed: "សញ្ញាសុវត្ថិភាពបានធ្វើបច្ចុប្បន្នភាព",
     },
   },
 }
