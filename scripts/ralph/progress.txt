@@ -2118,3 +2118,30 @@ Project: ApoloShop - Product Search Feature
   - Date comparison: Calculate previous period by subtracting period length from start date
   - Prisma raw SQL: Use $queryRaw with template literals for complex aggregations
 ---
+
+## 2026-01-13 - US-068
+- **Implemented**: Google Analytics 4 integration
+- **Files changed**:
+  - `lib/ga4.ts` (new file - GA4 tracking utilities)
+  - `providers/ga4-provider.tsx` (new file - GA4 provider component)
+  - `app/layout.tsx` (modified - added GA4Provider to layout)
+  - `components/pages/settings-page.tsx` (modified - added GA4 settings section)
+  - `components/shop-app.tsx` (modified - added GA4 tracking events)
+  - `components/search-dropdown.tsx` (modified - added search tracking)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **GA4 script injection**: Uses Next.js Script component with afterInteractive strategy
+  - **E-commerce events**: view_item, add_to_cart, remove_from_cart, view_cart, begin_checkout, purchase, refund
+  - **Enhanced conversions**: setEnhancedConversionData for better attribution with customer data
+  - **Custom events**: search, sign_up, login, share, add_to_wishlist, generate_lead
+  - **Admin configuration**: Enable/disable toggle, Measurement ID input (G-XXXXXXXXXX format validation), enhanced conversions toggle, debug mode toggle
+  - **Utility functions**: cartItemToGA4Item, productToGA4Item for converting data to GA4 format
+- **Learnings for future iterations**:
+  - GA4 Measurement ID format: G-[10 alphanumeric characters]
+  - Use `strategy="afterInteractive"` for non-blocking script loading
+  - gtag is accessed via window.gtag after dataLayer initialization
+  - isGA4Available() check prevents errors when GA4 is disabled
+  - Enhanced conversions require email/phone to be normalized (lowercase, trimmed)
+  - Settings stored as nested object: `{ ga4: { enabled, measurementId, enhancedConversions, debugMode } }`
+  - useEffect with isCartOpen dependency tracks view_cart only on cart open, not on content changes
+---
