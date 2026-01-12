@@ -859,8 +859,8 @@
         "Build passes: bun run build"
       ],
       "priority": 55,
-      "passes": false,
-      "notes": "Increases customer retention and repeat purchases"
+      "passes": true,
+      "notes": "Implemented LoyaltyAccount/LoyaltyTransaction models, 4 tiers (Bronze/Silver/Gold/Platinum), /api/loyalty endpoint, LoyaltyPointsCard and CheckoutLoyalty components, bilingual translations"
     },
     {
       "id": "US-056",

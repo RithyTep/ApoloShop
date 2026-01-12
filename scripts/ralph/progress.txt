@@ -1711,3 +1711,33 @@ Project: ApoloShop - Product Search Feature
   - remainingQuantity = quantity - soldCount (null quantity = unlimited)
   - useActiveFlashSales returns map of productId -> FlashSaleForProduct for O(1) lookup
 ---
+
+## 2026-01-12 - US-055
+- **Implemented**: Customer loyalty program
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added LoyaltyAccount, LoyaltyTransaction models, LoyaltyTier and LoyaltyTransactionType enums)
+  - `lib/loyalty.ts` (new file - loyalty service with business logic)
+  - `app/api/loyalty/route.ts` (new file - GET/POST endpoint)
+  - `lib/api-hooks.ts` (modified - added loyalty types and hooks)
+  - `components/loyalty-points-card.tsx` (new file - customer loyalty display)
+  - `components/checkout-loyalty.tsx` (new file - checkout redemption UI)
+  - `lib/i18n.ts` (modified - added loyalty translations EN/KH)
+- **Features**:
+  - **LoyaltyAccount model**: customerId, currentPoints, lifetimePoints, tier (Bronze/Silver/Gold/Platinum)
+  - **LoyaltyTransaction model**: accountId, type (EARN/REDEEM/BONUS/EXPIRE/ADJUSTMENT/REFUND), points, orderId, expiresAt
+  - **Tier system**: Bronze (1x), Silver (1.25x, 500+ pts), Gold (1.5x, 2000+ pts), Platinum (2x, 5000+ pts)
+  - **Points earning**: 1 point per $1 spent, multiplied by tier multiplier
+  - **Points redemption**: 100 points = $1 discount, min 100 points to redeem
+  - **Points expiry**: 12 months from earning date, processExpiredPoints() for batch expiry
+  - **API actions**: earn, redeem, calculate, pointsNeeded
+  - **LoyaltyPointsCard**: Full card with tier badge, progress to next tier, transaction history
+  - **LoyaltyPointsBadge**: Mini widget for header/nav display
+  - **CheckoutLoyalty**: Slider/input for point redemption, shows points to earn
+- **Learnings for future iterations**:
+  - Used separate currentPoints (spendable) and lifetimePoints (for tier calculation)
+  - Tier upgrades are automatic on earn, but no downgrades on refund (better UX)
+  - Points expiry tracked per-transaction with expiresAt field, batch job processes expired
+  - Redemption value capped at order total to prevent over-discount
+  - Existing Progress component from Shadcn used for tier progress bar
+  - Slider component from Shadcn used for point selection in checkout
+---
