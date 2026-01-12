@@ -2003,3 +2003,188 @@ export async function exportProducts(options?: {
   document.body.removeChild(link);
   window.URL.revokeObjectURL(downloadUrl);
 }
+
+// ============================================
+// CLIENTS (SUPER ADMIN)
+// ============================================
+
+export interface Client {
+  id: string;
+  name: string;
+  slug: string;
+  domain?: string | null;
+  settings?: {
+    currency?: "USD" | "KHR";
+    language?: "EN" | "KH";
+    timezone?: string;
+  } | null;
+  primaryColor?: string | null;
+  secondaryColor?: string | null;
+  logoUrl?: string | null;
+  faviconUrl?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    products: number;
+    orders: number;
+    customers: number;
+  };
+}
+
+export interface ClientStats {
+  totalRevenue: number;
+  totalRevenueKhr: number;
+  orderCount: number;
+  averageOrderValue: number;
+  productCount: number;
+  customerCount: number;
+}
+
+export interface ClientWithStats extends Client {
+  stats?: ClientStats;
+}
+
+export interface ClientsResponse {
+  clients: Client[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+/**
+ * Hook to fetch all clients (super admin only)
+ */
+export function useClients(options?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  isActive?: boolean;
+}) {
+  return useQuery({
+    queryKey: ["clients", options],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (options?.page) params.set("page", String(options.page));
+      if (options?.limit) params.set("limit", String(options.limit));
+      if (options?.search) params.set("search", options.search);
+      if (options?.isActive !== undefined) params.set("isActive", String(options.isActive));
+
+      return fetchAPI<ClientsResponse>(`/api/clients?${params.toString()}`);
+    },
+  });
+}
+
+/**
+ * Hook to fetch a single client with stats
+ */
+export function useClientStats(clientId: string) {
+  return useQuery({
+    queryKey: ["client-stats", clientId],
+    queryFn: () => fetchAPI<{ client: Client; stats: ClientStats }>(`/api/clients/${clientId}/stats`),
+    enabled: !!clientId,
+  });
+}
+
+/**
+ * Hook to create a new client
+ */
+export function useCreateClient() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      name: string;
+      slug: string;
+      domain?: string;
+      settings?: Client["settings"];
+      isActive?: boolean;
+    }) =>
+      fetchAPI<Client>("/api/clients", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+    },
+  });
+}
+
+/**
+ * Hook to update a client
+ */
+export function useUpdateClient() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      ...data
+    }: {
+      id: string;
+      name?: string;
+      slug?: string;
+      domain?: string | null;
+      settings?: Client["settings"];
+      isActive?: boolean;
+    }) =>
+      fetchAPI<Client>("/api/clients", {
+        method: "PUT",
+        body: JSON.stringify({ id, ...data }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+    },
+  });
+}
+
+/**
+ * Hook to delete/disable a client
+ */
+export function useDeleteClient() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, force = false }: { id: string; force?: boolean }) =>
+      fetchAPI<{
+        success: boolean;
+        softDeleted?: boolean;
+        forceDeleted?: boolean;
+        hasData?: boolean;
+        counts?: { products: number; orders: number; customers: number };
+      }>(`/api/clients?id=${id}${force ? "&force=true" : ""}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+    },
+  });
+}
+
+/**
+ * Helper function to set impersonation cookie for client admin access
+ */
+export function setClientImpersonation(clientId: string, clientSlug: string): void {
+  // Store impersonation info in localStorage
+  localStorage.setItem("impersonateClientId", clientId);
+  localStorage.setItem("impersonateClientSlug", clientSlug);
+}
+
+/**
+ * Helper function to clear impersonation
+ */
+export function clearClientImpersonation(): void {
+  localStorage.removeItem("impersonateClientId");
+  localStorage.removeItem("impersonateClientSlug");
+}
+
+/**
+ * Helper function to get current impersonation
+ */
+export function getClientImpersonation(): { clientId: string; clientSlug: string } | null {
+  if (typeof window === "undefined") return null;
+  const clientId = localStorage.getItem("impersonateClientId");
+  const clientSlug = localStorage.getItem("impersonateClientSlug");
+  if (clientId && clientSlug) {
+    return { clientId, clientSlug };
+  }
+  return null;
+}

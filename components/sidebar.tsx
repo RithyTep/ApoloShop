@@ -19,6 +19,7 @@ import {
   Clock,
   ClipboardList,
   MessageSquare,
+  Building2,
   type LucideIcon,
 } from "lucide-react"
 import { useState } from "react"
@@ -41,6 +42,7 @@ type NavItem =
   | "business-hours"
   | "backlog"
   | "reviews"
+  | "super-admin"
 
 interface SidebarProps {
   activeNav: NavItem
@@ -113,6 +115,7 @@ export function Sidebar({ activeNav, setActiveNav, orderCount = 0, lowStockCount
             label: "Developer",
             items: [
               { id: "backlog" as NavItem, label: "Backlog", icon: ClipboardList },
+              { id: "super-admin" as NavItem, label: "Super Admin", icon: Building2 },
             ],
           },
         ]

@@ -624,3 +624,66 @@ Project: ApoloShop - Product Search Feature
   - Switch component for visibility toggle provides immediate feedback
   - DndContext + SortableContext pattern is consistent with existing customizer implementation
 ---
+
+## 2026-01-12 - US-026
+- **Implemented**: Bulk product import/export
+- **Files changed**:
+  - `app/api/products/export/route.ts` (new file - GET endpoint for CSV export)
+  - `app/api/products/import/route.ts` (new file - POST endpoint for CSV import)
+  - `components/product-import-export.tsx` (new file - ProductImportDialog and ProductExportButton)
+  - `components/ui/alert.tsx` (new file - Shadcn Alert component)
+  - `components/ui/scroll-area.tsx` (new file - Shadcn ScrollArea component)
+  - `components/pages/products-page.tsx` (modified - integrated import/export buttons)
+  - `lib/api-hooks.ts` (modified - added ImportResult types, useImportProducts hook, exportProducts function)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **GET /api/products/export**: Returns CSV with all product fields including inventory, filterable by category/status
+  - **POST /api/products/import**: Accepts multipart form CSV upload with FormData
+  - **CSV fields**: sku, nameEn, nameKh, descriptionEn, descriptionKh, priceUsd, priceKhr, categorySlug, stock, minStockLevel, imageUrl, images, isActive
+  - **Validation**: Zod schema validation per row, category lookup validation, SKU uniqueness check
+  - **Error reporting**: Row-by-row errors with field name, message, and original row data
+  - **Dry run mode**: dryRun=true validates without making changes, returns pendingCreates/pendingUpdates counts
+  - **Update existing**: updateExisting=true allows updating products by SKU match
+  - **ProductImportDialog**: Four stages (select/validating/importing/complete), progress bar, file drag-drop, result summary with error scroll
+  - **ProductExportButton**: Download CSV with current filters applied
+- **Learnings for future iterations**:
+  - CSV parsing: Handle quoted fields with escaped quotes (RFC 4180 format)
+  - FormData upload: Don't set Content-Type header manually, let browser handle multipart boundary
+  - Dry run pattern: Validate and return counts before actual import for user confirmation
+  - XSS sanitization: Apply to text fields during import to prevent stored XSS
+  - Import result types: Use ImportRowError with row number for precise error location
+  - Progress stages: Simple state machine (select -> validating -> complete | select -> validating -> importing -> complete)
+  - Blob download: Use URL.createObjectURL() + click() + revokeObjectURL() pattern
+---
+
+## 2026-01-12 - US-027
+- **Implemented**: Super admin client management
+- **Files changed**:
+  - `app/api/clients/[id]/stats/route.ts` (new file - client stats endpoint)
+  - `components/pages/super-admin-page.tsx` (new file - main super admin UI)
+  - `lib/api-hooks.ts` (modified - added Client types and hooks)
+  - `components/admin-dashboard.tsx` (modified - integrated SuperAdminPage)
+  - `components/sidebar.tsx` (modified - added super-admin nav item)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **SuperAdminPage component**: Full client management dashboard in Developer section
+  - **Client list with search**: Searchable table with pagination (10 per page)
+  - **Status filter**: Filter by all/active/inactive clients
+  - **Summary cards**: Total clients, active clients, total products, total orders
+  - **Create dialog**: Create new client with name, slug, domain, currency, language, isActive
+  - **Edit dialog**: Update client settings with validation
+  - **View dialog**: Detailed client info with statistics (revenue, orders, AOV, products, customers)
+  - **Delete confirmation**: AlertDialog with soft-delete warning for clients with data
+  - **Client stats API**: GET /api/clients/[id]/stats returns client with revenue/order aggregates
+  - **Impersonate feature**: setClientImpersonation/clearClientImpersonation helpers using localStorage
+  - **useClients hook**: Fetch clients with pagination, search, status filter
+  - **useClientStats hook**: Fetch single client with detailed stats
+  - **useCreateClient/useUpdateClient/useDeleteClient hooks**: CRUD mutations with cache invalidation
+- **Learnings for future iterations**:
+  - Client types: Client, ClientStats, ClientWithStats, ClientsResponse for type safety
+  - Impersonation pattern: Store clientId/clientSlug in localStorage for cross-tab persistence
+  - Stats aggregation: Use Prisma aggregate for _sum and _count on orders table
+  - Soft delete: Clients with products/orders/customers get isActive=false instead of deletion
+  - Developer section: Super admin only visible in development mode (via process.env.NODE_ENV)
+  - Dialog state pattern: Separate state for create/edit/view/delete dialogs for clean UX
+---

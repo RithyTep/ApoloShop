@@ -18,6 +18,7 @@ import { CustomizerPage } from "./customizer/customizer-page"
 import { BusinessHoursPage } from "./pages/business-hours-page"
 import { BacklogPage } from "./pages/backlog-page"
 import { ReviewsPage } from "./pages/reviews-page"
+import { SuperAdminPage } from "./pages/super-admin-page"
 import { useOrders, useLowStockItems, useAdminReviews } from "@/lib/api-hooks"
 
 type NavItem =
@@ -37,6 +38,7 @@ type NavItem =
   | "business-hours"
   | "backlog"
   | "reviews"
+  | "super-admin"
 
 export function AdminDashboard() {
   const [activeNav, setActiveNav] = useState<NavItem>("dashboard")
@@ -84,6 +86,8 @@ export function AdminDashboard() {
         return <BacklogPage />
       case "reviews":
         return <ReviewsPage />
+      case "super-admin":
+        return <SuperAdminPage />
       default:
         return <DashboardPage />
     }

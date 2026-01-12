@@ -397,8 +397,8 @@
         "Build passes: bun run build"
       ],
       "priority": 26,
-      "passes": false,
-      "notes": "Essential for shops with large catalogs"
+      "passes": true,
+      "notes": "Implemented /api/products/export (GET, CSV download) and /api/products/import (POST, multipart CSV upload) with dry-run validation, row-by-row error reporting, updateExisting option. ProductImportDialog with progress stages, ProductExportButton with filters. Added Alert and ScrollArea UI components."
     },
     {
       "id": "US-027",
@@ -413,8 +413,8 @@
         "Build passes: bun run build"
       ],
       "priority": 27,
-      "passes": false,
-      "notes": "Central management for SaaS operators"
+      "passes": true,
+      "notes": "Implemented SuperAdminPage with client list (search/pagination), create/edit/disable client dialogs, client stats API (/api/clients/[id]/stats), view dialog with revenue/orders/products/customers stats, impersonate feature via localStorage"
     },
     {
       "id": "US-028",
