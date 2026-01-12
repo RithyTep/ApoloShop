@@ -1419,3 +1419,55 @@ Project: ApoloShop - Product Search Feature
   - SECURITY_EVENT_CONFIG provides human-readable descriptions and default severity per event type
   - Super admin check uses SUPER_ADMIN_KEY env var with development fallback
 ---
+
+## 2026-01-12 - US-046
+- **Implemented**: Data encryption at rest for PII fields
+- **Files changed**:
+  - `lib/encryption.ts` (new file - AES-256-GCM encryption utilities)
+  - `lib/prisma.ts` (modified - added transparent encryption middleware)
+  - `app/api/admin/encryption/route.ts` (new file - encryption status and key rotation API)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **AES-256-GCM encryption**: Uses IV (16 bytes), auth tag (16 bytes), scrypt key derivation
+  - **Encrypted format**: `enc:keyId:iv:authTag:ciphertext` (all hex encoded)
+  - **ENCRYPTED_FIELDS config**: Defines which fields to encrypt per model:
+    - Customer: phone, email, notes
+    - Payment: transactionId
+  - **lib/encryption.ts functions**:
+    - encrypt(): Encrypts plaintext with current key, returns formatted string
+    - decrypt(): Decrypts with key rotation support (tries current key, then previous)
+    - isEncrypted(): Checks if value has encryption prefix
+    - reEncrypt(): Re-encrypts value with current key (for rotation)
+    - encryptFields()/decryptFields(): Batch field encryption/decryption
+    - getEncryptedFieldsForModel(): Get encrypted fields for a model
+    - hasEncryptedFields(): Check if model has encrypted fields
+    - isEncryptionConfigured(): Check if ENCRYPTION_KEY is set (32+ chars)
+    - getEncryptionStatus(): Returns config status for admin dashboard
+    - isKeyRotationNeeded(): Check if previous key exists for rotation
+  - **Prisma middleware** (lib/prisma.ts):
+    - Transparent encryption on create/update/upsert/createMany/updateMany
+    - Transparent decryption on findUnique/findFirst/findMany
+    - Handles nested data structures
+    - Graceful degradation when encryption not configured
+  - **GET /api/admin/encryption**: Super admin only, returns encryption status, rotation needed, model stats
+  - **POST /api/admin/encryption**: Super admin only, action: "rotate" to re-encrypt all data with current key
+  - **Key rotation capability**:
+    - Set ENCRYPTION_KEY_PREVIOUS to old key before changing ENCRYPTION_KEY
+    - Increment ENCRYPTION_KEY_ID to track key version
+    - POST /api/admin/encryption { action: "rotate" } re-encrypts all records
+    - Rotation uses raw SQL to bypass middleware encryption
+    - Audit logging for key rotation operations
+- **Environment variables**:
+  - ENCRYPTION_KEY: Primary encryption key (required, min 32 chars)
+  - ENCRYPTION_KEY_PREVIOUS: Previous key for rotation (optional)
+  - ENCRYPTION_KEY_ID: Key version identifier (optional, default "1")
+- **Learnings for future iterations**:
+  - Prisma middleware intercepts all DB operations, ideal for transparent encryption
+  - Key rotation needs direct SQL to bypass middleware (avoid double-encryption)
+  - scryptSync with salt ensures key derivation even with short input
+  - Auth tag verification in GCM mode provides integrity protection
+  - Encrypted values are longer than plaintext (prefix + IV + authTag + ciphertext)
+  - Graceful degradation: if no key configured, data flows through unencrypted
+  - Model stats query needed to count encrypted vs unencrypted records
+  - Super admin only access for encryption management (sensitive operation)
+---

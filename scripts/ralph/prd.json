@@ -715,8 +715,8 @@
         "Build passes: bun run build"
       ],
       "priority": 46,
-      "passes": false,
-      "notes": "Protects data if database is compromised"
+      "passes": true,
+      "notes": "Implemented lib/encryption.ts with AES-256-GCM encryption (IV + authTag), Prisma middleware in lib/prisma.ts for transparent encryption/decryption of Customer (phone, email, notes) and Payment (transactionId) fields. Key rotation via POST /api/admin/encryption with reEncrypt capability. ENCRYPTION_KEY env var required (32+ chars), ENCRYPTION_KEY_PREVIOUS for rotation."
     },
     {
       "id": "US-047",
