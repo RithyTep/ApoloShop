@@ -28,6 +28,7 @@ import { ChatPage } from "./pages/chat-page"
 import { HelpCenterPage } from "./pages/help-center-page"
 import { ShippingZonesPage } from "./pages/shipping-zones-page"
 import { OrderTrackingPage } from "./pages/order-tracking-page"
+import { AnalyticsPage } from "./pages/analytics-page"
 import { useOrders, useLowStockItems, useAdminReviews } from "@/lib/api-hooks"
 
 type NavItem =
@@ -57,6 +58,7 @@ type NavItem =
   | "help-center"
   | "shipping-zones"
   | "order-tracking"
+  | "analytics"
 
 export function AdminDashboard() {
   const [activeNav, setActiveNav] = useState<NavItem>("dashboard")
@@ -124,6 +126,8 @@ export function AdminDashboard() {
         return <ShippingZonesPage />
       case "order-tracking":
         return <OrderTrackingPage />
+      case "analytics":
+        return <AnalyticsPage />
       default:
         return <DashboardPage />
     }

@@ -28,6 +28,7 @@ import {
   HelpCircle,
   Truck,
   MapPin,
+  TrendingUp,
   type LucideIcon,
 } from "lucide-react"
 import { useState } from "react"
@@ -60,6 +61,7 @@ type NavItem =
   | "help-center"
   | "shipping-zones"
   | "order-tracking"
+  | "analytics"
 
 interface SidebarProps {
   activeNav: NavItem
@@ -128,6 +130,7 @@ export function Sidebar({ activeNav, setActiveNav, orderCount = 0, lowStockCount
         { id: "role-permissions", label: "Role Permissions", icon: ShieldCheck },
         { id: "payments", label: "Payments", icon: CreditCard },
         { id: "reports", label: "Reports", icon: BarChart3 },
+        { id: "analytics", label: "Analytics", icon: TrendingUp },
         { id: "performance", label: "Performance", icon: Activity },
         { id: "security-dashboard", label: "Security", icon: ShieldAlert },
         { id: "audit-logs", label: "Audit Logs", icon: Shield },

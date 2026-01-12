@@ -2086,3 +2086,35 @@ Project: ApoloShop - Product Search Feature
   - Stock receipt: Automatically resolve alerts when stock exceeds reorder point
   - In-memory notification settings: Stored in settings table with key "stockAlertNotifications"
 ---
+
+## 2026-01-13 - US-067
+- **Implemented**: Advanced analytics dashboard with business intelligence
+- **Files changed**:
+  - `app/api/analytics/advanced/route.ts` (new) - API endpoint for advanced analytics data
+  - `components/pages/analytics-page.tsx` (new) - Full analytics dashboard with all visualizations
+  - `lib/api-hooks.ts` (modified) - Added useAdvancedAnalytics hook and types
+  - `components/admin-dashboard.tsx` (modified) - Added AnalyticsPage to navigation
+  - `components/sidebar.tsx` (modified) - Added Analytics nav item with TrendingUp icon
+  - `package.json` (modified) - Added html2canvas dependency for PDF export
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Revenue trends with comparison**: Line/area chart showing current vs previous period revenue
+  - **Period comparison metrics**: Summary cards showing revenue, orders, AOV with % change vs previous period
+  - **Conversion funnel**: Visual funnel showing Orders Created -> Confirmed -> In Preparation -> Completed with drop-off rates
+  - **Product performance matrix**: Scatter chart plotting revenue vs margin (bubble size = quantity sold)
+  - **Customer cohort analysis**: Retention heatmap showing % of customers returning by signup month
+  - **Export to PDF**: Using html2canvas + jsPDF for full report export with pagination
+  - **Date range selector**: 7 days, 30 days, 90 days, 1 year options
+- **API Features**:
+  - Raw SQL queries for efficient daily aggregations with comparison periods
+  - Cohort calculation using CTE (Common Table Expressions) for customer first order month
+  - Product performance with margin calculation (estimated 60% cost ratio)
+  - Order status funnel aggregation
+- **Learnings for future iterations**:
+  - ComposedChart from recharts combines Line, Area, and Bar in one visualization
+  - Cohort retention heatmap: Use background color intensity (rgba) based on retention %
+  - Scatter chart: ZAxis controls bubble size, good for 3-dimensional data
+  - PDF export: html2canvas captures DOM, jsPDF handles pagination for long content
+  - Date comparison: Calculate previous period by subtracting period length from start date
+  - Prisma raw SQL: Use $queryRaw with template literals for complex aggregations
+---

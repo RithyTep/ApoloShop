@@ -4712,3 +4712,86 @@ export function useUpdateOrderTracking() {
     },
   });
 }
+
+// ============================================
+// ADVANCED ANALYTICS
+// ============================================
+
+export interface RevenueTrendPoint {
+  date: string;
+  revenue: number;
+  previousRevenue: number;
+  orderCount: number;
+  previousOrderCount: number;
+  avgOrderValue: number;
+  previousAvgOrderValue: number;
+}
+
+export interface FunnelStage {
+  stage: string;
+  count: number;
+  percentage: number;
+  dropoff: number;
+}
+
+export interface ProductPerformanceItem {
+  id: string;
+  nameEn: string;
+  nameKh: string;
+  sku: string;
+  imageUrl: string | null;
+  revenue: number;
+  cost: number;
+  margin: number;
+  marginPercent: number;
+  quantity: number;
+  category: {
+    id: string;
+    nameEn: string;
+    nameKh: string;
+  } | null;
+}
+
+export interface CohortRow {
+  cohortMonth: string;
+  cohortSize: number;
+  retention: number[];
+}
+
+export interface AdvancedAnalyticsSummary {
+  totalRevenue: number;
+  previousTotalRevenue: number;
+  revenueGrowth: number;
+  totalOrders: number;
+  previousTotalOrders: number;
+  ordersGrowth: number;
+  avgOrderValue: number;
+  previousAvgOrderValue: number;
+  aovGrowth: number;
+  conversionRate: number;
+}
+
+export interface AdvancedAnalyticsData {
+  revenueTrends: RevenueTrendPoint[];
+  conversionFunnel: FunnelStage[];
+  productPerformance: ProductPerformanceItem[];
+  customerCohorts: CohortRow[];
+  summary: AdvancedAnalyticsSummary;
+}
+
+/**
+ * Hook to fetch advanced analytics data
+ * Includes revenue trends, conversion funnel, product performance matrix, and customer cohorts
+ */
+export function useAdvancedAnalytics(options?: { startDate?: string; endDate?: string }) {
+  const params = new URLSearchParams();
+  if (options?.startDate) params.set("startDate", options.startDate);
+  if (options?.endDate) params.set("endDate", options.endDate);
+
+  return useQuery({
+    queryKey: ["advanced-analytics", options],
+    queryFn: () =>
+      fetchAPI<AdvancedAnalyticsData>(`/api/analytics/advanced?${params.toString()}`),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
