@@ -29,10 +29,13 @@ model User {
   twoFactorEnabled Boolean   @default(false) @map("two_factor_enabled")
   twoFactorSecret  String?   @map("two_factor_secret") // Encrypted TOTP secret
   recoveryCodes    Json?     @map("recovery_codes") // Array of hashed recovery codes
+  // Password security fields
+  passwordChangedAt DateTime? @map("password_changed_at") // For password expiry reminders
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
-  sessions     Session[]
+  sessions         Session[]
+  passwordHistory  PasswordHistory[]
 
   @@map("users")
   @@schema("apolo")
@@ -101,6 +104,20 @@ model Session {
   @@index([userId])
   @@index([token])
   @@map("sessions")
+  @@schema("apolo")
+}
+
+// Password history for preventing password reuse
+model PasswordHistory {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("password_history")
   @@schema("apolo")
 }
 

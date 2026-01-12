@@ -9,10 +9,11 @@ import {
   ACCESS_TOKEN_EXPIRY_MS,
   PENDING_2FA_TOKEN_EXPIRY_MS,
 } from "@/lib/jwt"
+import { shouldShowExpiryWarning, PASSWORD_CONFIG } from "@/lib/password-security"
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(1, "Password is required"),
 })
 
 export async function POST(request: NextRequest) {
@@ -86,6 +87,9 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    // Check password expiry warning
+    const expiryWarning = shouldShowExpiryWarning(user.passwordChangedAt)
+
     // Set cookies
     const response = NextResponse.json({
       user: {
@@ -95,9 +99,18 @@ export async function POST(request: NextRequest) {
         role: user.role.name,
         permissions,
         twoFactorEnabled: false,
+        passwordChangedAt: user.passwordChangedAt,
       },
       accessToken: tokenPair.accessToken,
       expiresIn: Math.floor(ACCESS_TOKEN_EXPIRY_MS / 1000), // seconds
+      // Password expiry warning info
+      passwordExpiry: expiryWarning.show
+        ? {
+            showWarning: true,
+            daysRemaining: expiryWarning.daysRemaining,
+            expiryDays: PASSWORD_CONFIG.expiryDays,
+          }
+        : null,
     })
 
     // Set refresh token as httpOnly cookie

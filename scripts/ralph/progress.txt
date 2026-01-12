@@ -888,3 +888,100 @@ Project: ApoloShop - Product Search Feature
   - Permission matrix UI uses Set for efficient toggle operations
   - Collapsible sections improve UX when many resources exist
 ---
+
+## 2026-01-12 - US-033
+- **Implemented**: Two-factor authentication (2FA) with TOTP
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added twoFactorEnabled, twoFactorSecret, recoveryCodes to User model)
+  - `lib/totp.ts` (new file - TOTP utilities using otplib)
+  - `lib/jwt.ts` (modified - added pending 2FA token support)
+  - `app/api/auth/login/route.ts` (modified - returns pendingToken when 2FA enabled)
+  - `app/api/auth/2fa/setup/route.ts` (new file - POST/PUT/DELETE for setup flow)
+  - `app/api/auth/2fa/verify/route.ts` (new file - POST to complete login with 2FA)
+  - `app/api/auth/2fa/disable/route.ts` (new file - POST to disable 2FA)
+  - `app/api/auth/2fa/recovery-codes/route.ts` (new file - GET count, POST regenerate)
+  - `app/api/auth/2fa/status/route.ts` (new file - GET 2FA status)
+  - `components/two-factor-settings.tsx` (new file - UI component for 2FA management)
+  - `lib/i18n.ts` (modified - added twoFactor translations EN/KH)
+  - `package.json`, `bun.lock` (modified - added otplib, qrcode dependencies)
+- **Features**:
+  - **User model 2FA fields**: twoFactorEnabled (boolean), twoFactorSecret (encrypted), recoveryCodes (hashed JSON array)
+  - **TOTP utilities** (lib/totp.ts):
+    - generateSecret(): Creates TOTP secret
+    - verifyTOTP(): Async verification with 30s window
+    - generateKeyUri(): Creates otpauth:// URI for authenticator apps
+    - generateQRCode(): Creates QR code data URL using qrcode library
+    - generateRecoveryCodes(): Creates 10 recovery codes (format: XXXX-XXXX)
+    - hashRecoveryCode/verifyRecoveryCode: SHA-256 hashing for storage
+    - encryptSecret/decryptSecret: AES-256-GCM encryption for TOTP secrets
+  - **Pending 2FA token** (lib/jwt.ts):
+    - signPendingToken/verifyPendingToken: 5-minute token for 2FA flow
+    - Pending2FATokenPayload type with userId, email, type: "pending_2fa"
+  - **Login flow with 2FA**:
+    - Returns `{ requires2FA: true, pendingToken, expiresIn }` when 2FA enabled
+    - User submits pendingToken + 2FA code to /api/auth/2fa/verify
+    - Verify endpoint validates TOTP or recovery code, issues full token pair
+  - **2FA setup flow**:
+    - POST /api/auth/2fa/setup: Generates secret, QR code, recovery codes
+    - PUT /api/auth/2fa/setup: Verifies user can generate valid codes, enables 2FA
+    - DELETE /api/auth/2fa/setup: Cancels pending setup
+  - **Recovery codes**:
+    - 10 codes generated on setup, each can be used once
+    - Recovery code removes itself from list after use
+    - GET /api/auth/2fa/recovery-codes: Returns remaining count
+    - POST /api/auth/2fa/recovery-codes: Regenerates all codes (requires password + TOTP)
+  - **TwoFactorSettings component**:
+    - Setup wizard: QR code display, manual entry option, code verification
+    - Recovery codes display with download/copy options
+    - Disable flow with password confirmation
+    - Regenerate codes dialog with security verification
+    - Status display with low recovery codes warning
+  - **Bilingual support**: Complete EN/KH translations for all 2FA UI
+- **Learnings for future iterations**:
+  - otplib v14+ uses async verify() function, not sync like earlier versions
+  - Use OTP class with strategy: "totp" for async operations
+  - generateURI() instead of keyuri() in newer otplib versions
+  - Pending token pattern enables stateless 2FA verification between login steps
+  - Recovery codes should be hashed (not encrypted) since they're one-time use
+  - TOTP secrets should be encrypted at rest for security
+  - QR code generation is async - use toDataURL from qrcode library
+  - 5-minute pending token expiry balances security and UX
+  - Show recovery codes only once during setup - never retrievable again
+---
+
+## 2026-01-12 - US-034
+- **Implemented**: Password security enhancements (OWASP recommended practices)
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added PasswordHistory model, passwordChangedAt to User)
+  - `lib/password-security.ts` (new file - password validation, strength calculation, bcrypt helpers)
+  - `components/password-strength-indicator.tsx` (new file - UI components)
+  - `app/api/users/route.ts` (modified - strong validation, history check, bcrypt 12)
+  - `app/api/auth/login/route.ts` (modified - password expiry warning in response)
+  - `lib/i18n.ts` (modified - added passwordSecurity translations EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Strong password requirements**: min 8 chars, uppercase, lowercase, number, special char
+  - **PASSWORD_CONFIG**: Centralized config for minLength(8), maxLength(128), bcryptCostFactor(12), historyCount(5), expiryDays(90)
+  - **passwordRequirements array**: Typed requirements with test functions and bilingual labels
+  - **calculatePasswordStrength()**: Returns level (weak/fair/good/strong), score (0-100), labels (EN/KH)
+  - **validatePassword()**: Returns isValid, errors, requirements status, strength
+  - **hashPassword()/verifyPassword()**: bcrypt with cost factor 12
+  - **isPasswordInHistory()**: Checks password against array of historical hashes
+  - **Password expiry**: isPasswordExpired(), shouldShowExpiryWarning(), getPasswordAge()
+  - **PasswordHistory model**: userId, passwordHash, createdAt with auto-cleanup of old entries
+  - **PasswordStrengthIndicator component**: Real-time strength bar, requirements checklist, success message
+  - **PasswordStrengthBadge component**: Compact badge for inline use
+  - **PasswordExpiryWarning component**: Warning banner with urgency levels and action button
+  - **Users API enhancements**: Validates on create/update, stores history, prevents reuse of last 5
+  - **Login response**: Includes passwordExpiry info when approaching 90-day limit
+  - **Bilingual support**: Full EN/KH translations for all UI text
+- **Learnings for future iterations**:
+  - bcrypt cost factor 12 is OWASP recommended (seed already used 12, API was using 10)
+  - Password history check is O(n) where n = historyCount due to bcrypt compare
+  - Keep password requirements as typed objects for reusability in frontend/backend
+  - Strength calculation: base score from requirements + bonuses/penalties for patterns
+  - Common patterns to penalize: 123, password, qwerty, repeated chars, word+numbers
+  - 90-day expiry with 14-day warning window balances security and UX
+  - passwordChangedAt is null for legacy accounts - treat as "no expiry" for backwards compatibility
+  - PasswordStrengthIndicator shows/hides based on password input for clean UX
+---

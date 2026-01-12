@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
+import {
+  validatePassword,
+  hashPassword,
+  isPasswordInHistory,
+  PASSWORD_CONFIG,
+  formatPasswordRequirementsError,
+} from "@/lib/password-security"
 
 const userCreateSchema = z.object({
   email: z.string().email("Invalid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z
+    .string()
+    .min(PASSWORD_CONFIG.minLength, `Password must be at least ${PASSWORD_CONFIG.minLength} characters`)
+    .max(PASSWORD_CONFIG.maxLength, `Password must not exceed ${PASSWORD_CONFIG.maxLength} characters`),
   name: z.string().min(1, "Name is required"),
   roleId: z.string().min(1, "Role is required"),
   isActive: z.boolean().default(true),
@@ -70,8 +79,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Role not found" }, { status: 404 })
     }
 
-    // Hash password
-    const passwordHash = await bcrypt.hash(data.password, 10)
+    // Validate password strength
+    const passwordValidation = validatePassword(data.password)
+    if (!passwordValidation.isValid) {
+      return NextResponse.json(
+        {
+          error: "Password does not meet requirements",
+          details: {
+            fieldErrors: {
+              password: [formatPasswordRequirementsError()],
+            },
+          },
+          requirements: passwordValidation.requirements,
+          strength: passwordValidation.strength,
+        },
+        { status: 400 }
+      )
+    }
+
+    // Hash password using bcrypt with cost factor 12
+    const passwordHash = await hashPassword(data.password)
 
     const user = await prisma.user.create({
       data: {
@@ -80,9 +107,18 @@ export async function POST(request: NextRequest) {
         name: data.name,
         roleId: data.roleId,
         isActive: data.isActive,
+        passwordChangedAt: new Date(), // Track password creation time
       },
       include: {
         role: true,
+      },
+    })
+
+    // Store initial password in history
+    await prisma.passwordHistory.create({
+      data: {
+        userId: user.id,
+        passwordHash,
       },
     })
 
@@ -99,7 +135,11 @@ export async function POST(request: NextRequest) {
 const userUpdateSchema = z.object({
   id: z.string().min(1, "User ID is required"),
   email: z.string().email().optional(),
-  password: z.string().min(6).optional(),
+  password: z
+    .string()
+    .min(PASSWORD_CONFIG.minLength)
+    .max(PASSWORD_CONFIG.maxLength)
+    .optional(),
   name: z.string().min(1).optional(),
   roleId: z.string().min(1).optional(),
   isActive: z.boolean().optional(),
@@ -146,8 +186,83 @@ export async function PUT(request: NextRequest) {
 
     // Prepare update data
     const updateData: Record<string, unknown> = { ...data }
+
+    // Handle password update with enhanced security
     if (password) {
-      updateData.passwordHash = await bcrypt.hash(password, 10)
+      // Validate password strength
+      const passwordValidation = validatePassword(password)
+      if (!passwordValidation.isValid) {
+        return NextResponse.json(
+          {
+            error: "Password does not meet requirements",
+            details: {
+              fieldErrors: {
+                password: [formatPasswordRequirementsError()],
+              },
+            },
+            requirements: passwordValidation.requirements,
+            strength: passwordValidation.strength,
+          },
+          { status: 400 }
+        )
+      }
+
+      // Get last 5 password hashes from history
+      const passwordHistory = await prisma.passwordHistory.findMany({
+        where: { userId: id },
+        orderBy: { createdAt: "desc" },
+        take: PASSWORD_CONFIG.historyCount,
+        select: { passwordHash: true },
+      })
+
+      // Check if new password matches any in history
+      const historyHashes = passwordHistory.map((h) => h.passwordHash)
+      const isReused = await isPasswordInHistory(password, historyHashes)
+
+      if (isReused) {
+        return NextResponse.json(
+          {
+            error: "Password has been used recently",
+            details: {
+              fieldErrors: {
+                password: [
+                  `Cannot reuse any of your last ${PASSWORD_CONFIG.historyCount} passwords. Please choose a different password.`,
+                ],
+              },
+            },
+          },
+          { status: 400 }
+        )
+      }
+
+      // Hash new password with cost factor 12
+      const newPasswordHash = await hashPassword(password)
+      updateData.passwordHash = newPasswordHash
+      updateData.passwordChangedAt = new Date()
+
+      // Store in password history
+      await prisma.passwordHistory.create({
+        data: {
+          userId: id,
+          passwordHash: newPasswordHash,
+        },
+      })
+
+      // Cleanup: keep only last N passwords in history
+      const oldHistory = await prisma.passwordHistory.findMany({
+        where: { userId: id },
+        orderBy: { createdAt: "desc" },
+        skip: PASSWORD_CONFIG.historyCount,
+        select: { id: true },
+      })
+
+      if (oldHistory.length > 0) {
+        await prisma.passwordHistory.deleteMany({
+          where: {
+            id: { in: oldHistory.map((h) => h.id) },
+          },
+        })
+      }
     }
 
     const user = await prisma.user.update({

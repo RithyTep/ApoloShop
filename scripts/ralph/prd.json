@@ -507,8 +507,8 @@
         "Build passes: bun run build"
       ],
       "priority": 33,
-      "passes": false,
-      "notes": "Critical security for admin accounts"
+      "passes": true,
+      "notes": "Implemented 2FA with TOTP using otplib. Added twoFactorEnabled/twoFactorSecret/recoveryCodes to User model. Created /api/auth/2fa/setup (POST/PUT/DELETE), /api/auth/2fa/verify, /api/auth/2fa/disable, /api/auth/2fa/recovery-codes, /api/auth/2fa/status endpoints. Login returns pendingToken when 2FA enabled. TwoFactorSettings UI component with QR code setup wizard. Encrypted secret storage and hashed recovery codes."
     },
     {
       "id": "US-034",
@@ -523,8 +523,8 @@
         "Build passes: bun run build"
       ],
       "priority": 34,
-      "passes": false,
-      "notes": "OWASP recommended password practices"
+      "passes": true,
+      "notes": "Implemented lib/password-security.ts with OWASP password practices. PasswordHistory model for reuse prevention, 90-day expiry warning, PasswordStrengthIndicator component with real-time feedback, bcrypt cost factor 12."
     },
     {
       "id": "US-035",
