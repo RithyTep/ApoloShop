@@ -2836,3 +2836,166 @@ export function initiateOAuthLogin(
   // Navigate to OAuth initiation URL (will redirect to provider)
   window.location.href = url;
 }
+
+// ============================================
+// SECURITY DASHBOARD
+// ============================================
+
+export type SecurityDashboardTimeframe = "1h" | "6h" | "24h" | "7d" | "30d";
+
+export interface SecurityDashboardSummary {
+  securityScore: number;
+  loginSuccessCount: number;
+  loginFailedCount: number;
+  failedLoginRate: string;
+  activeSessions: number;
+  lockedAccountsCount: number;
+  unreviewedSuspiciousLogins: number;
+  criticalEventsCount: number;
+}
+
+export interface DeviceSessionCount {
+  type: string;
+  count: number;
+}
+
+export interface SessionsBreakdown {
+  total: number;
+  byDevice: DeviceSessionCount[];
+}
+
+export interface LockedAccount {
+  userId: string;
+  userName: string;
+  email: string;
+  lockedAt: string;
+  lockedUntil: string;
+  failedAttempts: number;
+  ipAddress: string | null;
+}
+
+export interface LoginAttemptEntry {
+  id: string;
+  email: string;
+  userId: string | null;
+  ipAddress: string;
+  success: boolean;
+  createdAt: string;
+}
+
+export interface FailedLoginTrendPoint {
+  hour: string;
+  count: number;
+}
+
+export interface SecurityLogStats {
+  totalEvents: number;
+  byEventType: Record<string, number>;
+  bySeverity: Record<string, number>;
+  recentCritical: number;
+}
+
+export interface SecurityAlert {
+  pattern: string;
+  severity: "INFO" | "WARNING" | "CRITICAL";
+  count: number;
+  message: string;
+}
+
+export interface CriticalEvent {
+  id: string;
+  event: string;
+  userId: string | null;
+  userName: string | null;
+  userEmail: string | null;
+  ipAddress: string | null;
+  details: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+export interface SuspiciousLogin {
+  id: string;
+  userId: string;
+  deviceName: string | null;
+  ipAddress: string | null;
+  country: string | null;
+  city: string | null;
+  isNewDevice: boolean;
+  isNewLocation: boolean;
+  createdAt: string;
+  user: {
+    name: string;
+    email: string;
+  };
+}
+
+export interface SecurityDashboardConfig {
+  lockoutMaxAttempts: number;
+  lockoutDurationMinutes: number;
+}
+
+export interface SecurityDashboardResponse {
+  timeframe: SecurityDashboardTimeframe;
+  generatedAt: string;
+  summary: SecurityDashboardSummary;
+  sessions: SessionsBreakdown;
+  lockedAccounts: LockedAccount[];
+  recentLoginAttempts: LoginAttemptEntry[];
+  failedLoginTrends: FailedLoginTrendPoint[];
+  securityLogStats: SecurityLogStats;
+  alerts: SecurityAlert[];
+  criticalEvents: CriticalEvent[];
+  suspiciousLogins: SuspiciousLogin[];
+  config: SecurityDashboardConfig;
+}
+
+/**
+ * Hook to fetch security dashboard data
+ */
+export function useSecurityDashboard(timeframe: SecurityDashboardTimeframe = "24h") {
+  return useQuery({
+    queryKey: ["security-dashboard", timeframe],
+    queryFn: () =>
+      fetchAPI<SecurityDashboardResponse>(
+        `/api/admin/security-dashboard?timeframe=${timeframe}`
+      ),
+    staleTime: 30000, // 30 seconds - security data should be fairly fresh
+    refetchInterval: 60000, // Auto-refresh every minute
+  });
+}
+
+/**
+ * Hook to unlock a locked account
+ */
+export function useUnlockAccount() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (userId: string) =>
+      fetchAPI<{ success: boolean; message: string }>("/api/admin/lockouts", {
+        method: "POST",
+        body: JSON.stringify({ userId }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["security-dashboard"] });
+    },
+  });
+}
+
+/**
+ * Hook to force logout a user (revoke all their sessions)
+ */
+export function useForceLogout() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (userId: string) =>
+      fetchAPI<{ success: boolean; revokedCount: number }>("/api/admin/sessions", {
+        method: "DELETE",
+        body: JSON.stringify({ userId }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["security-dashboard"] });
+    },
+  });
+}
