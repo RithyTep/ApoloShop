@@ -5,16 +5,11 @@ import { useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { ShoppingCart, Plus, Minus } from "lucide-react"
+import { ShoppingCart } from "lucide-react"
 import { useProducts, useCategories, Product } from "@/lib/api-hooks"
 import { cn } from "@/lib/utils"
 import { WishlistButton } from "@/components/wishlist-button"
+import { ProductQuickView, QuickViewButton } from "@/components/product-quick-view"
 
 interface ProductGridProps {
   onAddToCart: (id: string, name: string, price: number, image: string) => void
@@ -28,8 +23,7 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
   const [isPending, startTransition] = useTransition()
   const [isAnimating, setIsAnimating] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [quantity, setQuantity] = useState(1)
+  const [quickViewOpen, setQuickViewOpen] = useState(false)
 
   const { data: productsData, isLoading: productsLoading, isFetching } = useProducts(categoryFilter || undefined)
   const { data: categoriesData } = useCategories()
@@ -103,20 +97,16 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
     setTimeout(() => setIsAnimating(false), 150)
   }
 
-  // Open product detail dialog
-  const openProductDialog = (product: Product) => {
+  // Open product quick view modal
+  const openQuickView = (product: Product) => {
     setSelectedProduct(product)
-    setQuantity(1)
-    setDialogOpen(true)
+    setQuickViewOpen(true)
   }
 
-  // Handle add to cart from dialog
-  const handleDialogAddToCart = () => {
-    if (selectedProduct) {
-      for (let i = 0; i < quantity; i++) {
-        onAddToCart(selectedProduct.id, selectedProduct.nameEn, selectedProduct.priceUsd, selectedProduct.imageUrl || "")
-      }
-      setDialogOpen(false)
+  // Handle add to cart from quick view
+  const handleQuickViewAddToCart = (id: string, name: string, price: number, image: string, quantity: number) => {
+    for (let i = 0; i < quantity; i++) {
+      onAddToCart(id, name, price, image)
     }
   }
 
@@ -215,19 +205,23 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
                   className="bg-card border border-border flex flex-col group animate-in fade-in-0 slide-in-from-bottom-2"
                   style={{ animationDelay: `${index * 30}ms`, animationDuration: "300ms" }}
                 >
-                  {/* Image - Click to open dialog */}
+                  {/* Image with Quick View on hover */}
                   <div className="relative">
-                    <button
-                      onClick={() => openProductDialog(product)}
-                      className="aspect-square overflow-hidden bg-muted block w-full cursor-pointer"
-                    >
+                    <div className="aspect-square overflow-hidden bg-muted">
                       <img
                         src={product.imageUrl || "/placeholder.svg"}
                         alt={product.nameEn}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading={index < 8 ? "eager" : "lazy"}
                       />
-                    </button>
+                    </div>
+                    {/* Hover overlay with Quick View button */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors duration-200 pointer-events-none">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
+                        <QuickViewButton onClick={() => openQuickView(product)} language={language} />
+                      </div>
+                    </div>
+                    {/* Wishlist button */}
                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <WishlistButton productId={product.id} size="sm" language={language} />
                     </div>
@@ -235,14 +229,9 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
 
                   {/* Content */}
                   <div className="p-3 sm:p-4 flex flex-col flex-1">
-                    <button
-                      onClick={() => openProductDialog(product)}
-                      className="hover:text-primary transition-colors text-left"
-                    >
-                      <h3 className="font-semibold text-sm sm:text-base text-foreground mb-1 line-clamp-2">
-                        {language === "EN" ? product.nameEn : product.nameKh}
-                      </h3>
-                    </button>
+                    <h3 className="font-semibold text-sm sm:text-base text-foreground mb-1 line-clamp-2">
+                      {language === "EN" ? product.nameEn : product.nameKh}
+                    </h3>
 
                     {/* Price */}
                     <p className="text-lg sm:text-xl font-bold text-primary mb-3">
@@ -288,105 +277,17 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
         )}
       </div>
 
-      {/* Product Detail Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-2xl w-[95vw] p-0 overflow-hidden">
-          {selectedProduct && (() => {
-            const inStock = (selectedProduct.inventory?.quantity || 0) > 0
-            return (
-              <div className="flex flex-col md:flex-row">
-                {/* Product Image */}
-                <div className="md:w-1/2 aspect-square bg-muted relative">
-                  <img
-                    src={selectedProduct.imageUrl || "/placeholder.svg"}
-                    alt={selectedProduct.nameEn}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-3 right-3">
-                    <WishlistButton productId={selectedProduct.id} size="md" language={language} />
-                  </div>
-                </div>
-
-                {/* Product Details */}
-                <div className="md:w-1/2 p-6 flex flex-col">
-                  <DialogHeader className="mb-4">
-                    <DialogTitle className="text-xl font-bold">
-                      {language === "EN" ? selectedProduct.nameEn : selectedProduct.nameKh}
-                    </DialogTitle>
-                  </DialogHeader>
-
-                  {/* Description */}
-                  <p className="text-muted-foreground text-sm mb-4 flex-grow">
-                    {language === "EN"
-                      ? selectedProduct.descriptionEn || "No description available"
-                      : selectedProduct.descriptionKh || "មិនមានការពិពណ៌នាទេ"}
-                  </p>
-
-                  {/* Price */}
-                  <p className="text-2xl font-bold text-primary mb-4">
-                    {currency === "USD"
-                      ? `$${Number(selectedProduct.priceUsd).toFixed(2)}`
-                      : `${Number(selectedProduct.priceKhr).toLocaleString()}៛`}
-                  </p>
-
-                  {/* Stock Badge */}
-                  <div className="mb-4">
-                    <Badge
-                      variant={inStock ? "default" : "outline"}
-                      className={inStock ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}
-                    >
-                      {language === "EN"
-                        ? inStock ? "In Stock" : "Out of Stock"
-                        : inStock ? "មាននៅក្នុងស្តុក" : "អស់ស្តុក"}
-                    </Badge>
-                  </div>
-
-                  {/* Quantity Selector */}
-                  {inStock && (
-                    <div className="flex items-center gap-4 mb-4">
-                      <span className="text-sm text-muted-foreground">
-                        {language === "EN" ? "Quantity:" : "ចំនួន:"}
-                      </span>
-                      <div className="flex items-center border border-border rounded">
-                        <button
-                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                          className="p-2 hover:bg-muted transition-colors"
-                          disabled={quantity <= 1}
-                        >
-                          <Minus size={16} />
-                        </button>
-                        <span className="px-4 py-2 min-w-[3rem] text-center font-medium">
-                          {quantity}
-                        </span>
-                        <button
-                          onClick={() => setQuantity(quantity + 1)}
-                          className="p-2 hover:bg-muted transition-colors"
-                        >
-                          <Plus size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Add to Cart Button */}
-                  <Button
-                    onClick={handleDialogAddToCart}
-                    disabled={!inStock}
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2 transition-transform active:scale-95"
-                    size="lg"
-                  >
-                    <ShoppingCart size={18} />
-                    <span>
-                      {language === "EN" ? "Add to Cart" : "បន្ថែមទៅរទុក"}
-                      {inStock && quantity > 1 && ` (${quantity})`}
-                    </span>
-                  </Button>
-                </div>
-              </div>
-            )
-          })()}
-        </DialogContent>
-      </Dialog>
+      {/* Product Quick View Modal */}
+      {selectedProduct && (
+        <ProductQuickView
+          product={selectedProduct}
+          open={quickViewOpen}
+          onOpenChange={setQuickViewOpen}
+          onAddToCart={handleQuickViewAddToCart}
+          currency={currency}
+          language={language}
+        />
+      )}
     </div>
   )
 }

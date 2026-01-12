@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -7,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { useCart, useLanguage, useCurrency } from "@/lib/shop-context"
 import type { ProductsConfig, Product } from "@/lib/api-hooks"
 import { WishlistButton } from "@/components/wishlist-button"
+import { ProductQuickView, QuickViewButton } from "@/components/product-quick-view"
 
 interface ProductsSectionProps {
   config: ProductsConfig
@@ -17,6 +19,19 @@ export function ProductsSection({ config, initialProducts }: ProductsSectionProp
   const { addToCart } = useCart()
   const { language } = useLanguage()
   const { currency } = useCurrency()
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [quickViewOpen, setQuickViewOpen] = useState(false)
+
+  const openQuickView = (product: Product) => {
+    setSelectedProduct(product)
+    setQuickViewOpen(true)
+  }
+
+  const handleQuickViewAddToCart = (id: string, name: string, price: number, image: string, quantity: number) => {
+    for (let i = 0; i < quantity; i++) {
+      addToCart(id, name, price, image)
+    }
+  }
 
   // Filter and limit products
   let products = initialProducts.filter((p) => p.isActive)
@@ -73,13 +88,20 @@ export function ProductsSection({ config, initialProducts }: ProductsSectionProp
                 key={product.id}
                 className="bg-card border border-border flex flex-col group"
               >
-                {/* Image */}
+                {/* Image with Quick View on hover */}
                 <div className="aspect-square overflow-hidden bg-muted relative">
                   <img
                     src={product.imageUrl || "/placeholder.svg"}
                     alt={language === "EN" ? product.nameEn : product.nameKh}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
+                  {/* Hover overlay with Quick View button */}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors duration-200 pointer-events-none">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
+                      <QuickViewButton onClick={() => openQuickView(product)} language={language} />
+                    </div>
+                  </div>
+                  {/* Wishlist button */}
                   <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     <WishlistButton productId={product.id} size="sm" language={language} />
                   </div>
@@ -147,6 +169,18 @@ export function ProductsSection({ config, initialProducts }: ProductsSectionProp
             )
           })}
         </div>
+
+        {/* Product Quick View Modal */}
+        {selectedProduct && (
+          <ProductQuickView
+            product={selectedProduct}
+            open={quickViewOpen}
+            onOpenChange={setQuickViewOpen}
+            onAddToCart={handleQuickViewAddToCart}
+            currency={currency}
+            language={language}
+          />
+        )}
       </div>
     </section>
   )

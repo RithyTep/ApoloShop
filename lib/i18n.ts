@@ -91,6 +91,19 @@ export const translations = {
       save: "Save",
       saved: "Saved",
     },
+    // Quick View
+    quickView: {
+      button: "Quick View",
+      addToCart: "Add to Cart",
+      quantity: "Quantity",
+      available: "available",
+      noDescription: "No description available",
+      viewFullDetails: "Click product for full details",
+      previousImage: "Previous image",
+      nextImage: "Next image",
+      decreaseQuantity: "Decrease quantity",
+      increaseQuantity: "Increase quantity",
+    },
   },
   kh: {
     // Order Status
@@ -182,6 +195,19 @@ export const translations = {
       removedFromWishlist: "បានដកចេញពីបញ្ជីប្រាថ្នា",
       save: "រក្សាទុក",
       saved: "បានរក្សាទុក",
+    },
+    // Quick View
+    quickView: {
+      button: "មើលរហ័ស",
+      addToCart: "បន្ថែមទៅរទុក",
+      quantity: "ចំនួន",
+      available: "នៅសល់",
+      noDescription: "មិនមានការពិពណ៌នាទេ",
+      viewFullDetails: "ចុចផលិតផលសម្រាប់ព័ត៌មានលម្អិត",
+      previousImage: "រូបភាពមុន",
+      nextImage: "រូបភាពបន្ទាប់",
+      decreaseQuantity: "បន្ថយចំនួន",
+      increaseQuantity: "បង្កើនចំនួន",
     },
   },
 }
