@@ -17,7 +17,8 @@ import { SettingsPage } from "./pages/settings-page"
 import { CustomizerPage } from "./customizer/customizer-page"
 import { BusinessHoursPage } from "./pages/business-hours-page"
 import { BacklogPage } from "./pages/backlog-page"
-import { useOrders, useLowStockItems } from "@/lib/api-hooks"
+import { ReviewsPage } from "./pages/reviews-page"
+import { useOrders, useLowStockItems, useAdminReviews } from "@/lib/api-hooks"
 
 type NavItem =
   | "dashboard"
@@ -35,6 +36,7 @@ type NavItem =
   | "customizer"
   | "business-hours"
   | "backlog"
+  | "reviews"
 
 export function AdminDashboard() {
   const [activeNav, setActiveNav] = useState<NavItem>("dashboard")
@@ -42,9 +44,11 @@ export function AdminDashboard() {
   // Fetch counts for sidebar badges
   const { data: ordersData } = useOrders({ status: "NEW" })
   const { data: lowStockData } = useLowStockItems()
+  const { data: reviewsData } = useAdminReviews({ status: "PENDING" })
 
   const newOrderCount = ordersData?.pagination?.total || 0
   const lowStockCount = lowStockData?.inventory?.length || 0
+  const pendingReviewCount = reviewsData?.pendingCount || 0
 
   const renderPage = () => {
     switch (activeNav) {
@@ -78,6 +82,8 @@ export function AdminDashboard() {
         return <BusinessHoursPage />
       case "backlog":
         return <BacklogPage />
+      case "reviews":
+        return <ReviewsPage />
       default:
         return <DashboardPage />
     }
@@ -90,6 +96,7 @@ export function AdminDashboard() {
         setActiveNav={setActiveNav}
         orderCount={newOrderCount}
         lowStockCount={lowStockCount}
+        reviewCount={pendingReviewCount}
       />
       <main className="flex-1 overflow-auto">{renderPage()}</main>
     </div>

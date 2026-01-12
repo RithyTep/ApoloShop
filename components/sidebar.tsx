@@ -18,6 +18,7 @@ import {
   Palette,
   Clock,
   ClipboardList,
+  MessageSquare,
   type LucideIcon,
 } from "lucide-react"
 import { useState } from "react"
@@ -39,12 +40,14 @@ type NavItem =
   | "customizer"
   | "business-hours"
   | "backlog"
+  | "reviews"
 
 interface SidebarProps {
   activeNav: NavItem
   setActiveNav: (item: NavItem) => void
   orderCount?: number
   lowStockCount?: number
+  reviewCount?: number
 }
 
 interface NavItemConfig {
@@ -60,7 +63,7 @@ interface NavGroup {
   items: NavItemConfig[]
 }
 
-export function Sidebar({ activeNav, setActiveNav, orderCount = 0, lowStockCount = 0 }: SidebarProps) {
+export function Sidebar({ activeNav, setActiveNav, orderCount = 0, lowStockCount = 0, reviewCount = 0 }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(true)
 
   const navGroups: NavGroup[] = [
@@ -74,6 +77,7 @@ export function Sidebar({ activeNav, setActiveNav, orderCount = 0, lowStockCount
       items: [
         { id: "orders", label: "Orders", icon: ShoppingBag, badge: orderCount > 0 ? orderCount : undefined },
         { id: "customers", label: "Customers", icon: Users },
+        { id: "reviews", label: "Reviews", icon: MessageSquare, badge: reviewCount > 0 ? reviewCount : undefined },
       ],
     },
     {

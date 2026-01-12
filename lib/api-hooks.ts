@@ -1638,3 +1638,204 @@ export function useProductRecommendations(productId: string, limit = 8) {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
+
+// ============================================
+// PRODUCT REVIEWS
+// ============================================
+
+export type ReviewStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export interface Review {
+  id: string;
+  rating: number;
+  comment: string | null;
+  status: ReviewStatus;
+  reviewerName: string;
+  reviewerEmail?: string;
+  createdAt: string;
+  updatedAt?: string;
+  product?: {
+    id: string;
+    nameEn: string;
+    nameKh: string;
+    imageUrl: string | null;
+  };
+}
+
+export interface RatingDistribution {
+  1: number;
+  2: number;
+  3: number;
+  4: number;
+  5: number;
+}
+
+export interface ReviewStats {
+  averageRating: number;
+  totalReviews: number;
+  distribution: RatingDistribution;
+}
+
+export interface ProductReviewsResponse {
+  productId: string;
+  reviews: Review[];
+  stats: ReviewStats;
+  pagination: {
+    total: number;
+    offset: number;
+    limit: number;
+    hasMore: boolean;
+  };
+}
+
+export interface AdminReviewsResponse {
+  reviews: Review[];
+  pendingCount: number;
+  pagination: {
+    total: number;
+    offset: number;
+    limit: number;
+    hasMore: boolean;
+  };
+}
+
+/**
+ * Hook to fetch reviews for a specific product
+ */
+export function useProductReviews(productId: string, options?: { limit?: number; offset?: number }) {
+  const params = new URLSearchParams();
+  if (options?.limit) params.set("limit", options.limit.toString());
+  if (options?.offset) params.set("offset", options.offset.toString());
+
+  return useQuery({
+    queryKey: ["product-reviews", productId, options],
+    queryFn: () =>
+      fetchAPI<ProductReviewsResponse>(
+        `/api/products/${productId}/reviews?${params.toString()}`
+      ),
+    enabled: !!productId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+}
+
+/**
+ * Hook to create a new review for a product
+ */
+export function useCreateReview() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      productId,
+      rating,
+      comment,
+      customerId,
+      guestName,
+    }: {
+      productId: string;
+      rating: number;
+      comment?: string;
+      customerId?: string;
+      guestName?: string;
+    }) =>
+      fetchAPI<{ message: string; review: Review }>(
+        `/api/products/${productId}/reviews`,
+        {
+          method: "POST",
+          body: JSON.stringify({ rating, comment, customerId, guestName }),
+        }
+      ),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["product-reviews", variables.productId] });
+    },
+  });
+}
+
+/**
+ * Hook to fetch all reviews for admin (with moderation)
+ */
+export function useAdminReviews(options?: { status?: ReviewStatus; productId?: string; limit?: number; offset?: number }) {
+  const params = new URLSearchParams();
+  if (options?.status) params.set("status", options.status);
+  if (options?.productId) params.set("productId", options.productId);
+  if (options?.limit) params.set("limit", options.limit.toString());
+  if (options?.offset) params.set("offset", options.offset.toString());
+
+  return useQuery({
+    queryKey: ["admin-reviews", options],
+    queryFn: () =>
+      fetchAPI<AdminReviewsResponse>(`/api/reviews?${params.toString()}`),
+    staleTime: 1 * 60 * 1000, // 1 minute
+  });
+}
+
+/**
+ * Hook to update review status (admin moderation)
+ */
+export function useUpdateReviewStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ reviewId, status }: { reviewId: string; status: ReviewStatus }) =>
+      fetchAPI<{ message: string; review: Review }>(`/api/reviews/${reviewId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["product-reviews"] });
+    },
+  });
+}
+
+/**
+ * Hook to delete a review (admin)
+ */
+export function useDeleteReview() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (reviewId: string) =>
+      fetchAPI<{ message: string }>(`/api/reviews/${reviewId}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["product-reviews"] });
+    },
+  });
+}
+
+/**
+ * Hook to fetch rating stats for multiple products at once
+ * Useful for displaying ratings on product cards
+ */
+export function useProductRatings(productIds: string[]) {
+  return useQuery({
+    queryKey: ["product-ratings", productIds.sort().join(",")],
+    queryFn: async () => {
+      const ratings = await Promise.all(
+        productIds.map(async (productId) => {
+          try {
+            const response = await fetchAPI<ProductReviewsResponse>(
+              `/api/products/${productId}/reviews?limit=0`
+            );
+            return {
+              productId,
+              averageRating: response.stats.averageRating,
+              totalReviews: response.stats.totalReviews,
+            };
+          } catch {
+            return { productId, averageRating: 0, totalReviews: 0 };
+          }
+        })
+      );
+      return ratings.reduce(
+        (acc, item) => {
+          acc[item.productId] = { averageRating: item.averageRating, totalReviews: item.totalReviews };
+          return acc;
+        },
+        {} as Record<string, { averageRating: number; totalReviews: number }>
+      );
+    },
+    enabled: productIds.length > 0,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}

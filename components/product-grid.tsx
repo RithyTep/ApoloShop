@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ShoppingCart } from "lucide-react"
-import { useProducts, useCategories, Product } from "@/lib/api-hooks"
+import { useProducts, useCategories, useProductRatings, Product } from "@/lib/api-hooks"
 import { cn } from "@/lib/utils"
 import { WishlistButton } from "@/components/wishlist-button"
 import { ProductQuickView, QuickViewButton } from "@/components/product-quick-view"
+import { StarRating } from "@/components/star-rating"
 
 interface ProductGridProps {
   onAddToCart: (id: string, name: string, price: number, image: string) => void
@@ -30,6 +31,10 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
 
   const products = productsData?.products?.filter((p) => p.isActive) || []
   const categories = categoriesData?.categories?.filter((c) => c.isActive) || []
+
+  // Fetch ratings for all visible products
+  const productIds = products.map((p) => p.id)
+  const { data: ratingsData } = useProductRatings(productIds)
 
   // Preload images utility
   const preloadImages = (imageUrls: string[]) => {
@@ -232,6 +237,19 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
                     <h3 className="font-semibold text-sm sm:text-base text-foreground mb-1 line-clamp-2">
                       {language === "EN" ? product.nameEn : product.nameKh}
                     </h3>
+
+                    {/* Rating */}
+                    {ratingsData?.[product.id] && ratingsData[product.id].totalReviews > 0 && (
+                      <div className="mb-2">
+                        <StarRating
+                          rating={ratingsData[product.id].averageRating}
+                          size="sm"
+                          showValue
+                          showCount
+                          totalReviews={ratingsData[product.id].totalReviews}
+                        />
+                      </div>
+                    )}
 
                     {/* Price */}
                     <p className="text-lg sm:text-xl font-bold text-primary mb-3">

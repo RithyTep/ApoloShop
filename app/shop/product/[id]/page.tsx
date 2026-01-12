@@ -10,10 +10,12 @@ import { Card } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Minus, Plus, ShoppingCart, Package } from "lucide-react"
-import { Product } from "@/lib/api-hooks"
+import { Product, useProductReviews } from "@/lib/api-hooks"
 import { useRecentlyViewed } from "@/lib/use-recently-viewed"
 import { RecentlyViewed } from "@/components/recently-viewed"
 import { ProductRecommendations } from "@/components/product-recommendations"
+import { ProductReviews } from "@/components/product-reviews"
+import { StarRating } from "@/components/star-rating"
 
 interface ProductDetailProps {
   language?: "EN" | "KH"
@@ -43,6 +45,9 @@ export default function ProductDetailPage() {
     queryFn: () => fetchProduct(productId),
     enabled: !!productId,
   })
+
+  // Fetch reviews for rating display
+  const { data: reviewsData } = useProductReviews(productId, { limit: 0 })
 
   // Track this product as recently viewed
   useEffect(() => {
@@ -237,6 +242,19 @@ export default function ProductDetailPage() {
               {getName(product.nameEn, product.nameKh)}
             </h1>
 
+            {/* Rating */}
+            {reviewsData?.stats && reviewsData.stats.totalReviews > 0 && (
+              <div className="flex items-center gap-2">
+                <StarRating
+                  rating={reviewsData.stats.averageRating}
+                  size="md"
+                  showValue
+                  showCount
+                  totalReviews={reviewsData.stats.totalReviews}
+                />
+              </div>
+            )}
+
             {/* Price */}
             <div className="text-3xl font-bold text-primary">
               {formatPrice(product.priceUsd, product.priceKhr)}
@@ -326,6 +344,9 @@ export default function ProductDetailPage() {
           excludeProductId={productId}
           maxDisplay={4}
         />
+
+        {/* Product Reviews */}
+        <ProductReviews productId={productId} language={language} />
       </main>
     </div>
   )
