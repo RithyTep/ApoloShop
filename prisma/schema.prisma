@@ -1,16 +1,16 @@
 // Prisma Schema for ApoloShop CMS
-// PostgreSQL database hosted on Railway.com
+// PostgreSQL database hosted on Neon (Vercel deployment)
 
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["multiSchema"]
-  binaryTargets   = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  schemas  = ["apolo"]
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+  schemas   = ["apolo"]
 }
 
 // ============================================
