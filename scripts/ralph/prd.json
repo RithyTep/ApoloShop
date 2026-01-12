@@ -636,8 +636,8 @@
         "Build passes: bun run build"
       ],
       "priority": 41,
-      "passes": false,
-      "notes": "Secure self-service password recovery"
+      "passes": true,
+      "notes": "Implemented PasswordResetToken model, lib/password-reset.ts service with 60-min token expiry and rate limiting (3/hour), POST /api/auth/forgot-password and POST/GET /api/auth/reset-password endpoints, email notifications via notification-service, password history check, session revocation on reset, bilingual translations (EN/KH)"
     },
     {
       "id": "US-042",

@@ -34,9 +34,10 @@ model User {
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
-  sessions         Session[]
-  passwordHistory  PasswordHistory[]
-  socialAccounts   SocialAccount[]
+  sessions            Session[]
+  passwordHistory     PasswordHistory[]
+  socialAccounts      SocialAccount[]
+  passwordResetTokens PasswordResetToken[]
 
   @@map("users")
   @@schema("apolo")
@@ -168,6 +169,25 @@ model AccountLockout {
   @@index([userId])
   @@index([lockedUntil])
   @@map("account_lockouts")
+  @@schema("apolo")
+}
+
+// Password reset tokens
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique // Hashed token (SHA-256)
+  expiresAt DateTime @map("expires_at")
+  usedAt    DateTime? @map("used_at") // Null until token is used
+  ipAddress String?  @map("ip_address") // IP that requested the reset
+  userAgent String?  @map("user_agent") @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
   @@schema("apolo")
 }
 
