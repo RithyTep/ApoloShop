@@ -213,8 +213,8 @@
         "Build passes: bun run build"
       ],
       "priority": 14,
-      "passes": false,
-      "notes": "Prevent stockouts with proactive alerts"
+      "passes": true,
+      "notes": "Implemented /api/reports/inventory with lowStockProducts (critical/low status), outOfStockProducts, totalInventoryValue (USD/KHR), stockByCategory, fastMovingProducts, slowMovingProducts. Configurable threshold via ?threshold= param. Added Inventory tab to reports-page.tsx with full visualizations."
     },
     {
       "id": "US-015",
@@ -228,8 +228,8 @@
         "Build passes: bun run build"
       ],
       "priority": 15,
-      "passes": false,
-      "notes": "Core multi-tenant architecture"
+      "passes": true,
+      "notes": "Implemented Client model with slug/domain support, clientId on Product/Order/Customer, /api/clients CRUD with super admin auth, and middleware for client detection from hostname"
     },
     {
       "id": "US-016",

@@ -300,3 +300,57 @@ Project: ApoloShop - Product Search Feature
   - LTV (Lifetime Value) calculated as sum of all completed order totals per customer
   - Segment thresholds are currently hardcoded - could be made configurable in future
 ---
+
+## 2026-01-12 - US-014
+- **Implemented**: Admin inventory report
+- **Files changed**:
+  - `app/api/reports/inventory/route.ts` (new file)
+  - `lib/api-hooks.ts` (modified - added InventoryReport types and useInventoryReport hook)
+  - `components/pages/reports-page.tsx` (modified - added Inventory tab with full visualizations)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **GET /api/reports/inventory endpoint**: Returns comprehensive inventory status report
+  - **Summary metrics**: totalProducts, productsWithInventory, lowStockCount, criticalStockCount, outOfStockCount, healthyStockCount, totalInventoryValue (USD/KHR)
+  - **Low stock products**: With critical/low status indicators, sorted by severity
+  - **Out of stock products**: Products with zero quantity or no inventory record
+  - **Stock by category**: Breakdown of inventory value and stock alerts per category
+  - **Fast-moving products**: High sales velocity items with daysUntilStockout calculation
+  - **Slow-moving products**: No sales in 30 days, tied-up inventory value
+  - **Configurable threshold**: `?threshold=` query param for custom low stock level
+  - **Inventory tab**: Added to reports page with summary cards, pie chart, bar chart, and multiple tables
+- **Learnings for future iterations**:
+  - Critical status = quantity <= 50% of minLevel; low status = quantity <= minLevel
+  - Products without inventory records are treated as out-of-stock
+  - Fast-moving = sold 10+ units in last 30 days; daysUntilStockout = currentStock / dailySaleRate
+  - Slow-moving = has stock but zero sales in 30 days
+  - Email/notification alerts were marked optional in acceptance criteria - could be added later via webhook integration
+  - Inventory report doesn't use date range since it's a snapshot of current state
+---
+
+## 2026-01-12 - US-015
+- **Implemented**: Multi-tenant client model
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added Client model, clientId to Product/Order/Customer/ShopCustomization)
+  - `app/api/clients/route.ts` (new file - CRUD endpoint with super admin auth)
+  - `lib/client-middleware.ts` (new file - client detection utilities)
+  - `middleware.ts` (new file - Next.js middleware for request interception)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Client model**: id, name, slug (unique, for subdomains), domain (unique, for custom domains), settings (JSON), isActive, timestamps
+  - **Relations**: Client has many Products, Orders, Customers, ShopCustomizations (optional clientId on each)
+  - **GET /api/clients**: List clients with pagination, search, isActive filter, includes _count for products/orders/customers
+  - **POST /api/clients**: Create client with slug/domain uniqueness validation
+  - **PUT /api/clients**: Update client with uniqueness checks
+  - **DELETE /api/clients**: Soft delete (deactivate) if has data, force delete with cascade option
+  - **Super admin auth**: Uses x-admin-key header or SUPER_ADMIN_KEY env var
+  - **Client middleware**: extractClientIdentifier (domain vs subdomain vs default), findClientByIdentifier, getClientFromRequest, withClient/requireClient HOCs
+  - **Next.js middleware**: Extracts client slug from hostname, injects x-client-slug header for API routes
+- **Learnings for future iterations**:
+  - Used optional clientId (nullable) for backwards compatibility with existing single-tenant data
+  - Slug is for subdomains ({slug}.apoloshop.com), domain is for custom domains (shop.example.com)
+  - Middleware is lightweight (edge runtime) - database lookup happens in API route via client-middleware.ts
+  - BASE_DOMAIN env var controls subdomain extraction (defaults to apoloshop.com)
+  - DEFAULT_CLIENT_SLUG env var for fallback when no client detected (defaults to "default")
+  - Custom domains are prefixed with "domain:" in middleware header to distinguish from slugs
+  - Build passes but database migration needed to add client_id columns to actual DB
+---
