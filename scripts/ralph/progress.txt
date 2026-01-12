@@ -1741,3 +1741,37 @@ Project: ApoloShop - Product Search Feature
   - Existing Progress component from Shadcn used for tier progress bar
   - Slider component from Shadcn used for point selection in checkout
 ---
+
+## 2026-01-12 - US-056
+- **Implemented**: Email marketing integration
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added NewsletterSubscriber, EmailCampaign, EmailSend, AbandonedCart, WelcomeEmailProgress models)
+  - `lib/email-marketing.ts` (new file - email marketing service)
+  - `components/newsletter-form.tsx` (new file - newsletter subscription form)
+  - `app/api/newsletter/subscribe/route.ts` (new file)
+  - `app/api/newsletter/unsubscribe/route.ts` (new file)
+  - `app/api/email/cron/route.ts` (new file - cron for automated emails)
+  - `lib/i18n.ts` (modified - added newsletter translations EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **NewsletterSubscriber model**: email, status, source, language, unsubscribeToken, confirmedAt
+  - **EmailCampaign model**: type (NEWSLETTER/PROMOTIONAL/TRANSACTIONAL/WELCOME/ABANDONED_CART/WINBACK), bilingual content, scheduling, statistics
+  - **EmailSend model**: tracks individual sends with status (PENDING/SENT/DELIVERED/OPENED/CLICKED/BOUNCED/FAILED)
+  - **AbandonedCart model**: tracks cart contents, recovery token, email sequence status (1hr/24hr/72hr)
+  - **WelcomeEmailProgress model**: tracks welcome email series (3 emails)
+  - **SendGrid integration**: sendViaSendGrid() with API key support
+  - **SMTP fallback**: uses existing notification-service.ts sendEmailNotification()
+  - **Newsletter form**: NewsletterForm and NewsletterSection components, stacked/inline variants
+  - **Abandoned cart recovery**: processAbandonedCarts() sends 3 emails at 1hr, 24hr, 72hr intervals
+  - **Welcome series**: startWelcomeSeries() and processWelcomeSeries() for 3-email onboarding
+  - **Order emails**: sendOrderConfirmationEmail() and sendShippingNotificationEmail()
+  - **Cron endpoint**: /api/email/cron for scheduled processing (CRON_SECRET auth)
+- **Learnings for future iterations**:
+  - Email campaign types cover all use cases: NEWSLETTER, PROMOTIONAL, TRANSACTIONAL, WELCOME, ABANDONED_CART, WINBACK
+  - Abandoned cart detection: mark as abandoned after 1 hour of inactivity
+  - Recovery token pattern: unique token for cart restoration without login
+  - Welcome series timing: immediate, +1 day, +3 days with discount code in final email
+  - SendGrid returns 202 for success, message ID in x-message-id header
+  - Cron job should be called hourly via Vercel Cron or external scheduler
+  - Unsubscribe tokens stored in DB, one-click unsubscribe via URL param
+---
