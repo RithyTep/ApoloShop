@@ -1997,3 +1997,33 @@ Project: ApoloShop - Product Search Feature
   - Admin page pattern: separate dialogs for create vs update operations
   - Status icons and colors improve tracking UX
 ---
+
+## 2026-01-13 - US-064
+- **Implemented**: Product variants and options system
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added ProductVariant model, hasVariants/variantTypes to Product)
+  - `components/variant-selector.tsx` (new file - variant selector UI component)
+  - `components/product-detail-client.tsx` (modified - integrated variant selector)
+  - `lib/server-utils.ts` (modified - include variants in product fetch)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **ProductVariant model**: productId, sku, options (JSON), priceUsd, priceKhr, stock, imageUrl, sortOrder
+  - **Product fields**: hasVariants flag, variantTypes array for configuring variant dimensions
+  - **Variant types**: size, color, material, style, pattern, weight, flavor, scent (with EN/KH labels)
+  - **Color swatches**: Visual color buttons using hex color map (30+ colors), checkmark on selection
+  - **Text buttons**: For non-color variants (size, material, etc.)
+  - **Stock per option**: Options show as disabled/unavailable when variant has 0 stock
+  - **Variant pricing**: Display price difference from base price
+  - **Image switching**: Display variant-specific images when selected
+  - **Cart integration**: Cart items include variantId, variantSku, variantOptions
+  - **Bilingual**: Full EN/KH support for labels, stock status, prompts
+- **Learnings for future iterations**:
+  - Variant options stored as JSON object: `{ "size": "M", "color": "Red" }`
+  - hasVariants flag differentiates products with/without variants for UI logic
+  - variantSelectionRequired blocks add-to-cart until all options selected
+  - Color map includes common colors + tailwind palette names
+  - Prisma Decimal needs type casting for variant prices (toNumber check)
+  - Cart items should use composite key (productId + variantId) to handle same product with different variants
+  - VariantSelector component is reusable - takes variants array and variantTypes
+  - Server-utils includes variants in product fetch with isActive filter and sortOrder
+---
