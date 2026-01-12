@@ -652,8 +652,8 @@
         "Build passes: bun run build"
       ],
       "priority": 42,
-      "passes": false,
-      "notes": "Ensures valid customer emails"
+      "passes": true,
+      "notes": "Implemented EmailVerifyToken model, lib/email-verification.ts service with 24-hour token expiry and rate limiting (3/hour), POST /api/auth/send-verification and GET/POST /api/auth/verify-email endpoints, resend option with cooldown, isEmailVerificationRequired() helper for action restrictions, bilingual translations (EN/KH)"
     },
     {
       "id": "US-043",

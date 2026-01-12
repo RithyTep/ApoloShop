@@ -1259,3 +1259,37 @@ Project: ApoloShop - Product Search Feature
   - Password history stored indefinitely (historyCount controls how many to check, not total stored)
   - Clean up expired/used tokens periodically via cleanupExpiredTokens()
 ---
+
+## 2026-01-12 - US-042
+- **Implemented**: Email verification
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added EmailVerifyToken model, emailVerified/emailVerifiedAt to User/Customer)
+  - `lib/email-verification.ts` (new file - verification service)
+  - `app/api/auth/send-verification/route.ts` (new file - GET/POST endpoint)
+  - `app/api/auth/verify-email/route.ts` (new file - GET/POST endpoint)
+  - `lib/i18n.ts` (modified - added emailVerification translations EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **EmailVerifyToken model**: userId (optional), customerId (optional), email, token (SHA-256 hashed), expiresAt, usedAt, ipAddress, userAgent
+  - **User/Customer model additions**: emailVerified (boolean), emailVerifiedAt (datetime)
+  - **VERIFICATION_CONFIG**: tokenExpiryHours (24), maxResendPerHour (3), minTimeBetweenResends (60s)
+  - **sendUserVerificationEmail()**: Generates token, sends email, rate limits
+  - **sendCustomerVerificationEmail()**: Same for customer accounts
+  - **validateVerificationToken()**: Validates without consuming (for preview)
+  - **verifyEmail()**: Consumes token, updates emailVerified status
+  - **getVerificationStatus()**: Returns verification state and resend eligibility
+  - **isEmailVerificationRequired()**: Helper to check if action requires verification
+  - **GET /api/auth/send-verification**: Returns verification status
+  - **POST /api/auth/send-verification**: Sends/resends verification email
+  - **GET /api/auth/verify-email**: Redirects to success/error page after verification
+  - **POST /api/auth/verify-email**: JSON API for AJAX verification
+  - **Bilingual support**: Full EN/KH translations for all verification UI
+- **Learnings for future iterations**:
+  - EmailVerifyToken supports both userId and customerId (one must be set)
+  - 24-hour token expiry is more lenient than password reset (1 hour) since email change is less critical
+  - Rate limit is per-account (not per-email) since we're verifying known accounts
+  - GET endpoint redirects to pages, POST returns JSON - supports both link clicks and SPA
+  - validateVerificationToken() allows checking token without consuming (useful for preview before confirm)
+  - isEmailVerificationRequired() centralizes list of restricted actions
+  - cleanupExpiredTokens() can be run periodically to clean database
+---
