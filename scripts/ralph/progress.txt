@@ -1775,3 +1775,61 @@ Project: ApoloShop - Product Search Feature
   - Cron job should be called hourly via Vercel Cron or external scheduler
   - Unsubscribe tokens stored in DB, one-click unsubscribe via URL param
 ---
+
+## 2026-01-12 - US-057
+- **Implemented**: SEO optimization
+- **Files changed**:
+  - `app/sitemap.ts` (new file - dynamic sitemap generation)
+  - `components/json-ld.tsx` (new file - JSON-LD structured data components)
+  - `components/product-detail-client.tsx` (new file - client-side product detail with SEO integration)
+  - `lib/seo.ts` (new file - SEO utilities: slug generation, JSON-LD helpers, metadata helpers)
+  - `app/shop/product/[id]/page.tsx` (modified - added generateMetadata, JSON-LD, canonical URLs)
+  - `lib/server-utils.ts` (modified - added getProductByIdOrSlug with review stats for SEO)
+  - `lib/api-hooks.ts` (modified - type exports for SEO components)
+  - `prisma/schema.prisma` (modified - confirmed slug field on Product model)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Dynamic meta tags**: generateMetadata() for product pages with title, description, keywords, Open Graph, Twitter Cards
+  - **Sitemap.xml**: Auto-generated at /sitemap.xml with static pages, products (using slug or ID), and categories
+  - **JSON-LD structured data**: ProductJsonLd, BreadcrumbJsonLd, OrganizationJsonLd, WebsiteJsonLd, LocalBusinessJsonLd components
+  - **Canonical URLs**: alternates.canonical set on all product pages to prevent duplicate content
+  - **SEO-friendly slugs**: Product slug field support with ID fallback for backwards compatibility
+  - **SEO utilities**: generateSlug(), generateUniqueSlug(), truncateForMeta(), getBaseUrl(), getCanonicalUrl(), getProductUrl(), getCategoryUrl()
+  - **Product page SEO**: Full metadata with product name, description, price, category, images
+  - **Review integration**: Aggregate rating included in JSON-LD when reviews exist
+- **Learnings for future iterations**:
+  - Next.js sitemap() function in app router returns MetadataRoute.Sitemap array
+  - JSON-LD rendered via dangerouslySetInnerHTML with script type="application/ld+json"
+  - Product URL prefers slug over ID for better SEO, with graceful fallback
+  - getBaseUrl() checks NEXT_PUBLIC_BASE_URL, then VERCEL_URL, then localhost default
+  - Prisma query for sitemap uses select with only needed fields for performance
+  - Review stats attached to product via _reviewStats for SSR SEO metadata
+  - Sitemap includes changeFrequency and priority for search engine hints
+---
+
+## 2026-01-12 - US-058
+- **Implemented**: Image optimization pipeline
+- **Files changed**:
+  - `lib/image-optimizer.ts` (new file - server-side image processing with sharp)
+  - `app/api/images/optimize/route.ts` (new file - optimized image upload endpoint)
+  - `components/optimized-image.tsx` (new file - lazy loading image component)
+  - `package.json` (modified - added sharp and @types/sharp)
+- **Features**:
+  - **Multi-size generation**: thumbnail (80px), small (320px), medium (640px), large (1024px), xlarge (1920px)
+  - **WebP conversion**: Primary format with 82% quality for best compression/quality balance
+  - **Fallback formats**: JPEG (85% quality, mozjpeg) for older browsers, PNG for transparency
+  - **Blur placeholder (LQIP)**: 20x20 blurred JPEG base64 data URL for instant loading
+  - **Smart compression**: Size-appropriate compression without visible quality loss
+  - **POST /api/images/optimize**: Accepts file upload, returns optimized variants + blur placeholder
+  - **OptimizedImage component**: picture element for WebP fallback, Intersection Observer lazy loading, blur-to-clear transition, responsive srcset
+  - **useImageOptimizer hook**: Upload helper with progress tracking
+  - **CDN integration**: Cloudflare R2 with 1-year cache headers (existing infrastructure)
+- **Learnings for future iterations**:
+  - sharp is the gold standard for Node.js image processing, handles all formats
+  - WebP provides 25-35% smaller files than JPEG at same quality
+  - Blur placeholder (LQIP) should be very small (20x20) - it's only seen for ~100ms
+  - Intersection Observer rootMargin of 200px starts loading just before visible
+  - picture element source order matters: WebP first, then fallback
+  - fetchPriority="high" for above-fold images, "auto" for lazy loaded
+  - Native loading="lazy" + IntersectionObserver = best lazy loading support
+---
