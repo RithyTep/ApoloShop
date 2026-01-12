@@ -2027,3 +2027,31 @@ Project: ApoloShop - Product Search Feature
   - VariantSelector component is reusable - takes variants array and variantTypes
   - Server-utils includes variants in product fetch with isActive filter and sortOrder
 ---
+
+## 2026-01-13 - US-065
+- **Implemented**: Barcode and SKU management
+- **Files changed**:
+  - `lib/sku-barcode.ts` (new) - SKU generation and barcode utilities
+  - `components/barcode-scanner.tsx` (new) - Camera-based barcode scanner with manual fallback
+  - `components/barcode-label.tsx` (new) - Barcode label printing with multiple sizes
+  - `app/api/sku/route.ts` (new) - SKU generation API
+  - `app/api/inventory/scan/route.ts` (new) - Scan-to-add inventory API
+  - `components/pages/inventory-page.tsx` (modified) - Added scan-to-add and print labels
+  - `components/pages/products-page.tsx` (modified) - Added auto-generate SKU and print label buttons
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - Auto-generate SKU: Format {CAT}-{PROD}{SEQ} (e.g., COF-LC001)
+  - BarcodeScanner: Uses BarcodeDetector API with camera, manual input fallback
+  - BarcodeLabel: Three sizes (38x25mm, 50x30mm, 60x40mm), SVG download, print preview
+  - PrintPreviewDialog: Bulk label printing with quantity per product
+  - Scan-to-add: Quick inventory updates via barcode scan, add/subtract actions
+  - EAN-13 barcode generation from SKU for label printing
+  - SKU search already existed in products table filter
+- **Learnings for future iterations**:
+  - BarcodeDetector API not available in all browsers, needs manual input fallback
+  - For camera-based scanning: `navigator.mediaDevices.getUserMedia()` with facingMode: 'environment'
+  - EAN-13 check digit calculation: sum of odd positions * 1 + even positions * 3, mod 10
+  - Label sizes: Common label paper sizes in mm (38x25, 50x30, 60x40)
+  - SKU format: Keep short but descriptive - category code (3 chars) + product initials + sequence
+  - Print: Use window.open() with print styles for label printing
+---

@@ -1019,8 +1019,8 @@
         "Build passes: bun run build"
       ],
       "priority": 65,
-      "passes": false,
-      "notes": "Streamlines inventory management for physical stores"
+      "passes": true,
+      "notes": "Implemented lib/sku-barcode.ts with auto-generate SKU (category prefix + product code + sequence), BarcodeScanner component with camera/manual input, BarcodeLabel/PrintPreviewDialog for label printing (small/medium/large sizes), scan-to-add in inventory page, SKU search already existed. APIs: /api/sku and /api/inventory/scan."
     },
     {
       "id": "US-066",
