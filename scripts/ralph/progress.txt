@@ -1225,3 +1225,37 @@ Project: ApoloShop - Product Search Feature
   - OAuth login creates session using existing session-service for consistency
   - Callback routes set oauth-login cookie (1 min expiry) for client-side success detection
 ---
+
+## 2026-01-12 - US-041
+- **Implemented**: Password reset flow
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added PasswordResetToken model, relation to User)
+  - `lib/password-reset.ts` (new file - password reset service)
+  - `app/api/auth/forgot-password/route.ts` (new file - POST endpoint)
+  - `app/api/auth/reset-password/route.ts` (new file - GET/POST endpoint)
+  - `lib/i18n.ts` (modified - added passwordReset translations EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **PasswordResetToken model**: userId, token (SHA-256 hashed), expiresAt, usedAt, ipAddress, userAgent
+  - **RESET_CONFIG**: tokenExpiryMinutes (60), maxRequestsPerHour (3), tokenLength (32), minTimeBetweenRequests (60s)
+  - **Token generation**: Secure random token with SHA-256 hashing for storage
+  - **Rate limiting**: 3 requests per hour per email, 60-second cooldown between requests
+  - **POST /api/auth/forgot-password**: Validates email, checks rate limit, generates token, sends email
+  - **GET /api/auth/reset-password**: Validates token without exposing userId (just email)
+  - **POST /api/auth/reset-password**: Validates token, new password strength, password history
+  - **Password validation**: Uses existing PASSWORD_CONFIG (min 8 chars, complexity requirements)
+  - **Password history check**: Prevents reuse of last 5 passwords via isPasswordInHistory()
+  - **Session revocation**: All sessions invalidated on password reset (force re-login)
+  - **Email notifications**: Reset link email and confirmation email via notification-service
+  - **Security measures**: Generic responses to prevent email enumeration, timing-safe token comparison
+  - **Bilingual support**: Full EN/KH translations for all UI text
+- **Learnings for future iterations**:
+  - SHA-256 for token storage (not bcrypt) since we only need exact match, not partial verification
+  - Generic "If account exists" response prevents user enumeration attacks
+  - Token invalidation on password reset ensures one-time use
+  - Rate limit by email (not IP) to prevent distributed attacks while allowing legitimate retries
+  - Cooldown period (minTimeBetweenRequests) prevents rapid request spam
+  - Session revocation is critical security measure - user must re-authenticate
+  - Password history stored indefinitely (historyCount controls how many to check, not total stored)
+  - Clean up expired/used tokens periodically via cleanupExpiredTokens()
+---
