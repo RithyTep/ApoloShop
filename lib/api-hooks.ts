@@ -3362,3 +3362,178 @@ export function useCalculateLoyaltyRedemption() {
       }),
   });
 }
+
+// ============================================
+// PERFORMANCE MONITORING
+// ============================================
+
+export interface WebVitalData {
+  name: string;
+  avgValue: number;
+  count: number;
+}
+
+export interface WebVitalRatings {
+  good: number;
+  "needs-improvement": number;
+  poor: number;
+}
+
+export interface SlowEndpoint {
+  path: string;
+  method: string | null;
+  avgTime: number;
+  count: number;
+}
+
+export interface SlowQuery {
+  name: string;
+  avgTime: number;
+  count: number;
+}
+
+export interface ErrorTrend {
+  date: string;
+  count: number;
+}
+
+export interface PerformanceSummary {
+  webVitals: WebVitalData[];
+  webVitalRatings: Record<string, WebVitalRatings>;
+  api: {
+    avgResponseTime: number;
+    maxResponseTime: number;
+    minResponseTime: number;
+    totalRequests: number;
+    slowestEndpoints: SlowEndpoint[];
+  };
+  database: {
+    avgQueryTime: number;
+    maxQueryTime: number;
+    totalQueries: number;
+    slowestQueries: SlowQuery[];
+  };
+  errors: {
+    total: number;
+    unresolved: number;
+    trends: ErrorTrend[];
+  };
+}
+
+export interface ErrorLogEntry {
+  id: string;
+  message: string;
+  stack: string | null;
+  name: string | null;
+  path: string | null;
+  method: string | null;
+  statusCode: number | null;
+  fingerprint: string | null;
+  resolved: boolean;
+  createdAt: string;
+  count: number;
+  firstSeen: string;
+  lastSeen: string;
+}
+
+/**
+ * Hook to get performance summary
+ */
+export function usePerformanceSummary(options?: {
+  startDate?: string;
+  endDate?: string;
+}) {
+  const params = new URLSearchParams();
+  if (options?.startDate) params.set("startDate", options.startDate);
+  if (options?.endDate) params.set("endDate", options.endDate);
+
+  return useQuery({
+    queryKey: ["performance-summary", options],
+    queryFn: () =>
+      fetchAPI<PerformanceSummary>(`/api/performance?${params.toString()}`),
+    staleTime: 60 * 1000, // 1 minute
+    refetchInterval: 5 * 60 * 1000, // Refresh every 5 minutes
+  });
+}
+
+/**
+ * Hook to get recent errors
+ */
+export function usePerformanceErrors(options?: {
+  limit?: number;
+  resolved?: boolean;
+  path?: string;
+}) {
+  const params = new URLSearchParams();
+  if (options?.limit) params.set("limit", options.limit.toString());
+  if (options?.resolved !== undefined)
+    params.set("resolved", options.resolved.toString());
+  if (options?.path) params.set("path", options.path);
+
+  return useQuery({
+    queryKey: ["performance-errors", options],
+    queryFn: () =>
+      fetchAPI<{ errors: ErrorLogEntry[] }>(
+        `/api/performance/errors?${params.toString()}`
+      ),
+    staleTime: 30 * 1000, // 30 seconds
+  });
+}
+
+/**
+ * Hook to resolve errors
+ */
+export function useResolveError() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      errorId,
+      fingerprint,
+      resolvedBy,
+    }: {
+      errorId?: string;
+      fingerprint?: string;
+      resolvedBy?: string;
+    }) =>
+      fetchAPI<{ success: boolean; resolved?: number }>("/api/performance", {
+        method: "PATCH",
+        body: JSON.stringify({ errorId, fingerprint, resolvedBy }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["performance-errors"] });
+      queryClient.invalidateQueries({ queryKey: ["performance-summary"] });
+    },
+  });
+}
+
+/**
+ * Hook to log Web Vitals from client
+ */
+export function useLogWebVitals() {
+  return useMutation({
+    mutationFn: (metrics: { name: string; value: number; path?: string }[]) =>
+      fetchAPI<{ success: boolean }>("/api/performance", {
+        method: "POST",
+        body: JSON.stringify({ type: "web-vitals", metrics }),
+      }),
+  });
+}
+
+/**
+ * Hook to log client-side errors
+ */
+export function useLogError() {
+  return useMutation({
+    mutationFn: (error: {
+      message: string;
+      stack?: string;
+      name?: string;
+      path?: string;
+    }) =>
+      fetchAPI<{ success: boolean }>("/api/performance", {
+        method: "POST",
+        body: JSON.stringify({ type: "error", error }),
+      }),
+  });
+}

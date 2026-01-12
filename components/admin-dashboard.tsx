@@ -23,6 +23,7 @@ import { AuditLogsPage } from "./pages/audit-logs-page"
 import { RolePermissionsPage } from "./pages/role-permissions-page"
 import { SecurityDashboardPage } from "./pages/security-dashboard-page"
 import { FlashSalesPage } from "./pages/flash-sales-page"
+import { PerformancePage } from "./pages/performance-page"
 import { useOrders, useLowStockItems, useAdminReviews } from "@/lib/api-hooks"
 
 type NavItem =
@@ -47,6 +48,7 @@ type NavItem =
   | "role-permissions"
   | "security-dashboard"
   | "flash-sales"
+  | "performance"
 
 export function AdminDashboard() {
   const [activeNav, setActiveNav] = useState<NavItem>("dashboard")
@@ -104,6 +106,8 @@ export function AdminDashboard() {
         return <SecurityDashboardPage />
       case "flash-sales":
         return <FlashSalesPage />
+      case "performance":
+        return <PerformancePage />
       default:
         return <DashboardPage />
     }

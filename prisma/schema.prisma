@@ -1540,3 +1540,85 @@ model WelcomeEmailProgress {
   @@map("welcome_email_progress")
   @@schema("apolo")
 }
+
+// ============================================
+// PERFORMANCE MONITORING
+// ============================================
+
+enum MetricType {
+  WEB_VITAL      // Core Web Vitals (LCP, FID, CLS, FCP, TTFB)
+  API_RESPONSE   // API endpoint response times
+  DATABASE_QUERY // Database query performance
+  ERROR          // Error tracking
+
+  @@schema("apolo")
+}
+
+model PerformanceMetric {
+  id          String     @id @default(cuid())
+  type        MetricType
+  name        String     // Metric name (e.g., "LCP", "FID", "/api/products", "findMany")
+  value       Float      // Metric value in milliseconds
+  // Rating for Core Web Vitals
+  rating      String?    // "good", "needs-improvement", "poor"
+  // Context
+  path        String?    // Page path or API endpoint
+  method      String?    // HTTP method for API metrics
+  // User/Session info
+  sessionId   String?    @map("session_id")
+  userId      String?    @map("user_id")
+  // Device info
+  deviceType  String?    @map("device_type") // "mobile", "desktop", "tablet"
+  userAgent   String?    @map("user_agent") @db.Text
+  // Additional details
+  details     Json?      // Additional context (error stack, query details, etc.)
+  // Timestamps
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  @@index([type])
+  @@index([name])
+  @@index([rating])
+  @@index([path])
+  @@index([createdAt])
+  @@index([type, createdAt])
+  @@map("performance_metrics")
+  @@schema("apolo")
+}
+
+// Error log for Sentry-like error tracking
+model ErrorLog {
+  id          String   @id @default(cuid())
+  // Error info
+  message     String   @db.Text
+  stack       String?  @db.Text
+  name        String?  // Error name/type
+  // Context
+  path        String?  // Page or API path
+  method      String?  // HTTP method for API errors
+  statusCode  Int?     @map("status_code")
+  // User/Session info
+  sessionId   String?  @map("session_id")
+  userId      String?  @map("user_id")
+  // Request info
+  requestBody Json?    @map("request_body")
+  requestHeaders Json? @map("request_headers")
+  // Device info
+  deviceType  String?  @map("device_type")
+  userAgent   String?  @map("user_agent") @db.Text
+  ipAddress   String?  @map("ip_address")
+  // Fingerprint for grouping similar errors
+  fingerprint String?
+  // Resolution
+  resolved    Boolean  @default(false)
+  resolvedAt  DateTime? @map("resolved_at")
+  resolvedBy  String?  @map("resolved_by")
+  // Timestamps
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([fingerprint])
+  @@index([path])
+  @@index([resolved])
+  @@index([createdAt])
+  @@map("error_logs")
+  @@schema("apolo")
+}
