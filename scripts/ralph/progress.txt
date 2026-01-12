@@ -199,3 +199,53 @@ Project: ApoloShop - Product Search Feature
   - Admin widgets should be self-contained with their own data fetching via hooks
   - Layout pattern: Use grid with `lg:col-span-1` and `lg:col-span-2` for asymmetric layouts
 ---
+
+## 2026-01-12 - US-010
+- **Implemented**: Dynamic component registry system
+- **Files changed**:
+  - `lib/component-registry.ts` (new file - registry module)
+  - `lib/api-hooks.ts` (modified - added useComponentRegistry and useUpdateComponentRegistry hooks)
+  - `components/pages/settings-page.tsx` (modified - added Component Settings section)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **ComponentRegistration type**: id, name, component, defaultEnabled, category, description
+  - **Register/get functions**: registerComponent, getComponent, getAllComponents, getComponentsByCategory
+  - **Lazy loading support**: registerLazyComponent helper using React.lazy()
+  - **Config helpers**: getDefaultConfig, getEnabledComponents, mergeWithDefaults for state management
+  - **Admin toggle UI**: Component Settings card in Settings page with enable/disable switches
+  - **Persistence**: Uses existing settings API to store componentRegistry config
+- **Learnings for future iterations**:
+  - Registry uses Map internally for O(1) lookups by component ID
+  - ComponentType<P> | LazyExoticComponent<ComponentType<P>> allows both eager and lazy components
+  - mergeWithDefaults handles new components being added after config is saved
+  - Admin UI shows empty state message when no components are registered
+  - Settings page pattern: separate mutation hook (useUpdateComponentRegistry) for specific settings
+---
+
+## 2026-01-12 - US-011
+- **Implemented**: Dynamic page builder blocks (Testimonials, Features, FAQ)
+- **Files changed**:
+  - `lib/api-hooks.ts` (modified - added TestimonialsConfig, FeaturesConfig, FAQConfig types and updated SectionType union)
+  - `components/customizer/editors/testimonials-editor.tsx` (new file)
+  - `components/customizer/editors/features-editor.tsx` (new file)
+  - `components/customizer/editors/faq-editor.tsx` (new file)
+  - `components/customizer/renderers/testimonials-renderer.tsx` (new file)
+  - `components/customizer/renderers/features-renderer.tsx` (new file)
+  - `components/customizer/renderers/faq-renderer.tsx` (new file)
+  - `components/customizer/customizer-page.tsx` (modified - integrated new block types)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Testimonials block**: Customer reviews with 5-star ratings, name, role, photo, and testimonial text
+  - **Features block**: Icon-based features with 15 lucide icons to choose from, title, and description
+  - **FAQ block**: Accordion-style FAQ with expandable question/answer pairs
+  - All blocks support bilingual content (EN/KH)
+  - All blocks have configurable layout options (grid/list, columns)
+  - Drag-and-drop reordering already supported via existing @dnd-kit implementation
+  - Preview mode shows live changes immediately
+- **Learnings for future iterations**:
+  - Existing Hero, ProductGrid (products), and Banner (promotions) blocks already exist
+  - Pattern: Each block type needs an editor component and a renderer component
+  - sectionIcons, sectionLabels, and defaultSectionConfigs records must all be updated together
+  - Accordion for FAQ uses simple state with Set<string> for tracking open items
+  - Feature icons are stored as string identifiers and mapped to components at render time
+---

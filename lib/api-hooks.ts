@@ -758,7 +758,7 @@ export function useDeleteRole() {
 // SHOP CUSTOMIZATION (White Label)
 // ============================================
 
-export type SectionType = "hero" | "promotions" | "products" | "footer" | "gallery" | "about" | "team";
+export type SectionType = "hero" | "promotions" | "products" | "footer" | "gallery" | "about" | "team" | "testimonials" | "features" | "faq";
 
 export interface HeroConfig {
   mediaType: "image" | "video";
@@ -891,12 +891,69 @@ export interface TeamConfig {
   members: TeamMember[];
 }
 
+// Testimonials Section
+export interface Testimonial {
+  id: string;
+  name: string;
+  roleEn: string;
+  roleKh: string;
+  contentEn: string;
+  contentKh: string;
+  imageUrl?: string;
+  rating: number;
+}
+
+export interface TestimonialsConfig {
+  titleEn: string;
+  titleKh: string;
+  layout: "grid" | "carousel";
+  columns: 2 | 3;
+  testimonials: Testimonial[];
+}
+
+// Features Section
+export interface Feature {
+  id: string;
+  icon: string;
+  titleEn: string;
+  titleKh: string;
+  descriptionEn: string;
+  descriptionKh: string;
+}
+
+export interface FeaturesConfig {
+  titleEn: string;
+  titleKh: string;
+  subtitleEn: string;
+  subtitleKh: string;
+  layout: "grid" | "list";
+  columns: 2 | 3 | 4;
+  features: Feature[];
+}
+
+// FAQ Section
+export interface FAQItem {
+  id: string;
+  questionEn: string;
+  questionKh: string;
+  answerEn: string;
+  answerKh: string;
+}
+
+export interface FAQConfig {
+  titleEn: string;
+  titleKh: string;
+  subtitleEn: string;
+  subtitleKh: string;
+  items: FAQItem[];
+}
+
 export interface ShopSection {
   id: string;
   type: SectionType;
   enabled: boolean;
   order: number;
-  config: HeroConfig | PromotionsConfig | ProductsConfig | FooterConfig | GalleryConfig | AboutConfig | TeamConfig;
+  config: HeroConfig | PromotionsConfig | ProductsConfig | FooterConfig | GalleryConfig | AboutConfig | TeamConfig | TestimonialsConfig | FeaturesConfig | FAQConfig;
 }
 
 export interface ShopTheme {

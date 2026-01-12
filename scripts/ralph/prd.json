@@ -167,8 +167,8 @@
         "Build passes: bun run build"
       ],
       "priority": 11,
-      "passes": false,
-      "notes": "Extends existing customizer with more block types"
+      "passes": true,
+      "notes": "Added Testimonials (with ratings), Features (with icons), and FAQ (accordion) block types. Each has editor and renderer components with bilingual support. Drag-and-drop already supported via @dnd-kit."
     },
     {
       "id": "US-012",

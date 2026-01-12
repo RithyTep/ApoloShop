@@ -38,6 +38,9 @@ import {
   FileText,
   Users,
   Megaphone,
+  MessageSquareQuote,
+  Sparkles,
+  HelpCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -65,6 +68,9 @@ import {
   GalleryConfig,
   AboutConfig,
   TeamConfig,
+  TestimonialsConfig,
+  FeaturesConfig,
+  FAQConfig,
   AnnouncementConfig,
 } from "@/lib/api-hooks"
 import { HeroEditor } from "./editors/hero-editor"
@@ -75,6 +81,9 @@ import { ThemeEditor } from "./editors/theme-editor"
 import { GalleryEditor } from "./editors/gallery-editor"
 import { AboutEditor } from "./editors/about-editor"
 import { TeamEditor } from "./editors/team-editor"
+import { TestimonialsEditor } from "./editors/testimonials-editor"
+import { FeaturesEditor } from "./editors/features-editor"
+import { FAQEditor } from "./editors/faq-editor"
 import { AnnouncementEditor } from "./editors/announcement-editor"
 import { HeroRenderer } from "./renderers/hero-renderer"
 import { PromotionsRenderer } from "./renderers/promotions-renderer"
@@ -83,6 +92,9 @@ import { FooterRenderer } from "./renderers/footer-renderer"
 import { GalleryRenderer } from "./renderers/gallery-renderer"
 import { AboutRenderer } from "./renderers/about-renderer"
 import { TeamRenderer } from "./renderers/team-renderer"
+import { TestimonialsRenderer } from "./renderers/testimonials-renderer"
+import { FeaturesRenderer } from "./renderers/features-renderer"
+import { FAQRenderer } from "./renderers/faq-renderer"
 import { AnnouncementBanner } from "../shop/announcement-banner"
 
 type DeviceType = "desktop" | "tablet" | "mobile"
@@ -95,6 +107,9 @@ const sectionIcons: Record<SectionType, React.ReactNode> = {
   gallery: <Images size={18} />,
   about: <FileText size={18} />,
   team: <Users size={18} />,
+  testimonials: <MessageSquareQuote size={18} />,
+  features: <Sparkles size={18} />,
+  faq: <HelpCircle size={18} />,
 }
 
 const sectionLabels: Record<SectionType, { en: string; type: string }> = {
@@ -105,6 +120,9 @@ const sectionLabels: Record<SectionType, { en: string; type: string }> = {
   gallery: { en: "Gallery", type: "gallery" },
   about: { en: "About Section", type: "about" },
   team: { en: "Team Section", type: "team" },
+  testimonials: { en: "Testimonials", type: "testimonials" },
+  features: { en: "Features", type: "features" },
+  faq: { en: "FAQ", type: "faq" },
 }
 
 const defaultSectionConfigs: Record<SectionType, object> = {
@@ -170,6 +188,29 @@ const defaultSectionConfigs: Record<SectionType, object> = {
     titleEn: "Our Team",
     titleKh: "ក្រុមការងាររបស់យើង",
     members: [],
+  },
+  testimonials: {
+    titleEn: "What Our Customers Say",
+    titleKh: "អ្វីដែលអតិថិជនរបស់យើងនិយាយ",
+    layout: "grid",
+    columns: 3,
+    testimonials: [],
+  },
+  features: {
+    titleEn: "Why Choose Us",
+    titleKh: "ហេតុអ្វីជ្រើសរើសយើង",
+    subtitleEn: "",
+    subtitleKh: "",
+    layout: "grid",
+    columns: 3,
+    features: [],
+  },
+  faq: {
+    titleEn: "Frequently Asked Questions",
+    titleKh: "សំណួរដែលសួរញឹកញាប់",
+    subtitleEn: "",
+    subtitleKh: "",
+    items: [],
   },
 }
 
@@ -571,6 +612,24 @@ export function CustomizerPage() {
                           onChange={(c) => updateSectionConfig(selectedSection.id, c)}
                         />
                       )}
+                      {selectedSection.type === "testimonials" && (
+                        <TestimonialsEditor
+                          config={selectedSection.config as TestimonialsConfig}
+                          onChange={(c) => updateSectionConfig(selectedSection.id, c)}
+                        />
+                      )}
+                      {selectedSection.type === "features" && (
+                        <FeaturesEditor
+                          config={selectedSection.config as FeaturesConfig}
+                          onChange={(c) => updateSectionConfig(selectedSection.id, c)}
+                        />
+                      )}
+                      {selectedSection.type === "faq" && (
+                        <FAQEditor
+                          config={selectedSection.config as FAQConfig}
+                          onChange={(c) => updateSectionConfig(selectedSection.id, c)}
+                        />
+                      )}
                     </CardContent>
                   </Card>
                 ) : (
@@ -704,6 +763,15 @@ export function CustomizerPage() {
                       )}
                       {section.type === "team" && (
                         <TeamRenderer config={section.config as TeamConfig} language="EN" />
+                      )}
+                      {section.type === "testimonials" && (
+                        <TestimonialsRenderer config={section.config as TestimonialsConfig} language="EN" />
+                      )}
+                      {section.type === "features" && (
+                        <FeaturesRenderer config={section.config as FeaturesConfig} language="EN" />
+                      )}
+                      {section.type === "faq" && (
+                        <FAQRenderer config={section.config as FAQConfig} language="EN" />
                       )}
                     </div>
                   ))}
