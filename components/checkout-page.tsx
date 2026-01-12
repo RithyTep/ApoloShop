@@ -29,6 +29,7 @@ import {
 import { useCreateOrder, type OrderChannel } from "@/lib/api-hooks"
 import { translations } from "@/lib/i18n"
 import type { PaymentGatewayType, PaymentInitResponse } from "@/lib/payment-gateways"
+import { CouponInput } from "@/components/coupon-input"
 
 interface ShippingAddress {
   id: string
@@ -117,8 +118,23 @@ export function CheckoutPage({
   const [qrCountdown, setQrCountdown] = useState(0)
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
 
+  // Coupon state
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    id: string
+    code: string
+    type: "PERCENTAGE" | "FIXED_AMOUNT" | "FREE_SHIPPING" | "BOGO"
+    description: string
+  } | null>(null)
+  const [couponDiscount, setCouponDiscount] = useState<{
+    usd: number
+    khr: number
+    description: string
+  } | null>(null)
+
   const createOrder = useCreateOrder()
-  const total = cart.reduce((acc, item) => acc + item.price * item.quantity, 0)
+  const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0)
+  const discountAmount = couponDiscount?.usd || 0
+  const finalTotal = Math.max(0, subtotal - discountAmount)
   const t = translations[language === "EN" ? "en" : "kh"]
   const tc = t.checkout
 
@@ -259,8 +275,27 @@ export function CheckoutPage({
 
       setOrderNumber(order.orderNumber)
 
+      // Record coupon usage if applied
+      if (appliedCoupon && couponDiscount) {
+        try {
+          await fetch("/api/coupons/use", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              couponId: appliedCoupon.id,
+              orderId: order.id,
+              discountUsd: couponDiscount.usd,
+              guestId: getOrCreateGuestId(),
+            }),
+          })
+        } catch (err) {
+          console.error("Failed to record coupon usage:", err)
+          // Non-blocking - order still proceeds
+        }
+      }
+
       // Initiate payment
-      const paymentAmount = currency === "USD" ? total : Math.round(total * 4000)
+      const paymentAmount = currency === "USD" ? finalTotal : Math.round(finalTotal * 4000)
 
       const response = await fetch("/api/payments/gateway", {
         method: "POST",
@@ -330,8 +365,9 @@ export function CheckoutPage({
       setOrderSuccess(true)
 
       const orderSummary = cart.map((item) => `${item.name} x${item.quantity}`).join("\n")
-      const message = `Order #${order.orderNumber} from ApoloShop:\n\nName: ${fullName}\nPhone: ${phone}\n${deliveryAddress ? `\nAddress: ${deliveryAddress}` : ""}\n\n${orderSummary}\n\nTotal: ${
-        currency === "USD" ? `$${total.toFixed(2)}` : `${Math.round(total * 4000)}៛`
+      const discountLine = couponDiscount ? `\nDiscount (${appliedCoupon?.code}): -${currency === "USD" ? `$${couponDiscount.usd.toFixed(2)}` : `${couponDiscount.khr}៛`}` : ""
+      const message = `Order #${order.orderNumber} from ApoloShop:\n\nName: ${fullName}\nPhone: ${phone}\n${deliveryAddress ? `\nAddress: ${deliveryAddress}` : ""}\n\n${orderSummary}${discountLine}\n\nTotal: ${
+        currency === "USD" ? `$${finalTotal.toFixed(2)}` : `${Math.round(finalTotal * 4000)}៛`
       }${deliveryNote ? `\n\nNote: ${deliveryNote}` : ""}`
 
       if (method === "telegram") {
@@ -357,6 +393,26 @@ export function CheckoutPage({
   // Format price for display
   const formatPrice = (price: number) => {
     return currency === "USD" ? `$${price.toFixed(2)}` : `${Math.round(price * 4000)}៛`
+  }
+
+  // Handle coupon apply
+  const handleCouponApply = (
+    coupon: {
+      id: string
+      code: string
+      type: "PERCENTAGE" | "FIXED_AMOUNT" | "FREE_SHIPPING" | "BOGO"
+      description: string
+    },
+    discount: { usd: number; khr: number; description: string }
+  ) => {
+    setAppliedCoupon(coupon)
+    setCouponDiscount(discount)
+  }
+
+  // Handle coupon remove
+  const handleCouponRemove = () => {
+    setAppliedCoupon(null)
+    setCouponDiscount(null)
   }
 
   // Check if form is valid
@@ -945,12 +1001,42 @@ export function CheckoutPage({
 
             <Separator className="mb-4" />
 
+            {/* Coupon Input */}
+            <div className="mb-4">
+              <CouponInput
+                currency={currency}
+                language={language}
+                cartItems={cart.map((item) => ({
+                  productId: item.id,
+                  priceUsd: item.price,
+                  quantity: item.quantity,
+                }))}
+                subtotalUsd={subtotal}
+                shippingUsd={0}
+                guestId={getOrCreateGuestId()}
+                appliedCoupon={appliedCoupon}
+                discount={couponDiscount}
+                onApply={handleCouponApply}
+                onRemove={handleCouponRemove}
+              />
+            </div>
+
+            <Separator className="mb-4" />
+
             {/* Totals */}
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">{tc.subtotal}</span>
-                <span className="text-foreground font-medium">{formatPrice(total)}</span>
+                <span className="text-foreground font-medium">{formatPrice(subtotal)}</span>
               </div>
+
+              {/* Discount line - only show if coupon applied */}
+              {couponDiscount && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-success">{tc.coupon.discount}</span>
+                  <span className="text-success font-medium">-{formatPrice(couponDiscount.usd)}</span>
+                </div>
+              )}
 
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">{tc.shipping}</span>
@@ -961,7 +1047,7 @@ export function CheckoutPage({
 
               <div className="flex justify-between text-lg font-bold">
                 <span className="text-foreground">{tc.total}</span>
-                <span className="text-primary">{formatPrice(total)}</span>
+                <span className="text-primary">{formatPrice(finalTotal)}</span>
               </div>
             </div>
 
