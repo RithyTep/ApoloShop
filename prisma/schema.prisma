@@ -36,6 +36,8 @@ model User {
   passwordChangedAt DateTime? @map("password_changed_at") // For password expiry reminders
   // Login notification preferences
   loginNotificationsEnabled Boolean @default(true) @map("login_notifications_enabled")
+  // IP whitelisting for admin access
+  allowedIPs   Json?     @map("allowed_ips") // Array of allowed IP addresses/CIDR ranges
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 

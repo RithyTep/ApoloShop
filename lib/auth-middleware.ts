@@ -37,6 +37,11 @@ import {
   hasAllScopes,
   ApiKeyScope,
 } from "./api-key"
+import {
+  checkIPWhitelist,
+  extractIPFromHeaders,
+  logBlockedIPAccess,
+} from "./ip-whitelist"
 
 // User context type
 export interface AuthUser {
@@ -45,6 +50,7 @@ export interface AuthUser {
   name: string
   role: string
   permissions: Record<string, string[]>
+  allowedIPs?: string[] | null
 }
 
 export type AuthenticatedRequest = NextRequest & {
@@ -59,6 +65,7 @@ export const AUTH_ERROR_CODES = {
   SESSION_EXPIRED: "SESSION_EXPIRED",
   ACCOUNT_DISABLED: "ACCOUNT_DISABLED",
   INSUFFICIENT_PERMISSIONS: "INSUFFICIENT_PERMISSIONS",
+  IP_NOT_ALLOWED: "IP_NOT_ALLOWED",
   CSRF_MISSING: "CSRF_MISSING",
   CSRF_INVALID: "CSRF_INVALID",
   CSRF_EXPIRED: "CSRF_EXPIRED",
@@ -175,6 +182,7 @@ async function verifyAuthentication(
         name: session.user.name,
         role: session.user.role.name,
         permissions: session.user.role.permissions as Record<string, string[]>,
+        allowedIPs: session.user.allowedIPs as string[] | null,
       },
     }
   } catch {
@@ -899,5 +907,107 @@ export function withAuthOrApiKey(
 
     // Fall back to user authentication
     return withAuth(handler as (request: AuthenticatedRequest) => Promise<NextResponse>)(request)
+  }
+}
+
+// ============================================
+// IP WHITELISTING MIDDLEWARE
+// ============================================
+
+/**
+ * Middleware that enforces IP whitelisting for admin routes
+ * Super admins bypass IP restrictions
+ * Must be used AFTER withAuth
+ */
+export function withIPWhitelist(
+  handler: (request: AuthenticatedRequest) => Promise<NextResponse>
+) {
+  return async (request: AuthenticatedRequest) => {
+    const clientIP = extractIPFromHeaders(request.headers)
+    const user = request.user
+
+    // Check IP whitelist
+    const result = checkIPWhitelist(clientIP, user.allowedIPs, user.role)
+
+    if (!result.allowed) {
+      // Log the blocked access attempt
+      logBlockedIPAccess({
+        userId: user.id,
+        userName: user.name,
+        ipAddress: clientIP,
+        allowedIPs: user.allowedIPs || [],
+        timestamp: new Date(),
+        userAgent: request.headers.get("user-agent") || undefined,
+        endpoint: request.nextUrl.pathname,
+      }).catch(() => {}) // Fire and forget
+
+      return NextResponse.json(
+        {
+          error: "Access denied: IP address not in allowed list",
+          code: AUTH_ERROR_CODES.IP_NOT_ALLOWED,
+          clientIP,
+        },
+        { status: 403 }
+      )
+    }
+
+    return handler(request)
+  }
+}
+
+/**
+ * Combined middleware: auth + IP whitelist
+ * Use this for admin routes that require IP whitelisting
+ */
+export function withAuthAndIPWhitelist(
+  handler: (request: AuthenticatedRequest) => Promise<NextResponse>
+) {
+  return withAuth(withIPWhitelist(handler))
+}
+
+/**
+ * Combined middleware: auth + IP whitelist + CSRF
+ * Use this for protected admin routes with state-changing operations
+ */
+export function withAuthIPWhitelistAndCSRF(
+  handler: (request: AuthenticatedRequest) => Promise<NextResponse>
+) {
+  return withAuth(
+    withIPWhitelist(
+      withCSRF(handler as (request: NextRequest) => Promise<NextResponse>) as (
+        request: AuthenticatedRequest
+      ) => Promise<NextResponse>
+    )
+  )
+}
+
+/**
+ * Fetch user's allowed IPs from database
+ * Useful for JWT flows where allowedIPs isn't in the token
+ */
+export async function getUserAllowedIPs(userId: string): Promise<string[] | null> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { allowedIPs: true },
+  })
+  return user?.allowedIPs as string[] | null
+}
+
+/**
+ * Update user's allowed IPs
+ * Returns true if successful, false otherwise
+ */
+export async function updateUserAllowedIPs(
+  userId: string,
+  allowedIPs: string[] | null
+): Promise<boolean> {
+  try {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { allowedIPs },
+    })
+    return true
+  } catch {
+    return false
   }
 }
