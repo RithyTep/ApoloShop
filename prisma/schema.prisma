@@ -352,10 +352,36 @@ model Customer {
   notificationPreferences NotificationPreference[]
   socialAccounts          SocialAccount[]
   emailVerifyTokens       EmailVerifyToken[]
+  shippingAddresses       ShippingAddress[]
 
   @@index([clientId])
   @@index([phone])
   @@map("customers")
+  @@schema("apolo")
+}
+
+// Shipping Address for returning customers
+model ShippingAddress {
+  id          String    @id @default(cuid())
+  customerId  String?   @map("customer_id")
+  customer    Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  guestId     String?   @map("guest_id") // For guest checkout
+  label       String?   // "Home", "Work", etc.
+  fullName    String    @map("full_name")
+  phone       String
+  province    String?   // Province/State
+  district    String?   // District/City
+  commune     String?   // Commune/Sangkat
+  addressLine String    @map("address_line") @db.Text // Street address
+  landmark    String?   // Nearby landmark
+  isDefault   Boolean   @default(false) @map("is_default")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([customerId])
+  @@index([guestId])
+  @@index([isDefault])
+  @@map("shipping_addresses")
   @@schema("apolo")
 }
 

@@ -242,6 +242,8 @@ export function ShopApp() {
           language={language}
           onBackToShop={() => setCurrentPage("shop")}
           onOrderComplete={clearCart}
+          onUpdateQuantity={updateQuantity}
+          onRemoveItem={removeFromCart}
         />
       )}
 

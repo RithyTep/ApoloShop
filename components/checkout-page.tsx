@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import type { CartItem } from "@/lib/shop-context"
 import {
   MessageCircle,
@@ -16,10 +17,31 @@ import {
   Smartphone,
   QrCode,
   Banknote,
+  MapPin,
+  Plus,
+  Minus,
+  Trash2,
+  ChevronRight,
+  Home,
+  Building,
+  Check,
 } from "lucide-react"
 import { useCreateOrder, type OrderChannel } from "@/lib/api-hooks"
 import { translations } from "@/lib/i18n"
 import type { PaymentGatewayType, PaymentInitResponse } from "@/lib/payment-gateways"
+
+interface ShippingAddress {
+  id: string
+  label: string | null
+  fullName: string
+  phone: string
+  province: string | null
+  district: string | null
+  commune: string | null
+  addressLine: string
+  landmark: string | null
+  isDefault: boolean
+}
 
 interface CheckoutPageProps {
   cart: CartItem[]
@@ -27,6 +49,8 @@ interface CheckoutPageProps {
   language: "EN" | "KH"
   onBackToShop: () => void
   onOrderComplete?: () => void
+  onUpdateQuantity?: (id: string, quantity: number) => void
+  onRemoveItem?: (id: string) => void
 }
 
 // Payment method icons mapping
@@ -37,10 +61,52 @@ const PAYMENT_ICONS: Record<PaymentGatewayType, typeof CreditCard> = {
   KHQR: QrCode,
 }
 
-export function CheckoutPage({ cart, currency, language, onBackToShop, onOrderComplete }: CheckoutPageProps) {
+// Guest ID storage key
+const GUEST_ID_KEY = "apoloshop-guest-id"
+
+function getOrCreateGuestId(): string {
+  if (typeof window === "undefined") return ""
+  let guestId = localStorage.getItem(GUEST_ID_KEY)
+  if (!guestId) {
+    guestId = `guest_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+    localStorage.setItem(GUEST_ID_KEY, guestId)
+  }
+  return guestId
+}
+
+export function CheckoutPage({
+  cart,
+  currency,
+  language,
+  onBackToShop,
+  onOrderComplete,
+  onUpdateQuantity,
+  onRemoveItem,
+}: CheckoutPageProps) {
+  // Contact info state
   const [fullName, setFullName] = useState("")
   const [phone, setPhone] = useState("")
   const [deliveryNote, setDeliveryNote] = useState("")
+
+  // Address state
+  const [savedAddresses, setSavedAddresses] = useState<ShippingAddress[]>([])
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
+  const [showNewAddressForm, setShowNewAddressForm] = useState(false)
+  const [addressChecked, setAddressChecked] = useState(false)
+  const [isCheckingAddresses, setIsCheckingAddresses] = useState(false)
+
+  // New address form state
+  const [newAddress, setNewAddress] = useState({
+    label: "",
+    province: "",
+    district: "",
+    commune: "",
+    addressLine: "",
+    landmark: "",
+  })
+  const [saveAddressForFuture, setSaveAddressForFuture] = useState(true)
+
+  // Order state
   const [orderSuccess, setOrderSuccess] = useState(false)
   const [orderNumber, setOrderNumber] = useState("")
 
@@ -50,11 +116,37 @@ export function CheckoutPage({ cart, currency, language, onBackToShop, onOrderCo
   const [paymentResponse, setPaymentResponse] = useState<PaymentInitResponse | null>(null)
   const [qrCountdown, setQrCountdown] = useState(0)
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
-  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null)
 
   const createOrder = useCreateOrder()
   const total = cart.reduce((acc, item) => acc + item.price * item.quantity, 0)
   const t = translations[language === "EN" ? "en" : "kh"]
+  const tc = t.checkout
+
+  // Check for saved addresses when phone number is entered
+  const checkSavedAddresses = useCallback(async () => {
+    if (!phone || phone.length < 8) return
+
+    setIsCheckingAddresses(true)
+    try {
+      const response = await fetch(`/api/shipping-addresses?phone=${encodeURIComponent(phone)}`)
+      if (response.ok) {
+        const data = await response.json()
+        setSavedAddresses(data.addresses || [])
+        setAddressChecked(true)
+
+        // Auto-select default address if available
+        const defaultAddr = data.addresses?.find((a: ShippingAddress) => a.isDefault)
+        if (defaultAddr) {
+          setSelectedAddressId(defaultAddr.id)
+          setFullName(defaultAddr.fullName)
+        }
+      }
+    } catch (error) {
+      console.error("Error checking addresses:", error)
+    } finally {
+      setIsCheckingAddresses(false)
+    }
+  }, [phone])
 
   // QR countdown timer
   useEffect(() => {
@@ -73,10 +165,84 @@ export function CheckoutPage({ cart, currency, language, onBackToShop, onOrderCo
     return () => clearInterval(interval)
   }, [paymentStep, qrCountdown])
 
+  // Get selected address details
+  const selectedAddress = savedAddresses.find((a) => a.id === selectedAddressId)
+
+  // Build full delivery address string
+  const getDeliveryAddressString = (): string => {
+    if (selectedAddress) {
+      const parts = [
+        selectedAddress.addressLine,
+        selectedAddress.commune,
+        selectedAddress.district,
+        selectedAddress.province,
+      ].filter(Boolean)
+      if (selectedAddress.landmark) {
+        parts.push(`(${selectedAddress.landmark})`)
+      }
+      return parts.join(", ")
+    }
+    if (showNewAddressForm && newAddress.addressLine) {
+      const parts = [
+        newAddress.addressLine,
+        newAddress.commune,
+        newAddress.district,
+        newAddress.province,
+      ].filter(Boolean)
+      if (newAddress.landmark) {
+        parts.push(`(${newAddress.landmark})`)
+      }
+      return parts.join(", ")
+    }
+    return ""
+  }
+
+  // Save new address
+  const saveNewAddress = async () => {
+    if (!newAddress.addressLine || !fullName || !phone) return
+
+    const guestId = getOrCreateGuestId()
+
+    try {
+      const response = await fetch("/api/shipping-addresses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          guestId,
+          fullName,
+          phone,
+          label: newAddress.label || null,
+          province: newAddress.province || null,
+          district: newAddress.district || null,
+          commune: newAddress.commune || null,
+          addressLine: newAddress.addressLine,
+          landmark: newAddress.landmark || null,
+          isDefault: savedAddresses.length === 0,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setSavedAddresses((prev) => [...prev, data.address])
+        setSelectedAddressId(data.address.id)
+        setShowNewAddressForm(false)
+      }
+    } catch (error) {
+      console.error("Error saving address:", error)
+    }
+  }
+
   const handleCreateOrderAndPay = async () => {
-    // First create the order
     setPaymentStep("processing")
     setIsProcessingPayment(true)
+
+    // Save address if requested
+    if (saveAddressForFuture && showNewAddressForm && newAddress.addressLine) {
+      await saveNewAddress()
+    }
+
+    const deliveryAddress = getDeliveryAddressString()
+    const orderNote = [deliveryAddress, deliveryNote].filter(Boolean).join("\n\n")
 
     try {
       const order = await createOrder.mutateAsync({
@@ -88,13 +254,12 @@ export function CheckoutPage({ cart, currency, language, onBackToShop, onOrderCo
         })),
         channel: "WEBSITE" as OrderChannel,
         currency,
-        note: deliveryNote || undefined,
+        note: orderNote || undefined,
       })
 
-      setCurrentOrderId(order.id)
       setOrderNumber(order.orderNumber)
 
-      // Now initiate payment
+      // Initiate payment
       const paymentAmount = currency === "USD" ? total : Math.round(total * 4000)
 
       const response = await fetch("/api/payments/gateway", {
@@ -121,17 +286,14 @@ export function CheckoutPage({ cart, currency, language, onBackToShop, onOrderCo
 
       // Handle different payment flows
       if (selectedPayment === "CASH") {
-        // COD - Order confirmed, show success
         setPaymentStep("success")
         setOrderSuccess(true)
         onOrderComplete?.()
       } else if (paymentData.redirectUrl) {
-        // Redirect-based payment (ABA PayWay, Wing)
         window.location.href = paymentData.redirectUrl
       } else if (paymentData.qrImage) {
-        // QR-based payment (KHQR)
         setPaymentStep("qr")
-        setQrCountdown(15 * 60) // 15 minutes
+        setQrCountdown(15 * 60)
       }
     } catch (error) {
       console.error("Payment error:", error)
@@ -143,6 +305,13 @@ export function CheckoutPage({ cart, currency, language, onBackToShop, onOrderCo
 
   const handleOrderVia = async (method: "telegram" | "messenger") => {
     const channel: OrderChannel = method === "telegram" ? "TELEGRAM" : "MESSENGER"
+    const deliveryAddress = getDeliveryAddressString()
+    const orderNote = [deliveryAddress, deliveryNote].filter(Boolean).join("\n\n")
+
+    // Save address if requested
+    if (saveAddressForFuture && showNewAddressForm && newAddress.addressLine) {
+      await saveNewAddress()
+    }
 
     try {
       const order = await createOrder.mutateAsync({
@@ -154,16 +323,16 @@ export function CheckoutPage({ cart, currency, language, onBackToShop, onOrderCo
         })),
         channel,
         currency,
-        note: deliveryNote || undefined,
+        note: orderNote || undefined,
       })
 
       setOrderNumber(order.orderNumber)
       setOrderSuccess(true)
 
       const orderSummary = cart.map((item) => `${item.name} x${item.quantity}`).join("\n")
-      const message = `Order #${order.orderNumber} from ApoloShop:\n\nName: ${fullName}\nPhone: ${phone}\n\n${orderSummary}\n\nTotal: ${
+      const message = `Order #${order.orderNumber} from ApoloShop:\n\nName: ${fullName}\nPhone: ${phone}\n${deliveryAddress ? `\nAddress: ${deliveryAddress}` : ""}\n\n${orderSummary}\n\nTotal: ${
         currency === "USD" ? `$${total.toFixed(2)}` : `${Math.round(total * 4000)}៛`
-      }\n\nDelivery Note: ${deliveryNote}`
+      }${deliveryNote ? `\n\nNote: ${deliveryNote}` : ""}`
 
       if (method === "telegram") {
         window.open(`https://t.me/share/url?url=${encodeURIComponent(message)}`, "_blank")
@@ -185,6 +354,14 @@ export function CheckoutPage({ cart, currency, language, onBackToShop, onOrderCo
     setPaymentResponse(null)
   }
 
+  // Format price for display
+  const formatPrice = (price: number) => {
+    return currency === "USD" ? `$${price.toFixed(2)}` : `${Math.round(price * 4000)}៛`
+  }
+
+  // Check if form is valid
+  const isFormValid = fullName && phone && (selectedAddressId || (showNewAddressForm && newAddress.addressLine))
+
   // Success screen
   if (orderSuccess) {
     return (
@@ -193,12 +370,8 @@ export function CheckoutPage({ cart, currency, language, onBackToShop, onOrderCo
           <div className="mx-auto w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mb-6">
             <CheckCircle className="w-10 h-10 text-success" />
           </div>
-          <h1 className="text-3xl font-bold text-foreground mb-4">
-            {language === "EN" ? "Order Placed Successfully!" : "បញ្ជាទិញបានជោគជ័យ!"}
-          </h1>
-          <p className="text-lg text-muted-foreground mb-2">
-            {language === "EN" ? "Your order number is:" : "លេខបញ្ជាទិញរបស់អ្នក:"}
-          </p>
+          <h1 className="text-3xl font-bold text-foreground mb-4">{tc.orderPlaced}</h1>
+          <p className="text-lg text-muted-foreground mb-2">{tc.orderNumber}:</p>
           <p className="text-2xl font-bold text-primary mb-4">{orderNumber}</p>
 
           {selectedPayment === "CASH" && (
@@ -207,13 +380,9 @@ export function CheckoutPage({ cart, currency, language, onBackToShop, onOrderCo
             </p>
           )}
 
-          <p className="text-muted-foreground mb-8">
-            {language === "EN"
-              ? "We'll contact you shortly to confirm your order."
-              : "យើងនឹងទាក់ទងអ្នកក្នុងពេលឆាប់ៗដើម្បីបញ្ជាក់ការបញ្ជាទិញរបស់អ្នក។"}
-          </p>
+          <p className="text-muted-foreground mb-8">{tc.contactUs}</p>
           <Button onClick={onBackToShop} className="bg-primary text-primary-foreground">
-            {language === "EN" ? "Continue Shopping" : "បន្តទិញទំនិញ"}
+            {tc.continueShopping}
           </Button>
         </div>
       </main>
@@ -228,7 +397,7 @@ export function CheckoutPage({ cart, currency, language, onBackToShop, onOrderCo
     return (
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Button onClick={handleRetryPayment} variant="outline" className="mb-8 bg-transparent">
-          ← {t.payment.changeMethod}
+          {t.payment.changeMethod}
         </Button>
 
         <div className="text-center py-8">
@@ -272,7 +441,6 @@ export function CheckoutPage({ cart, currency, language, onBackToShop, onOrderCo
           <div className="flex gap-4 justify-center">
             <Button
               onClick={() => {
-                // Poll for payment status
                 if (paymentResponse.paymentId) {
                   fetch("/api/payments/verify", {
                     method: "POST",
@@ -306,7 +474,7 @@ export function CheckoutPage({ cart, currency, language, onBackToShop, onOrderCo
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center py-16">
           <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mb-6">
-            <span className="text-3xl">❌</span>
+            <span className="text-3xl">&#10060;</span>
           </div>
           <h1 className="text-2xl font-bold text-foreground mb-4">{t.payment.failed}</h1>
           <div className="flex gap-4 justify-center">
@@ -322,28 +490,31 @@ export function CheckoutPage({ cart, currency, language, onBackToShop, onOrderCo
     )
   }
 
-  // Main checkout form
+  // Main checkout page - One-page layout with all steps visible
   return (
-    <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <Button onClick={onBackToShop} variant="outline" className="mb-8 bg-transparent">
-        {language === "EN" ? "← Back to Shop" : "← ត្រលប់ទៅហាង"}
+    <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <Button onClick={onBackToShop} variant="outline" className="mb-6 bg-transparent">
+        {language === "EN" ? "Back to Shop" : "ត្រលប់ទៅហាង"}
       </Button>
 
-      <div className="grid md:grid-cols-3 gap-8">
-        {/* Form */}
-        <div className="md:col-span-2">
-          <h1 className="text-3xl font-bold text-foreground mb-8">{language === "EN" ? "Checkout" : "ឈានទៅការលម្អិត"}</h1>
+      <h1 className="text-3xl font-bold text-foreground mb-8">{tc.title}</h1>
 
-          <div className="space-y-6">
-            {/* Contact Info */}
+      <div className="grid lg:grid-cols-3 gap-8">
+        {/* Main Form - Left Column (2/3 width) */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Section 1: Contact Information */}
+          <div className="bg-card border border-border rounded-lg p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
+                1
+              </div>
+              <h2 className="text-xl font-semibold text-foreground">{tc.contactInfo}</h2>
+            </div>
+
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-foreground">
-                {language === "EN" ? "Contact Information" : "ព័ត៌មានលម្អិត"}
-              </h2>
-
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  {language === "EN" ? "Full Name" : "ឈ្មោះពេញលេញ"}
+                  {tc.fullName} *
                 </label>
                 <Input
                   type="text"
@@ -356,191 +527,495 @@ export function CheckoutPage({ cart, currency, language, onBackToShop, onOrderCo
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  {language === "EN" ? "Phone Number" : "លេខទូរស័ព្ទ"}
+                  {tc.phoneNumber} *
                 </label>
-                <Input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder={language === "EN" ? "+855 ..." : "+855 ..."}
-                  className="w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  {language === "EN" ? "Delivery Note (Optional)" : "ចំណាំការដឹក (ស្ម័គ្រចិត្ត)"}
-                </label>
-                <textarea
-                  value={deliveryNote}
-                  onChange={(e) => setDeliveryNote(e.target.value)}
-                  placeholder={language === "EN" ? "Add any delivery instructions..." : "បន្ថែមការណែនាំលម្អិត..."}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-border bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => {
+                      setPhone(e.target.value)
+                      setAddressChecked(false)
+                    }}
+                    placeholder="+855 ..."
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={checkSavedAddresses}
+                    disabled={!phone || phone.length < 8 || isCheckingAddresses}
+                    className="bg-transparent whitespace-nowrap"
+                  >
+                    {isCheckingAddresses ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      tc.checkAddresses
+                    )}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {tc.usePhoneForLookup}
+                </p>
               </div>
             </div>
+          </div>
 
-            <Separator />
+          {/* Section 2: Delivery Address */}
+          <div className="bg-card border border-border rounded-lg p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
+                2
+              </div>
+              <h2 className="text-xl font-semibold text-foreground">{tc.deliveryAddress}</h2>
+            </div>
 
-            {/* Payment Method Selection */}
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-foreground">{t.payment.selectMethod}</h2>
-
-              <RadioGroup
-                value={selectedPayment}
-                onValueChange={(value) => setSelectedPayment(value as PaymentGatewayType)}
-                className="space-y-3"
-              >
-                {/* Cash on Delivery */}
-                <div className="flex items-center space-x-3 p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                  <RadioGroupItem value="CASH" id="payment-cash" />
-                  <Label htmlFor="payment-cash" className="flex items-center gap-3 cursor-pointer flex-1">
-                    <Banknote className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">{t.payment.methods.cash}</p>
-                      <p className="text-sm text-muted-foreground">{t.payment.descriptions.cash}</p>
+            {/* Saved Addresses */}
+            {addressChecked && savedAddresses.length > 0 && (
+              <div className="mb-4">
+                <p className="text-sm text-success mb-3">{tc.addressFound}</p>
+                <div className="space-y-2">
+                  {savedAddresses.map((addr) => (
+                    <div
+                      key={addr.id}
+                      onClick={() => {
+                        setSelectedAddressId(addr.id)
+                        setShowNewAddressForm(false)
+                        if (addr.fullName) setFullName(addr.fullName)
+                      }}
+                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                        selectedAddressId === addr.id
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5">
+                          {addr.label?.toLowerCase().includes("work") || addr.label?.toLowerCase().includes("office") ? (
+                            <Building className="h-5 w-5 text-muted-foreground" />
+                          ) : (
+                            <Home className="h-5 w-5 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium">{addr.label || tc.deliveryAddress}</span>
+                            {addr.isDefault && (
+                              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                {language === "EN" ? "Default" : "លំនាំដើម"}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {addr.addressLine}
+                            {addr.commune && `, ${addr.commune}`}
+                            {addr.district && `, ${addr.district}`}
+                          </p>
+                          <p className="text-sm text-muted-foreground">{addr.phone}</p>
+                        </div>
+                        {selectedAddressId === addr.id && (
+                          <Check className="h-5 w-5 text-primary flex-shrink-0" />
+                        )}
+                      </div>
                     </div>
-                  </Label>
+                  ))}
                 </div>
+              </div>
+            )}
 
-                {/* ABA PayWay */}
-                <div className="flex items-center space-x-3 p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                  <RadioGroupItem value="ABA_PAYWAY" id="payment-aba" />
-                  <Label htmlFor="payment-aba" className="flex items-center gap-3 cursor-pointer flex-1">
-                    <CreditCard className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">{t.payment.methods.abaPayway}</p>
-                      <p className="text-sm text-muted-foreground">{t.payment.descriptions.abaPayway}</p>
-                    </div>
-                  </Label>
-                </div>
+            {addressChecked && savedAddresses.length === 0 && (
+              <p className="text-sm text-muted-foreground mb-4">{tc.noAddressFound}</p>
+            )}
 
-                {/* Wing */}
-                <div className="flex items-center space-x-3 p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                  <RadioGroupItem value="WING" id="payment-wing" />
-                  <Label htmlFor="payment-wing" className="flex items-center gap-3 cursor-pointer flex-1">
-                    <Smartphone className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">{t.payment.methods.wing}</p>
-                      <p className="text-sm text-muted-foreground">{t.payment.descriptions.wing}</p>
-                    </div>
-                  </Label>
-                </div>
-
-                {/* KHQR */}
-                <div className="flex items-center space-x-3 p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                  <RadioGroupItem value="KHQR" id="payment-khqr" />
-                  <Label htmlFor="payment-khqr" className="flex items-center gap-3 cursor-pointer flex-1">
-                    <QrCode className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">{t.payment.methods.khqr}</p>
-                      <p className="text-sm text-muted-foreground">{t.payment.descriptions.khqr}</p>
-                    </div>
-                  </Label>
-                </div>
-              </RadioGroup>
-
-              {createOrder.error && (
-                <div className="p-3 bg-destructive/10 text-destructive rounded-md text-sm">
-                  {language === "EN" ? "Failed to place order. Please try again." : "មិនអាចបញ្ជាទិញបានទេ។ សូមព្យាយាមម្តងទៀត។"}
-                </div>
-              )}
-
-              {/* Pay Now Button */}
+            {/* New Address Button */}
+            {!showNewAddressForm && (
               <Button
-                onClick={handleCreateOrderAndPay}
-                disabled={!fullName || !phone || isProcessingPayment || createOrder.isPending}
-                className="w-full bg-primary text-primary-foreground hover:bg-opacity-90 disabled:opacity-50 h-12 text-lg"
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowNewAddressForm(true)
+                  setSelectedAddressId(null)
+                }}
+                className="w-full bg-transparent"
               >
-                {isProcessingPayment || createOrder.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    {t.payment.processing}
-                  </>
-                ) : (
-                  <>
-                    {(() => {
-                      const Icon = PAYMENT_ICONS[selectedPayment]
-                      return <Icon className="mr-2 h-5 w-5" />
-                    })()}
-                    {t.payment.payNow}
-                  </>
-                )}
+                <Plus className="h-4 w-4 mr-2" />
+                {tc.newAddress}
               </Button>
+            )}
+
+            {/* New Address Form */}
+            {showNewAddressForm && (
+              <div className="space-y-4 mt-4 p-4 border border-border rounded-lg bg-muted/30">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-medium">{tc.newAddress}</h3>
+                  {savedAddresses.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setShowNewAddressForm(false)
+                        if (savedAddresses.length > 0) {
+                          setSelectedAddressId(savedAddresses[0].id)
+                        }
+                      }}
+                    >
+                      {language === "EN" ? "Cancel" : "បោះបង់"}
+                    </Button>
+                  )}
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1">
+                      {tc.addressLabel}
+                    </label>
+                    <Input
+                      type="text"
+                      value={newAddress.label}
+                      onChange={(e) => setNewAddress({ ...newAddress, label: e.target.value })}
+                      placeholder={tc.addressLabelPlaceholder}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1">
+                      {tc.province}
+                    </label>
+                    <Input
+                      type="text"
+                      value={newAddress.province}
+                      onChange={(e) => setNewAddress({ ...newAddress, province: e.target.value })}
+                      placeholder={language === "EN" ? "Phnom Penh" : "រាជធានីភ្នំពេញ"}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1">
+                      {tc.district}
+                    </label>
+                    <Input
+                      type="text"
+                      value={newAddress.district}
+                      onChange={(e) => setNewAddress({ ...newAddress, district: e.target.value })}
+                      placeholder={language === "EN" ? "Chamkar Mon" : "ចំការមន"}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1">
+                      {tc.commune}
+                    </label>
+                    <Input
+                      type="text"
+                      value={newAddress.commune}
+                      onChange={(e) => setNewAddress({ ...newAddress, commune: e.target.value })}
+                      placeholder={language === "EN" ? "Boeung Keng Kang" : "បឹងកេងកង"}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    {tc.streetAddress} *
+                  </label>
+                  <Input
+                    type="text"
+                    value={newAddress.addressLine}
+                    onChange={(e) => setNewAddress({ ...newAddress, addressLine: e.target.value })}
+                    placeholder={language === "EN" ? "#123, Street 456" : "#១២៣, ផ្លូវលេខ ៤៥៦"}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    {tc.landmark}
+                  </label>
+                  <Input
+                    type="text"
+                    value={newAddress.landmark}
+                    onChange={(e) => setNewAddress({ ...newAddress, landmark: e.target.value })}
+                    placeholder={tc.landmarkPlaceholder}
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="save-address"
+                    checked={saveAddressForFuture}
+                    onCheckedChange={(checked) => setSaveAddressForFuture(checked === true)}
+                  />
+                  <label
+                    htmlFor="save-address"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {tc.saveAddress}
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* Delivery Note */}
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-foreground mb-2">
+                {tc.deliveryNote}
+              </label>
+              <textarea
+                value={deliveryNote}
+                onChange={(e) => setDeliveryNote(e.target.value)}
+                placeholder={tc.deliveryNotePlaceholder}
+                rows={3}
+                className="w-full px-3 py-2 border border-border bg-background text-foreground placeholder-muted-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+          </div>
+
+          {/* Section 3: Payment Method */}
+          <div className="bg-card border border-border rounded-lg p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
+                3
+              </div>
+              <h2 className="text-xl font-semibold text-foreground">{tc.paymentMethod}</h2>
             </div>
 
-            <Separator />
-
-            {/* Alternative: Order via Messaging */}
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground text-center">
-                {language === "EN" ? "Or order via messaging apps" : "ឬបញ្ជាទិញតាមកម្មវិធីផ្ញើសារ"}
-              </p>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  onClick={() => handleOrderVia("telegram")}
-                  disabled={!fullName || !phone || createOrder.isPending}
-                  variant="outline"
-                  className="bg-transparent flex items-center justify-center gap-2"
-                >
-                  <MessageCircle size={18} />
-                  Telegram
-                </Button>
-
-                <Button
-                  onClick={() => handleOrderVia("messenger")}
-                  disabled={!fullName || !phone || createOrder.isPending}
-                  variant="outline"
-                  className="bg-transparent flex items-center justify-center gap-2"
-                >
-                  <Send size={18} />
-                  Messenger
-                </Button>
+            <RadioGroup
+              value={selectedPayment}
+              onValueChange={(value) => setSelectedPayment(value as PaymentGatewayType)}
+              className="space-y-3"
+            >
+              {/* Cash on Delivery */}
+              <div className="flex items-center space-x-3 p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                <RadioGroupItem value="CASH" id="payment-cash" />
+                <Label htmlFor="payment-cash" className="flex items-center gap-3 cursor-pointer flex-1">
+                  <Banknote className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">{t.payment.methods.cash}</p>
+                    <p className="text-sm text-muted-foreground">{t.payment.descriptions.cash}</p>
+                  </div>
+                </Label>
               </div>
+
+              {/* ABA PayWay */}
+              <div className="flex items-center space-x-3 p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                <RadioGroupItem value="ABA_PAYWAY" id="payment-aba" />
+                <Label htmlFor="payment-aba" className="flex items-center gap-3 cursor-pointer flex-1">
+                  <CreditCard className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">{t.payment.methods.abaPayway}</p>
+                    <p className="text-sm text-muted-foreground">{t.payment.descriptions.abaPayway}</p>
+                  </div>
+                </Label>
+              </div>
+
+              {/* Wing */}
+              <div className="flex items-center space-x-3 p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                <RadioGroupItem value="WING" id="payment-wing" />
+                <Label htmlFor="payment-wing" className="flex items-center gap-3 cursor-pointer flex-1">
+                  <Smartphone className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">{t.payment.methods.wing}</p>
+                    <p className="text-sm text-muted-foreground">{t.payment.descriptions.wing}</p>
+                  </div>
+                </Label>
+              </div>
+
+              {/* KHQR */}
+              <div className="flex items-center space-x-3 p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                <RadioGroupItem value="KHQR" id="payment-khqr" />
+                <Label htmlFor="payment-khqr" className="flex items-center gap-3 cursor-pointer flex-1">
+                  <QrCode className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">{t.payment.methods.khqr}</p>
+                    <p className="text-sm text-muted-foreground">{t.payment.descriptions.khqr}</p>
+                  </div>
+                </Label>
+              </div>
+            </RadioGroup>
+
+            {createOrder.error && (
+              <div className="mt-4 p-3 bg-destructive/10 text-destructive rounded-md text-sm">
+                {language === "EN" ? "Failed to place order. Please try again." : "មិនអាចបញ្ជាទិញបានទេ។ សូមព្យាយាមម្តងទៀត។"}
+              </div>
+            )}
+          </div>
+
+          {/* Alternative: Order via Messaging (Mobile) */}
+          <div className="lg:hidden bg-card border border-border rounded-lg p-6">
+            <p className="text-sm text-muted-foreground text-center mb-4">
+              {language === "EN" ? "Or order via messaging apps" : "ឬបញ្ជាទិញតាមកម្មវិធីផ្ញើសារ"}
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                onClick={() => handleOrderVia("telegram")}
+                disabled={!isFormValid || createOrder.isPending}
+                variant="outline"
+                className="bg-transparent flex items-center justify-center gap-2"
+              >
+                <MessageCircle size={18} />
+                Telegram
+              </Button>
+
+              <Button
+                onClick={() => handleOrderVia("messenger")}
+                disabled={!isFormValid || createOrder.isPending}
+                variant="outline"
+                className="bg-transparent flex items-center justify-center gap-2"
+              >
+                <Send size={18} />
+                Messenger
+              </Button>
             </div>
           </div>
         </div>
 
-        {/* Order Summary Sidebar */}
-        <div className="md:col-span-1">
-          <div className="bg-muted p-6 border border-border sticky top-24">
-            <h3 className="text-lg font-bold text-foreground mb-4">
-              {language === "EN" ? "Order Summary" : "សង្ខេបលម្អិត"}
-            </h3>
+        {/* Order Summary Sidebar - Right Column (1/3 width) */}
+        <div className="lg:col-span-1">
+          <div className="bg-card border border-border rounded-lg p-6 sticky top-24">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-foreground">{tc.orderSummary}</h3>
+              <span className="text-sm text-muted-foreground">
+                {cart.length} {tc.items}
+              </span>
+            </div>
 
-            <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
+            {/* Cart Items with Quantity Edit */}
+            <div className="space-y-4 mb-6 max-h-80 overflow-y-auto">
               {cart.map((item) => (
-                <div key={item.id} className="flex justify-between text-sm">
-                  <div>
-                    <p className="font-medium text-foreground">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">x{item.quantity}</p>
+                <div key={item.id} className="flex gap-3">
+                  {/* Product Image */}
+                  <div className="w-16 h-16 flex-shrink-0 bg-muted rounded-md overflow-hidden">
+                    {item.image ? (
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                        <MapPin className="h-6 w-6" />
+                      </div>
+                    )}
                   </div>
-                  <p className="font-medium text-foreground">
-                    {currency === "USD"
-                      ? `$${(item.price * item.quantity).toFixed(2)}`
-                      : `${Math.round(item.price * item.quantity * 4000)}៛`}
-                  </p>
+
+                  {/* Product Details */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground text-sm truncate">{item.name}</p>
+                    <p className="text-sm text-primary font-medium">
+                      {formatPrice(item.price)}
+                    </p>
+
+                    {/* Quantity Controls */}
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="flex items-center border border-border rounded">
+                        <button
+                          onClick={() => onUpdateQuantity?.(item.id, item.quantity - 1)}
+                          disabled={item.quantity <= 1}
+                          className="p-1 hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Minus className="h-3 w-3" />
+                        </button>
+                        <span className="px-3 text-sm font-medium">{item.quantity}</span>
+                        <button
+                          onClick={() => onUpdateQuantity?.(item.id, item.quantity + 1)}
+                          className="p-1 hover:bg-muted"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => onRemoveItem?.(item.id)}
+                        className="p-1 text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Line Total */}
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-medium text-foreground text-sm">
+                      {formatPrice(item.price * item.quantity)}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
 
             <Separator className="mb-4" />
 
+            {/* Totals */}
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{language === "EN" ? "Subtotal" : "សរុបមូលដ្ឋាន"}</span>
-                <span className="text-foreground font-medium">
-                  {currency === "USD" ? `$${total.toFixed(2)}` : `${Math.round(total * 4000)}៛`}
-                </span>
+                <span className="text-muted-foreground">{tc.subtotal}</span>
+                <span className="text-foreground font-medium">{formatPrice(total)}</span>
               </div>
 
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">{tc.shipping}</span>
+                <span className="text-success font-medium">{tc.freeShipping}</span>
+              </div>
+
+              <Separator />
+
               <div className="flex justify-between text-lg font-bold">
-                <span className="text-foreground">{language === "EN" ? "Total" : "សរុប"}</span>
-                <span className="text-primary">
-                  {currency === "USD" ? `$${total.toFixed(2)}` : `${Math.round(total * 4000)}៛`}
-                </span>
+                <span className="text-foreground">{tc.total}</span>
+                <span className="text-primary">{formatPrice(total)}</span>
+              </div>
+            </div>
+
+            {/* Place Order Button */}
+            <Button
+              onClick={handleCreateOrderAndPay}
+              disabled={!isFormValid || isProcessingPayment || createOrder.isPending}
+              className="w-full mt-6 bg-primary text-primary-foreground hover:bg-opacity-90 disabled:opacity-50 h-12 text-lg"
+            >
+              {isProcessingPayment || createOrder.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  {tc.processing}
+                </>
+              ) : (
+                <>
+                  {(() => {
+                    const Icon = PAYMENT_ICONS[selectedPayment]
+                    return <Icon className="mr-2 h-5 w-5" />
+                  })()}
+                  {tc.placeOrder}
+                </>
+              )}
+            </Button>
+
+            {/* Alternative: Order via Messaging (Desktop) */}
+            <div className="hidden lg:block mt-4">
+              <Separator className="mb-4" />
+              <p className="text-sm text-muted-foreground text-center mb-3">
+                {language === "EN" ? "Or order via messaging" : "ឬបញ្ជាទិញតាមកម្មវិធីផ្ញើសារ"}
+              </p>
+
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  onClick={() => handleOrderVia("telegram")}
+                  disabled={!isFormValid || createOrder.isPending}
+                  variant="outline"
+                  size="sm"
+                  className="bg-transparent flex items-center justify-center gap-1"
+                >
+                  <MessageCircle size={16} />
+                  Telegram
+                </Button>
+
+                <Button
+                  onClick={() => handleOrderVia("messenger")}
+                  disabled={!isFormValid || createOrder.isPending}
+                  variant="outline"
+                  size="sm"
+                  className="bg-transparent flex items-center justify-center gap-1"
+                >
+                  <Send size={16} />
+                  Messenger
+                </Button>
               </div>
             </div>
           </div>
