@@ -78,6 +78,67 @@
       "priority": 5,
       "passes": false,
       "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Add search API security features",
+      "description": "Implement security measures for the search API endpoint",
+      "acceptanceCriteria": [
+        "Add input validation: max query length (100 chars)",
+        "Sanitize search input to prevent XSS in results",
+        "Add rate limiting headers (X-RateLimit-Limit, X-RateLimit-Remaining)",
+        "Return 400 for invalid/malformed queries",
+        "Log suspicious search patterns (optional)",
+        "Build passes: bun run build"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "Security hardening for production use"
+    },
+    {
+      "id": "US-007",
+      "title": "Add whitelabel product filtering",
+      "description": "Filter search results to only show active products visible to customers",
+      "acceptanceCriteria": [
+        "Only return products where isActive = true",
+        "Only return products where isVisible = true (if field exists)",
+        "Filter by shopId/tenantId if multi-tenant (from settings)",
+        "Exclude out-of-stock products option via query param 'inStock=true'",
+        "Build passes: bun run build"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "Ensures whitelabel shops only show their own active products"
+    },
+    {
+      "id": "US-008",
+      "title": "Add search result branding support",
+      "description": "Support whitelabel branding in search results display",
+      "acceptanceCriteria": [
+        "Use shop's primary color for search highlight",
+        "Support custom 'no results' message from shop settings",
+        "Apply shop's font settings to search dropdown",
+        "Respect shop's currency display preference (USD/KHR)",
+        "Build passes: bun run build"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "Whitelabel customization for search UI"
+    },
+    {
+      "id": "US-009",
+      "title": "Add search analytics tracking",
+      "description": "Track search queries for shop analytics and security monitoring",
+      "acceptanceCriteria": [
+        "Log search queries to database (SearchLog model)",
+        "Track: query, timestamp, resultsCount, shopId",
+        "Add API endpoint GET /api/analytics/search for admin",
+        "Show popular searches in admin dashboard",
+        "Build passes: bun run build"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "Helps shop owners understand customer search behavior"
     }
   ]
 }

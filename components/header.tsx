@@ -1,7 +1,9 @@
 "use client"
 
-import { ShoppingCart } from "lucide-react"
+import { ShoppingCart, Search } from "lucide-react"
 import { StoreStatus } from "@/components/shop/store-status"
+import { Input } from "@/components/ui/input"
+import { useState } from "react"
 
 interface HeaderProps {
   cartCount: number
@@ -14,6 +16,8 @@ interface HeaderProps {
   logoUrl?: string
   primaryColor?: string
   showStoreStatus?: boolean
+  searchQuery?: string
+  onSearchChange?: (query: string) => void
 }
 
 export function Header({
@@ -27,7 +31,21 @@ export function Header({
   logoUrl,
   primaryColor,
   showStoreStatus = true,
+  searchQuery: externalSearchQuery,
+  onSearchChange,
 }: HeaderProps) {
+  const [internalSearchQuery, setInternalSearchQuery] = useState("")
+  const searchQuery = externalSearchQuery !== undefined ? externalSearchQuery : internalSearchQuery
+
+  const handleSearchChange = (value: string) => {
+    if (onSearchChange) {
+      onSearchChange(value)
+    } else {
+      setInternalSearchQuery(value)
+    }
+  }
+
+  const searchPlaceholder = language === "EN" ? "Search products..." : "ស្វែងរកផលិតផល..."
   return (
     <header className="fixed top-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-b border-border z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
@@ -48,6 +66,20 @@ export function Header({
             )}
             <span className="font-semibold text-lg text-foreground hidden sm:inline">{shopName}</span>
             {showStoreStatus && <StoreStatus language={language} />}
+          </div>
+
+          {/* Search Input - responsive: full width on mobile row, fixed width on desktop */}
+          <div className="hidden sm:flex flex-1 max-w-xs mx-4">
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder={searchPlaceholder}
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="pl-9 h-9 rounded-full"
+              />
+            </div>
           </div>
 
           {/* Right side: Pill Toggles + Cart */}
@@ -109,6 +141,20 @@ export function Header({
                 </span>
               )}
             </button>
+          </div>
+        </div>
+
+        {/* Mobile Search - full width on mobile only */}
+        <div className="sm:hidden mt-3">
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder={searchPlaceholder}
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-9 h-9 rounded-full w-full"
+            />
           </div>
         </div>
       </div>
