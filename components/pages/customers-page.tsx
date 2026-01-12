@@ -9,9 +9,11 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Eye, Pencil } from "lucide-react"
+import { Eye, Pencil, Bell } from "lucide-react"
 import { useCustomers, useUpdateCustomer, Customer } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
+import { NotificationPreferences } from "@/components/notification-preferences"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export function CustomersPage() {
   const { toast } = useToast()
@@ -177,49 +179,77 @@ export function CustomersPage() {
 
       {/* View Customer Dialog */}
       <Dialog open={!!viewCustomer} onOpenChange={() => setViewCustomer(null)}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[550px]">
           <DialogHeader>
             <DialogTitle>Customer Details</DialogTitle>
           </DialogHeader>
           {viewCustomer && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Name:</span>
-                  <p className="font-medium">{viewCustomer.name || "Unknown"}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Phone:</span>
-                  <p className="font-medium">{viewCustomer.phone}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Total Orders:</span>
-                  <p className="font-medium">{viewCustomer._count?.orders || viewCustomer.orderCount || 0}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Total Spent:</span>
-                  <p className="font-medium">${Number(viewCustomer.totalSpent || 0).toFixed(2)}</p>
-                </div>
-                <div className="col-span-2">
-                  <span className="text-muted-foreground">Notes:</span>
-                  <p className="font-medium">{viewCustomer.notes || "-"}</p>
-                </div>
-                <div className="col-span-2">
-                  <span className="text-muted-foreground">Tags:</span>
-                  <div className="flex gap-1 mt-1">
-                    {viewCustomer.tags?.length ? (
-                      viewCustomer.tags.map((tag, idx) => (
-                        <Badge key={idx} variant="secondary" className="rounded-sm">
-                          {tag}
-                        </Badge>
-                      ))
-                    ) : (
-                      <span className="text-muted-foreground">No tags</span>
-                    )}
+            <Tabs defaultValue="details" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="details" className="flex items-center gap-2">
+                  <Eye className="h-4 w-4" />
+                  Details
+                </TabsTrigger>
+                <TabsTrigger value="notifications" className="flex items-center gap-2">
+                  <Bell className="h-4 w-4" />
+                  Notifications
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="details" className="mt-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Name:</span>
+                    <p className="font-medium">{viewCustomer.name || "Unknown"}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Phone:</span>
+                    <p className="font-medium">{viewCustomer.phone}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Email:</span>
+                    <p className="font-medium">{viewCustomer.email || "-"}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Total Orders:</span>
+                    <p className="font-medium">{viewCustomer._count?.orders || viewCustomer.orderCount || 0}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Total Spent:</span>
+                    <p className="font-medium">${Number(viewCustomer.totalSpent || 0).toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Since:</span>
+                    <p className="font-medium">{viewCustomer.createdAt ? formatDate(viewCustomer.createdAt) : "-"}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground">Notes:</span>
+                    <p className="font-medium">{viewCustomer.notes || "-"}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground">Tags:</span>
+                    <div className="flex gap-1 mt-1">
+                      {viewCustomer.tags?.length ? (
+                        viewCustomer.tags.map((tag, idx) => (
+                          <Badge key={idx} variant="secondary" className="rounded-sm">
+                            {tag}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-muted-foreground">No tags</span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              </TabsContent>
+
+              <TabsContent value="notifications" className="mt-4">
+                <NotificationPreferences
+                  customerId={viewCustomer.id}
+                  customerEmail={viewCustomer.email}
+                />
+              </TabsContent>
+            </Tabs>
           )}
         </DialogContent>
       </Dialog>

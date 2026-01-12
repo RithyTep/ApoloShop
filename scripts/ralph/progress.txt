@@ -523,3 +523,75 @@ Project: ApoloShop - Product Search Feature
   - getCategories added to server-utils.ts for server-side category fetching
   - Filter state synced to URL on every change for shareable filtered views
 ---
+
+## 2026-01-12 - US-023
+- **Implemented**: Product reviews and ratings
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added Review model and ReviewStatus enum)
+  - `app/api/products/[id]/reviews/route.ts` (new file - GET/POST endpoint)
+  - `app/api/reviews/route.ts` (new file - admin GET all reviews endpoint)
+  - `app/api/reviews/[id]/route.ts` (new file - admin PATCH/DELETE endpoint)
+  - `components/star-rating.tsx` (new file - StarRating and InteractiveStarRating components)
+  - `components/product-reviews.tsx` (new file - ProductReviews component)
+  - `components/pages/reviews-page.tsx` (new file - admin reviews moderation page)
+  - `components/ui/progress.tsx` (new file - Shadcn Progress component)
+  - `components/product-grid.tsx` (modified - added rating display on cards)
+  - `components/sidebar.tsx` (modified - added reviews nav item)
+  - `components/admin-dashboard.tsx` (modified - integrated ReviewsPage)
+  - `lib/api-hooks.ts` (modified - added review types and hooks)
+  - `lib/i18n.ts` (modified - added reviews translations EN/KH)
+  - `app/shop/product/[id]/page.tsx` (modified - integrated ProductReviews and rating)
+  - `package.json` (modified - added @radix-ui/react-progress)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Review model**: id, productId, customerId, guestName, rating (1-5), comment, status (PENDING/APPROVED/REJECTED), timestamps
+  - **GET /api/products/[id]/reviews**: Fetch reviews with stats (average, distribution), pagination, optional includeUnapproved for admin
+  - **POST /api/products/[id]/reviews**: Submit review with rating (required), comment (optional), customerId or guestName, XSS sanitization
+  - **GET /api/reviews**: Admin endpoint to fetch all reviews with status filter
+  - **PATCH /api/reviews/[id]**: Admin endpoint to approve/reject reviews
+  - **DELETE /api/reviews/[id]**: Admin endpoint to delete reviews
+  - **StarRating component**: Renders 1-5 stars with partial fill support, multiple sizes (sm/md/lg)
+  - **InteractiveStarRating component**: Clickable star rating for review form
+  - **ProductReviews component**: Full review section with stats, rating distribution bars, review list, submit form, pagination
+  - **ReviewsPage**: Admin moderation dashboard with status filter, stats cards, approve/reject/delete actions, delete confirmation
+  - **Rating on product cards**: useProductRatings hook fetches ratings for visible products
+  - **Sidebar integration**: Reviews nav item with pending count badge
+  - **Bilingual support**: All UI text in English and Khmer
+- **Learnings for future iterations**:
+  - Review moderation pattern: default status PENDING, admin approves/rejects before public display
+  - Rating distribution: Prisma groupBy with _count aggregation for star counts
+  - XSS prevention: Sanitize user input before storing (comment, guestName)
+  - Duplicate review prevention: Check existing review from same customer before allowing new one
+  - Progress component from Radix UI for rating distribution bars
+  - useProductRatings hook batches rating requests for multiple products
+  - Admin badge counts: Fetch pending count separately for sidebar notification
+---
+
+## 2026-01-12 - US-024
+- **Implemented**: Order status notifications
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added NotificationPreference, NotificationLog models, NotificationChannel enum)
+  - `lib/notification-service.ts` (new file - notification service with Telegram/Email support)
+  - `app/api/notifications/preferences/route.ts` (new file - GET/POST/PUT/DELETE for preferences)
+  - `app/api/orders/route.ts` (modified - auto-send notifications on status change)
+  - `components/notification-preferences.tsx` (new file - UI component for managing preferences)
+  - `components/pages/customers-page.tsx` (modified - added Notifications tab in customer details dialog)
+  - `lib/i18n.ts` (modified - added notifications translations EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **NotificationPreference model**: customerId, channel (TELEGRAM/EMAIL/SMS), enabled, telegramChatId, per-status toggles
+  - **NotificationLog model**: Tracks all notification attempts with status/errors
+  - **Telegram support**: Uses TELEGRAM_BOT_TOKEN env var, sends via Telegram Bot API
+  - **Email support**: Optional SMTP configuration (SMTP_HOST/PORT/USER/PASS/FROM), uses nodemailer
+  - **Order status triggers**: Auto-notification on status change (CONFIRMED/PREPARING/READY/COMPLETED/CANCELLED)
+  - **Preferences API**: Full CRUD at /api/notifications/preferences
+  - **Customer UI**: Tab-based dialog showing Details + Notifications, per-channel settings with status toggles
+  - **Bilingual support**: EN/KH translations for all notification UI text
+- **Learnings for future iterations**:
+  - Fire-and-forget pattern: Call notification service without awaiting to avoid blocking API response
+  - nodemailer is optional dependency - dynamic import with catch fallback
+  - Telegram Bot API requires chat_id from user - users must start conversation with bot first
+  - Per-status preferences allow granular control (e.g., only notify on "Ready" status)
+  - Prisma unique constraint on [customerId, channel] ensures one preference per customer per channel
+  - Tabs component from Shadcn works well for organizing related content in dialogs
+---

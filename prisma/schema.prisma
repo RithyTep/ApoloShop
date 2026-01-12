@@ -141,9 +141,10 @@ model Customer {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  orders    Order[]
-  wishlists Wishlist[]
-  reviews   Review[]
+  orders                  Order[]
+  wishlists               Wishlist[]
+  reviews                 Review[]
+  notificationPreferences NotificationPreference[]
 
   @@index([clientId])
   @@index([phone])
@@ -508,6 +509,59 @@ model Wishlist {
   @@index([guestId])
   @@index([productId])
   @@map("wishlists")
+  @@schema("apolo")
+}
+
+// ============================================
+// NOTIFICATION PREFERENCES
+// ============================================
+
+enum NotificationChannel {
+  TELEGRAM
+  EMAIL
+  SMS
+
+  @@schema("apolo")
+}
+
+model NotificationPreference {
+  id           String   @id @default(cuid())
+  customerId   String   @map("customer_id")
+  customer     Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  channel      NotificationChannel
+  enabled      Boolean  @default(true)
+  // Channel-specific identifiers
+  telegramChatId String?  @map("telegram_chat_id")
+  // Preferences for what to be notified about
+  orderConfirmation Boolean @default(true) @map("order_confirmation")
+  orderPreparing    Boolean @default(true) @map("order_preparing")
+  orderReady        Boolean @default(true) @map("order_ready")
+  orderCompleted    Boolean @default(true) @map("order_completed")
+  orderCancelled    Boolean @default(true) @map("order_cancelled")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@unique([customerId, channel])
+  @@index([customerId])
+  @@map("notification_preferences")
+  @@schema("apolo")
+}
+
+model NotificationLog {
+  id           String              @id @default(cuid())
+  customerId   String              @map("customer_id")
+  orderId      String?             @map("order_id")
+  channel      NotificationChannel
+  type         String              // e.g., "order_status_changed", "order_confirmed"
+  message      String              @db.Text
+  status       String              @default("sent") // "sent", "failed", "pending"
+  errorMessage String?             @map("error_message") @db.Text
+  sentAt       DateTime            @default(now()) @map("sent_at")
+
+  @@index([customerId])
+  @@index([orderId])
+  @@index([sentAt])
+  @@map("notification_logs")
   @@schema("apolo")
 }
 

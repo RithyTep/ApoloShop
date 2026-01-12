@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
+import {
+  sendOrderStatusNotification,
+  type OrderNotificationData,
+  type OrderStatusType,
+} from "@/lib/notification-service"
 
 const orderItemSchema = z.object({
   productId: z.string().min(1),
@@ -251,6 +256,33 @@ export async function PUT(request: NextRequest) {
         payments: true,
       },
     })
+
+    // Send notification if status changed (non-blocking)
+    if (status && status !== existing.status) {
+      const notificationData: OrderNotificationData = {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        customerId: order.customerId,
+        customerName: order.customer.name,
+        customerPhone: order.customer.phone,
+        customerEmail: order.customer.email,
+        status: status as OrderStatusType,
+        totalUsd: Number(order.totalUsd),
+        totalKhr: order.totalKhr,
+        currency: order.currency as "USD" | "KHR",
+        items: order.items.map((item) => ({
+          productName: item.product?.nameEn || item.productName || "Unknown",
+          quantity: item.quantity,
+          priceUsd: Number(item.priceUsd),
+          priceKhr: item.priceKhr,
+        })),
+      }
+
+      // Fire and forget - don't block the response
+      sendOrderStatusNotification(notificationData).catch((err) => {
+        console.error("[Orders API] Failed to send notification:", err)
+      })
+    }
 
     return NextResponse.json(order)
   } catch (error) {

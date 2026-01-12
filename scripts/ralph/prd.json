@@ -351,8 +351,8 @@
         "Build passes: bun run build"
       ],
       "priority": 23,
-      "passes": false,
-      "notes": "Social proof increases conversions"
+      "passes": true,
+      "notes": "Implemented Review model with status (PENDING/APPROVED/REJECTED), POST/GET /api/products/[id]/reviews endpoint, StarRating component on product cards and detail page, ProductReviews component with submit form/pagination, admin ReviewsPage with approve/reject/delete moderation, reviews nav in sidebar with pending badge."
     },
     {
       "id": "US-024",
@@ -366,8 +366,8 @@
         "Build passes: bun run build"
       ],
       "priority": 24,
-      "passes": false,
-      "notes": "Keeps customers informed about their orders"
+      "passes": true,
+      "notes": "Implemented NotificationPreference/NotificationLog models, notification service with Telegram/Email support, /api/notifications/preferences endpoint, auto-trigger on order status change, NotificationPreferences UI in customer profile with Tabs"
     },
     {
       "id": "US-025",
