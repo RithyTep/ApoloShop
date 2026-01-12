@@ -13,10 +13,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { ImageUpload } from "@/components/ui/image-upload"
-import { Plus, Pencil, Trash, Upload, Download } from "lucide-react"
+import { Plus, Pencil, Trash, Upload, Download, Wand2, Printer, ScanLine } from "lucide-react"
 import { useProducts, useCategories, useCreateProduct, useUpdateProduct, useDeleteProduct, Product } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
 import { ProductImportDialog, ProductExportButton } from "@/components/product-import-export"
+import { PrintLabelButton } from "@/components/barcode-label"
+import { generateEAN13FromSKU } from "@/lib/sku-barcode"
 
 export function ProductsPage() {
   const { toast } = useToast()
@@ -151,6 +153,49 @@ export function ProductsPage() {
     }
   }
 
+  // Auto-generate SKU based on category and product name
+  const [isGeneratingSKU, setIsGeneratingSKU] = useState(false)
+
+  const handleGenerateSKU = async () => {
+    if (!formData.categoryId || !formData.nameEn) {
+      toast({
+        title: "Missing information",
+        description: "Please select a category and enter a product name first",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsGeneratingSKU(true)
+    try {
+      const response = await fetch('/api/sku', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          categoryId: formData.categoryId,
+          productName: formData.nameEn,
+          preview: false,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to generate SKU')
+      }
+
+      const data = await response.json()
+      setFormData({ ...formData, sku: data.sku })
+      toast({ title: `SKU generated: ${data.sku}` })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: (error as Error).message,
+        variant: "destructive",
+      })
+    } finally {
+      setIsGeneratingSKU(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="p-8 space-y-6">
@@ -272,23 +317,37 @@ export function ProductsPage() {
                         {product.isActive ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
-                    <TableCell className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs bg-transparent"
-                        onClick={() => openEditDialog(product)}
-                      >
-                        <Pencil size={14} />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs text-destructive hover:text-destructive bg-transparent"
-                        onClick={() => setDeleteProduct(product)}
-                      >
-                        <Trash size={14} />
-                      </Button>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs bg-transparent"
+                          onClick={() => openEditDialog(product)}
+                          title="Edit product"
+                        >
+                          <Pencil size={14} />
+                        </Button>
+                        <PrintLabelButton
+                          product={{
+                            id: product.id,
+                            sku: product.sku,
+                            nameEn: product.nameEn,
+                            priceUsd: product.priceUsd,
+                            category: product.category,
+                          }}
+                          size="sm"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs text-destructive hover:text-destructive bg-transparent"
+                          onClick={() => setDeleteProduct(product)}
+                          title="Delete product"
+                        >
+                          <Trash size={14} />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -364,11 +423,27 @@ export function ProductsPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="sku">SKU</Label>
-                <Input
-                  id="sku"
-                  value={formData.sku}
-                  onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="sku"
+                    value={formData.sku}
+                    onChange={(e) => setFormData({ ...formData, sku: e.target.value.toUpperCase() })}
+                    placeholder="Enter or auto-generate"
+                    className="flex-1 font-mono"
+                  />
+                  {!editingProduct && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={handleGenerateSKU}
+                      disabled={isGeneratingSKU}
+                      title="Auto-generate SKU"
+                    >
+                      <Wand2 size={16} className={isGeneratingSKU ? "animate-spin" : ""} />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
             <div className="space-y-2">
