@@ -376,3 +376,30 @@ Project: ApoloShop - Product Search Feature
   - createDefaultClientContext() useful for tests and development without DB
   - Build still passes even though DB migration for client_id columns pending
 ---
+
+## 2026-01-12 - US-018
+- **Implemented**: Recently viewed products tracking and display
+- **Files changed**:
+  - `lib/use-recently-viewed.ts` (new file - localStorage hook)
+  - `components/recently-viewed.tsx` (new file - display component)
+  - `app/shop/product/[id]/page.tsx` (modified - integrated hook and component)
+  - `lib/i18n.ts` (modified - added recentlyViewed translations)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **useRecentlyViewed hook**: Manages localStorage with max 10 product IDs, most recent first
+  - **addViewedProduct()**: Adds product to list, removes duplicates, persists to localStorage
+  - **clearRecentlyViewed()**: Clears all history with localStorage.removeItem
+  - **getViewedExcluding()**: Get IDs excluding current product (for product page display)
+  - **RecentlyViewed component**: Grid display with product cards, image, name, price
+  - **Loading state**: Skeleton cards while fetching product details from API
+  - **Clear button**: UI option to clear viewing history
+  - **Bilingual support**: "Recently Viewed" / "បានមើលថ្មីៗ" translations
+  - **Responsive grid**: 2 cols on mobile, 4 cols on desktop
+  - **Product detail integration**: Auto-tracks viewed product on page load
+- **Learnings for future iterations**:
+  - localStorage hook pattern: useEffect for initial load, useCallback for updates
+  - Product fetching: parallel Promise.all for multiple product IDs
+  - useEffect dependency for array: use .join(",") to create stable dependency string
+  - Component hides itself when no products to show (returns null)
+  - excludeProductId prop prevents showing current product in its own recently viewed section
+---
