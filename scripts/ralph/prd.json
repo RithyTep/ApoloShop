@@ -31,8 +31,8 @@
         "Build passes: bun run build"
       ],
       "priority": 2,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Search input added to components/header.tsx with Shadcn Input + Search icon"
     },
     {
       "id": "US-003",
@@ -47,8 +47,8 @@
         "Build passes: bun run build"
       ],
       "priority": 3,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "SearchDropdown component with 300ms debounce, skeleton loading, bilingual no results message"
     },
     {
       "id": "US-004",

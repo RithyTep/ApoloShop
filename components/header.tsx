@@ -4,6 +4,7 @@ import { ShoppingCart, Search } from "lucide-react"
 import { StoreStatus } from "@/components/shop/store-status"
 import { Input } from "@/components/ui/input"
 import { useState } from "react"
+import { SearchDropdown } from "@/components/search-dropdown"
 
 interface HeaderProps {
   cartCount: number
@@ -35,6 +36,7 @@ export function Header({
   onSearchChange,
 }: HeaderProps) {
   const [internalSearchQuery, setInternalSearchQuery] = useState("")
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
   const searchQuery = externalSearchQuery !== undefined ? externalSearchQuery : internalSearchQuery
 
   const handleSearchChange = (value: string) => {
@@ -43,6 +45,11 @@ export function Header({
     } else {
       setInternalSearchQuery(value)
     }
+    setIsSearchOpen(value.trim().length > 0)
+  }
+
+  const handleSearchClose = () => {
+    setIsSearchOpen(false)
   }
 
   const searchPlaceholder = language === "EN" ? "Search products..." : "ស្វែងរកផលិតផល..."
@@ -71,13 +78,21 @@ export function Header({
           {/* Search Input - responsive: full width on mobile row, fixed width on desktop */}
           <div className="hidden sm:flex flex-1 max-w-xs mx-4">
             <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
               <Input
                 type="search"
                 placeholder={searchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
+                onFocus={() => searchQuery.trim() && setIsSearchOpen(true)}
                 className="pl-9 h-9 rounded-full"
+              />
+              <SearchDropdown
+                query={searchQuery}
+                isOpen={isSearchOpen}
+                onClose={handleSearchClose}
+                language={language}
+                currency={currency}
               />
             </div>
           </div>
@@ -147,13 +162,21 @@ export function Header({
         {/* Mobile Search - full width on mobile only */}
         <div className="sm:hidden mt-3">
           <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
             <Input
               type="search"
               placeholder={searchPlaceholder}
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
+              onFocus={() => searchQuery.trim() && setIsSearchOpen(true)}
               className="pl-9 h-9 rounded-full w-full"
+            />
+            <SearchDropdown
+              query={searchQuery}
+              isOpen={isSearchOpen}
+              onClose={handleSearchClose}
+              language={language}
+              currency={currency}
             />
           </div>
         </div>

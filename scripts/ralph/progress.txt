@@ -28,3 +28,44 @@ Project: ApoloShop - Product Search Feature
   - Prisma `contains` with `mode: "insensitive"` works for case-insensitive search
   - Only return active products (`isActive: true`) for customer-facing search
 ---
+
+## 2026-01-12 - US-002
+- **Implemented**: Search input component in shop header
+- **Files changed**:
+  - `components/header.tsx` (modified)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - Added search input using Shadcn Input component with Search icon from lucide-react
+  - Desktop: fixed width (max-w-xs) search input in header row, centered
+  - Mobile: full-width search bar below header row (sm:hidden)
+  - Bilingual placeholder: "Search products..." (EN) / "ស្វែងរកផលិតផល..." (KH)
+  - Controlled input with optional external state management via props
+- **Learnings for future iterations**:
+  - Header component at `components/header.tsx` (not shop-header.tsx)
+  - Uses internal state by default, but supports controlled mode via `searchQuery` and `onSearchChange` props
+  - Mobile breakpoint is `sm:` (640px) - above shows inline, below shows full-width row
+  - Input styling: `rounded-full` for pill shape, `pl-9` for icon padding
+---
+
+## 2026-01-12 - US-003
+- **Implemented**: Search results dropdown with debounced API calls
+- **Files changed**:
+  - `components/search-dropdown.tsx` (new file)
+  - `components/header.tsx` (modified - integrated SearchDropdown)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - 300ms debounce on search input before API call
+  - Dropdown shows below search input with product results
+  - Displays product image (with placeholder for missing images), name, and price
+  - Bilingual "No results found" / "រកមិនឃើញលទ្ធផល" message
+  - Skeleton loading state with "Searching..." / "កំពុងស្វែងរក..." text
+  - Click outside to close dropdown
+  - Currency-aware price display (USD/KHR)
+  - Language-aware product name display (EN/KH)
+- **Learnings for future iterations**:
+  - SearchDropdown is separate component for reusability
+  - Uses `useRef` + `mousedown` event for click-outside detection
+  - Dropdown positioned with `absolute top-full` relative to search input container
+  - Price formatting uses `Number()` conversion since Prisma Decimal comes as string
+  - Search API returns max 5 results via `limit=5` param for dropdown brevity
+---
