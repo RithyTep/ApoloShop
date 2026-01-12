@@ -160,6 +160,28 @@ export const getProducts = cache(async (): Promise<Product[]> => {
   }
 })
 
+// Cached fetch for categories
+export const getCategories = cache(async () => {
+  try {
+    const categories = await prisma.category.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: "asc" },
+    })
+
+    return categories.map((c) => ({
+      id: c.id,
+      nameEn: c.nameEn,
+      nameKh: c.nameKh,
+      slug: c.slug,
+      sortOrder: c.sortOrder,
+      isActive: c.isActive,
+    }))
+  } catch (error) {
+    console.error("Error fetching categories:", error)
+    return []
+  }
+})
+
 // Preload functions for parallel data fetching
 export const preloadShopCustomization = () => {
   void getShopCustomization()
@@ -167,4 +189,8 @@ export const preloadShopCustomization = () => {
 
 export const preloadProducts = () => {
   void getProducts()
+}
+
+export const preloadCategories = () => {
+  void getCategories()
 }
