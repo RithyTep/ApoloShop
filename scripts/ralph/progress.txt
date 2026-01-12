@@ -1471,3 +1471,25 @@ Project: ApoloShop - Product Search Feature
   - Model stats query needed to count encrypted vs unencrypted records
   - Super admin only access for encryption management (sensitive operation)
 ---
+
+## 2026-01-12 - US-047
+- **Implemented**: Global API rate limiting
+- **Files changed**:
+  - `lib/rate-limiter.ts` (new file - core rate limiting logic)
+  - `lib/auth-middleware.ts` (modified - added rate limiting middleware)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Default limit**: 100 requests per minute per IP for anonymous users
+  - **User-type limits**: anonymous (100/min), authenticated (200/min), admin (500/min), super_admin (1000/min)
+  - **Endpoint-specific limits**: Configurable overrides for sensitive endpoints (login: 10/min, forgot-password: 3/min, etc.)
+  - **In-memory store**: Clean architecture with Redis-ready interface for distributed deployments
+  - **429 response**: Returns proper error with Retry-After header and X-RateLimit-* headers
+  - **Middleware**: withRateLimit, withAuthAndRateLimit, withRateLimitAndCSRF, withAuthRateLimitAndCSRF
+  - **Helper functions**: extractClientIP, getUserTypeFromRole, getEndpointRateLimit
+- **Learnings for future iterations**:
+  - Rate limiter uses sliding window algorithm via in-memory Map with periodic cleanup
+  - IRateLimiter interface allows swapping in-memory for Redis without changing middleware
+  - User type detected from request.user (set by withAuth middleware) for authenticated limits
+  - Endpoint-specific limits only apply to non-admin users (admins/super_admins use their higher base limits)
+  - X-RateLimit-Reset is Unix timestamp in seconds for standard compliance
+---
