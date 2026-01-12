@@ -763,8 +763,8 @@
         "Build passes: bun run build"
       ],
       "priority": 49,
-      "passes": false,
-      "notes": "Prevents malicious file uploads"
+      "passes": true,
+      "notes": "Implemented lib/secure-upload.ts with magic byte validation (JPEG, PNG, WebP, GIF, AVIF, SVG, PDF), type-specific max sizes, UUID filename generation, HMAC-signed URLs with expiry, SVG XSS validation, ClamAV placeholder. Enhanced /api/upload with comprehensive validation, added /api/uploads/signed-url and /api/uploads/signed-url/verify endpoints."
     },
     {
       "id": "US-050",

@@ -1520,3 +1520,30 @@ Project: ApoloShop - Product Search Feature
   - HTML entity encoding (&lt;, &gt;) is optional - stripping tags is often sufficient
   - Validation middleware composes well with auth middleware (withAuth(withBodyValidation(...)))
 ---
+
+## 2026-01-12 - US-049
+- **Implemented**: Secure file upload with magic byte validation
+- **Files changed**:
+  - `lib/secure-upload.ts` (new file - comprehensive file upload security utilities)
+  - `app/api/upload/route.ts` (modified - enhanced with security validation)
+  - `app/api/uploads/signed-url/route.ts` (new file - generate signed URLs)
+  - `app/api/uploads/signed-url/verify/route.ts` (new file - verify and redirect)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - Magic byte validation for JPEG, PNG, WebP, GIF, AVIF, SVG, PDF
+  - Special handling for WebP (RIFF container) and AVIF (ftyp box)
+  - Type-specific max file sizes (e.g., 10MB for images, 1MB for SVG, 20MB for PDF)
+  - UUID v4 secure filename generation using crypto.randomUUID()
+  - HMAC-SHA256 signed URLs with configurable expiry (default 1 hour)
+  - SVG XSS validation (checks for script tags, event handlers, etc.)
+  - ClamAV malware scanning placeholder (ready for integration)
+  - Comprehensive validateFile() function combining all checks
+  - Audit logging for upload attempts (success/failure)
+- **Learnings for future iterations**:
+  - Magic bytes need special handling for container formats (RIFF for WebP, ftyp for AVIF/HEIF)
+  - SVG files are text-based, need XSS sanitization before allowing
+  - Signed URLs use HMAC with timing-safe comparison for security
+  - Use crypto.timingSafeEqual() to prevent timing attacks on signature verification
+  - Type detection should use detected type for storage, not client-declared type
+  - Consider fail-open vs fail-closed for ClamAV - currently fail-open with logging
+---
