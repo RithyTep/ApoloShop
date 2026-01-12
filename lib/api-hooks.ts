@@ -3870,3 +3870,245 @@ export function useDeleteCannedResponse() {
     },
   });
 }
+
+// ============================================
+// HELP CENTER / FAQ
+// ============================================
+
+export type HelpArticleStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
+
+export interface HelpCategory {
+  id: string;
+  nameEn: string;
+  nameKh: string;
+  slug: string;
+  description?: string;
+  sortOrder: number;
+  iconName?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  articles?: HelpArticle[];
+  _count?: { articles: number };
+}
+
+export interface HelpArticle {
+  id: string;
+  categoryId: string;
+  titleEn: string;
+  titleKh: string;
+  slug: string;
+  contentEn: string;
+  contentKh: string;
+  metaTitleEn?: string;
+  metaTitleKh?: string;
+  metaDescEn?: string;
+  metaDescKh?: string;
+  status: HelpArticleStatus;
+  sortOrder: number;
+  isFeatured: boolean;
+  viewCount: number;
+  helpfulYes: number;
+  helpfulNo: number;
+  publishedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  category?: {
+    id: string;
+    nameEn: string;
+    nameKh: string;
+    slug: string;
+    iconName?: string;
+  };
+}
+
+/**
+ * Hook to fetch help categories
+ */
+export function useHelpCategories(options?: { activeOnly?: boolean; withArticles?: boolean }) {
+  const params = new URLSearchParams();
+  if (options?.activeOnly) params.set("activeOnly", "true");
+  if (options?.withArticles) params.set("withArticles", "true");
+  const query = params.toString();
+
+  return useQuery({
+    queryKey: ["help-categories", options],
+    queryFn: () =>
+      fetchAPI<{ categories: HelpCategory[] }>(
+        `/api/help/categories${query ? `?${query}` : ""}`
+      ),
+  });
+}
+
+/**
+ * Hook to create a help category
+ */
+export function useCreateHelpCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<HelpCategory>) =>
+      fetchAPI<HelpCategory>("/api/help/categories", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["help-categories"] });
+    },
+  });
+}
+
+/**
+ * Hook to update a help category
+ */
+export function useUpdateHelpCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<HelpCategory> & { id: string }) =>
+      fetchAPI<HelpCategory>("/api/help/categories", {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["help-categories"] });
+    },
+  });
+}
+
+/**
+ * Hook to delete a help category
+ */
+export function useDeleteHelpCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchAPI<{ success: boolean }>(`/api/help/categories?id=${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["help-categories"] });
+    },
+  });
+}
+
+/**
+ * Hook to fetch help articles
+ */
+export function useHelpArticles(options?: {
+  categoryId?: string;
+  status?: HelpArticleStatus;
+  search?: string;
+  featured?: boolean;
+  limit?: number;
+}) {
+  const params = new URLSearchParams();
+  if (options?.categoryId) params.set("categoryId", options.categoryId);
+  if (options?.status) params.set("status", options.status);
+  if (options?.search) params.set("search", options.search);
+  if (options?.featured) params.set("featured", "true");
+  if (options?.limit) params.set("limit", options.limit.toString());
+  const query = params.toString();
+
+  return useQuery({
+    queryKey: ["help-articles", options],
+    queryFn: () =>
+      fetchAPI<{ articles: HelpArticle[] }>(
+        `/api/help/articles${query ? `?${query}` : ""}`
+      ),
+  });
+}
+
+/**
+ * Hook to fetch a single help article by slug
+ */
+export function useHelpArticle(slug: string) {
+  return useQuery({
+    queryKey: ["help-article", slug],
+    queryFn: () =>
+      fetchAPI<{ articles: HelpArticle[] }>(`/api/help/articles?slug=${slug}`),
+    enabled: !!slug,
+  });
+}
+
+/**
+ * Hook to create a help article
+ */
+export function useCreateHelpArticle() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<HelpArticle>) =>
+      fetchAPI<HelpArticle>("/api/help/articles", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["help-articles"] });
+      queryClient.invalidateQueries({ queryKey: ["help-categories"] });
+    },
+  });
+}
+
+/**
+ * Hook to update a help article
+ */
+export function useUpdateHelpArticle() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<HelpArticle> & { id: string }) =>
+      fetchAPI<HelpArticle>("/api/help/articles", {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["help-articles"] });
+      queryClient.invalidateQueries({ queryKey: ["help-article"] });
+      queryClient.invalidateQueries({ queryKey: ["help-categories"] });
+    },
+  });
+}
+
+/**
+ * Hook to delete a help article
+ */
+export function useDeleteHelpArticle() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchAPI<{ success: boolean }>(`/api/help/articles?id=${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["help-articles"] });
+      queryClient.invalidateQueries({ queryKey: ["help-categories"] });
+    },
+  });
+}
+
+/**
+ * Hook to track article view
+ */
+export function useTrackArticleView() {
+  return useMutation({
+    mutationFn: (articleId: string) =>
+      fetchAPI<{ success: boolean }>("/api/help/articles/view", {
+        method: "POST",
+        body: JSON.stringify({ articleId }),
+      }),
+  });
+}
+
+/**
+ * Hook to submit article helpfulness feedback
+ */
+export function useArticleFeedback() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { articleId: string; helpful: boolean }) =>
+      fetchAPI<{ success: boolean }>("/api/help/articles/feedback", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["help-article"] });
+    },
+  });
+}

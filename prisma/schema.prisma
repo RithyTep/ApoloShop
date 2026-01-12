@@ -1737,3 +1737,73 @@ model AgentStatus {
   @@map("agent_statuses")
   @@schema("apolo")
 }
+
+// ============================================
+// HELP CENTER / FAQ
+// ============================================
+
+enum HelpArticleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@schema("apolo")
+}
+
+model HelpCategory {
+  id          String   @id @default(cuid())
+  nameEn      String   @map("name_en")
+  nameKh      String   @map("name_kh")
+  slug        String   @unique
+  description String?  @db.Text
+  sortOrder   Int      @default(0) @map("sort_order")
+  iconName    String?  @map("icon_name") // Lucide icon name
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  articles    HelpArticle[]
+
+  @@index([slug])
+  @@index([isActive])
+  @@index([sortOrder])
+  @@map("help_categories")
+  @@schema("apolo")
+}
+
+model HelpArticle {
+  id            String            @id @default(cuid())
+  categoryId    String            @map("category_id")
+  category      HelpCategory      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  titleEn       String            @map("title_en")
+  titleKh       String            @map("title_kh")
+  slug          String            @unique
+  contentEn     String            @map("content_en") @db.Text
+  contentKh     String            @map("content_kh") @db.Text
+  // SEO
+  metaTitleEn   String?           @map("meta_title_en")
+  metaTitleKh   String?           @map("meta_title_kh")
+  metaDescEn    String?           @map("meta_desc_en") @db.Text
+  metaDescKh    String?           @map("meta_desc_kh") @db.Text
+  // Status and visibility
+  status        HelpArticleStatus @default(DRAFT)
+  sortOrder     Int               @default(0) @map("sort_order")
+  isFeatured    Boolean           @default(false) @map("is_featured") // Show on help center home
+  // Analytics
+  viewCount     Int               @default(0) @map("view_count")
+  helpfulYes    Int               @default(0) @map("helpful_yes")
+  helpfulNo     Int               @default(0) @map("helpful_no")
+  // Timestamps
+  publishedAt   DateTime?         @map("published_at")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  @@index([categoryId])
+  @@index([slug])
+  @@index([status])
+  @@index([isFeatured])
+  @@index([viewCount])
+  @@index([sortOrder])
+  @@map("help_articles")
+  @@schema("apolo")
+}
