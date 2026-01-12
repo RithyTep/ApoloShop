@@ -1493,3 +1493,30 @@ Project: ApoloShop - Product Search Feature
   - Endpoint-specific limits only apply to non-admin users (admins/super_admins use their higher base limits)
   - X-RateLimit-Reset is Unix timestamp in seconds for standard compliance
 ---
+
+## 2026-01-12 - US-048
+- **Implemented**: Input validation middleware using Zod
+- **Files changed**:
+  - `lib/validation.ts` (new file - core validation middleware)
+  - `docs/features/input-validation-middleware.md` (new file - feature documentation)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **withBodyValidation**: HOF for validating JSON request bodies with Zod schemas
+  - **withQueryValidation**: HOF for validating URL query parameters
+  - **withParamsValidation**: HOF for validating path parameters (Next.js dynamic routes)
+  - **withValidation**: Combined body + query validation
+  - **XSS sanitization**: sanitizeString, containsXSS, sanitizeObject functions
+  - **XSS patterns detected**: script tags, javascript: protocol, event handlers, iframes, style tags, etc.
+  - **Type-safe requests**: ValidatedBodyRequest<T>, ValidatedQueryRequest<T>, ValidatedParamsRequest<T>
+  - **Common schemas**: paginationSchema, searchSchema, dateRangeSchema, sortSchema, commonQuerySchema
+  - **Safe string types**: safeString (auto-sanitize), noXSSString (reject XSS), safeEmail, safeUrl, safePhone
+  - **Error response format**: Detailed 400 response with code, details (field/message/code), and summary
+  - **Error codes**: INVALID_BODY, INVALID_QUERY, INVALID_PARAMS, BODY_REQUIRED, INVALID_JSON, XSS_DETECTED
+- **Learnings for future iterations**:
+  - Zod's safeParse returns {success: boolean, data/error} for non-throwing validation
+  - error.flatten() provides convenient fieldErrors and formErrors structure
+  - XSS patterns must reset lastIndex for global regex after test() call
+  - Next.js 15+ uses async params - must await context.params in dynamic routes
+  - HTML entity encoding (&lt;, &gt;) is optional - stripping tags is often sufficient
+  - Validation middleware composes well with auth middleware (withAuth(withBodyValidation(...)))
+---
