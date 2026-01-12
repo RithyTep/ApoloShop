@@ -555,8 +555,8 @@
         "Build passes: bun run build"
       ],
       "priority": 36,
-      "passes": false,
-      "notes": "Users control their active sessions"
+      "passes": true,
+      "notes": "Implemented Session model with device/IP/UA/lastActive/isRevoked fields, lib/session-service.ts with CRUD operations, GET/DELETE /api/sessions endpoints, ActiveSessions UI component, integrated with login/2FA flows, 30-day auto-expiry via validateSession check"
     },
     {
       "id": "US-037",

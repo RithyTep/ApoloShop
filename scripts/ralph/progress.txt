@@ -1019,3 +1019,50 @@ Project: ApoloShop - Product Search Feature
   - Include attemptsRemaining in 401 response so frontend can warn users
   - cleanupOldLoginAttempts() helper for periodic maintenance (24h retention)
 ---
+
+## 2026-01-12 - US-036
+- **Implemented**: Session management for tracking and managing active user sessions
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - enhanced Session model with device/IP/UA/lastActive/isRevoked fields)
+  - `lib/session-service.ts` (new file - session CRUD operations, device parsing, activity tracking)
+  - `app/api/sessions/route.ts` (new file - GET/DELETE for session list and bulk revoke)
+  - `app/api/sessions/[id]/route.ts` (new file - DELETE for individual session revoke)
+  - `components/active-sessions.tsx` (new file - UI component for viewing/managing sessions)
+  - `lib/api-hooks.ts` (modified - added session types and hooks)
+  - `lib/auth-middleware.ts` (modified - added session activity update, isRevoked check)
+  - `app/api/auth/login/route.ts` (modified - integrated createSession with device info)
+  - `app/api/auth/2fa/verify/route.ts` (modified - integrated createSession with device info)
+  - `lib/i18n.ts` (modified - added sessions translations EN/KH)
+  - `package.json` (modified - added ua-parser-js dependency)
+- **Features**:
+  - **Enhanced Session model**: Added deviceName, deviceType, ipAddress, userAgent, location, lastActive, isRevoked, revokedAt, isCurrent fields
+  - **Session service (lib/session-service.ts)**:
+    - SESSION_CONFIG with 30-day sessionDuration and inactivityThreshold
+    - parseUserAgent() using ua-parser-js for device detection
+    - extractIpAddress() from various proxy headers
+    - createSession() with device info capture
+    - touchSession()/touchSessionByToken() for activity updates
+    - getUserSessions() returns formatted session list
+    - revokeSession()/revokeAllSessionsExcept()/revokeAllSessions() for session management
+    - validateSession() checks expiry, revocation, and inactivity
+    - cleanupExpiredSessions() for maintenance
+    - getSessionStats() for session analytics
+  - **GET /api/sessions**: Returns active sessions with device icons, location, lastActive timestamps
+  - **DELETE /api/sessions**: "Log out all devices" - revokes all except current
+  - **DELETE /api/sessions/[id]**: Revoke specific session
+  - **ActiveSessions component**: Card-based UI with device icons (Monitor/Smartphone/Tablet/Globe), relative time display, current session badge, revoke confirmation dialogs, security tip warning
+  - **Auth integration**: Login and 2FA verify flows now create enhanced sessions with device info
+  - **Activity tracking**: Auth middleware updates lastActive on each authenticated request
+  - **Auto-expiry**: validateSession() checks 30-day inactivity threshold
+  - **Hooks**: useSessions, useRevokeSession, useRevokeAllSessions in api-hooks.ts
+  - **Bilingual support**: Full EN/KH translations for session management UI
+- **Learnings for future iterations**:
+  - ua-parser-js v2+ uses new API patterns - check documentation for latest syntax
+  - Session activity should be fire-and-forget (touchSession) to not block API responses
+  - isRevoked + revokedAt pattern enables soft-delete with audit trail
+  - Device parsing from User-Agent: browser name + OS name = deviceName
+  - Relative time formatting: use thresholds (minutes -> hours -> days) for human-readable times
+  - Session model isCurrent field marked at runtime, not stored - compare sessionId in response
+  - IP extraction priority: x-forwarded-for > x-real-ip > cf-connecting-ip
+  - AlertDialog from Shadcn works well for confirmation flows (revoke session, log out all)
+---
