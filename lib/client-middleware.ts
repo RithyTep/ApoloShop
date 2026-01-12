@@ -142,8 +142,31 @@ export async function findClientByIdentifier(
 }
 
 /**
+ * Parse the client slug header which may contain a domain prefix
+ * Middleware sets "domain:shop.example.com" for custom domains
+ * or just "client-slug" for subdomains
+ */
+function parseClientSlugHeader(slugHeader: string): {
+  type: "domain" | "subdomain" | "default"
+  value: string
+} {
+  if (slugHeader.startsWith("domain:")) {
+    // Custom domain - extract the domain part
+    return { type: "domain", value: slugHeader.slice(7) }
+  }
+
+  // Regular slug (subdomain or default)
+  if (slugHeader === DEFAULT_CLIENT_SLUG) {
+    return { type: "default", value: slugHeader }
+  }
+
+  return { type: "subdomain", value: slugHeader }
+}
+
+/**
  * Get client context from request
  * Checks headers first (injected by middleware), then resolves from hostname
+ * Falls back to default client if domain not found
  */
 export async function getClientFromRequest(
   request: NextRequest
@@ -186,10 +209,45 @@ export async function getClientFromRequest(
     }
   }
 
+  // Check for client slug header (set by middleware)
+  const clientSlugHeader = request.headers.get(CLIENT_SLUG_HEADER)
+
+  if (clientSlugHeader) {
+    const parsed = parseClientSlugHeader(clientSlugHeader)
+    const client = await findClientByIdentifier(parsed.type, parsed.value)
+
+    // If client found, return it
+    if (client) {
+      return client
+    }
+
+    // If not found and it was a custom domain or subdomain, fall back to default
+    if (parsed.type !== "default") {
+      console.warn(
+        `Client not found for ${parsed.type}: ${parsed.value}, falling back to default`
+      )
+      const defaultClient = await findClientByIdentifier(
+        "default",
+        DEFAULT_CLIENT_SLUG
+      )
+      return defaultClient
+    }
+  }
+
   // Otherwise, extract from hostname
   const hostname = request.headers.get("host") || ""
   const identifier = extractClientIdentifier(hostname)
-  return findClientByIdentifier(identifier.type, identifier.value)
+  const client = await findClientByIdentifier(identifier.type, identifier.value)
+
+  // Fallback to default client if not found
+  if (!client && identifier.type !== "default") {
+    console.warn(
+      `Client not found for ${identifier.type}: ${identifier.value}, falling back to default`
+    )
+    return findClientByIdentifier("default", DEFAULT_CLIENT_SLUG)
+  }
+
+  return client
 }
 
 /**
@@ -253,4 +311,43 @@ export async function getClientIdForFilter(
 ): Promise<string | null> {
   const client = await getClientFromRequest(request)
   return client?.id ?? null
+}
+
+/**
+ * Get client slug from request headers (for use in server components)
+ * Parses the middleware-injected header value
+ */
+export function getClientSlugFromHeaders(
+  headers: Headers
+): { type: "domain" | "subdomain" | "default"; value: string } | null {
+  const slugHeader = headers.get(CLIENT_SLUG_HEADER)
+  if (!slugHeader) return null
+  return parseClientSlugHeader(slugHeader)
+}
+
+/**
+ * Create a default client context for when no client is found
+ * This ensures the application can still function without a database client record
+ */
+export function createDefaultClientContext(): ClientContext {
+  return {
+    id: "default",
+    name: "Default Shop",
+    slug: DEFAULT_CLIENT_SLUG,
+    domain: null,
+    settings: null,
+    theme: null,
+    isActive: true,
+  }
+}
+
+/**
+ * Get client context with guaranteed fallback
+ * Never returns null - provides a default context if client not found
+ */
+export async function getClientFromRequestWithFallback(
+  request: NextRequest
+): Promise<ClientContext> {
+  const client = await getClientFromRequest(request)
+  return client ?? createDefaultClientContext()
 }

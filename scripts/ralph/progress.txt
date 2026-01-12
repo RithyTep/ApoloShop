@@ -354,3 +354,25 @@ Project: ApoloShop - Product Search Feature
   - Custom domains are prefixed with "domain:" in middleware header to distinguish from slugs
   - Build passes but database migration needed to add client_id columns to actual DB
 ---
+
+## 2026-01-12 - US-017
+- **Implemented**: Client domain routing for multi-tenant SaaS
+- **Files changed**:
+  - `lib/client-middleware.ts` (modified - added parseClientSlugHeader, fallback logic, helper functions)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **parseClientSlugHeader()**: Parses middleware's x-client-slug header, handles "domain:" prefix for custom domains
+  - **Enhanced getClientFromRequest()**: Now uses middleware-injected header first, with automatic fallback
+  - **Fallback to default client**: When domain/subdomain not found, automatically falls back to DEFAULT_CLIENT_SLUG
+  - **getClientSlugFromHeaders()**: Helper for server components to parse client slug from headers
+  - **createDefaultClientContext()**: Creates a synthetic default client context when no DB record exists
+  - **getClientFromRequestWithFallback()**: Guaranteed non-null client context retrieval
+  - **Warning logs**: Logs when falling back to default for monitoring/debugging
+- **Learnings for future iterations**:
+  - Middleware (edge runtime) can't do DB lookups - passes slug via header to API routes
+  - "domain:" prefix distinguishes custom domains from subdomain slugs
+  - Fallback pattern ensures app works even if client record missing from DB
+  - Three-tier resolution: x-client-id header -> x-client-slug header -> hostname extraction
+  - createDefaultClientContext() useful for tests and development without DB
+  - Build still passes even though DB migration for client_id columns pending
+---

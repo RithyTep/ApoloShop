@@ -243,8 +243,8 @@
         "Build passes: bun run build"
       ],
       "priority": 16,
-      "passes": false,
-      "notes": "Visual whitelabeling for each client"
+      "passes": true,
+      "notes": "Added theme fields to Client model (primaryColor, secondaryColor, logoUrl, faviconUrl). Created useClientTheme/useClientThemeStyles hooks. Added /api/client/theme endpoint. Created ClientThemeEditor with live preview. Theme applies automatically via shop-app.tsx."
     },
     {
       "id": "US-017",
@@ -258,8 +258,8 @@
         "Build passes: bun run build"
       ],
       "priority": 17,
-      "passes": false,
-      "notes": "Enables true multi-tenant SaaS model"
+      "passes": true,
+      "notes": "Enhanced client-middleware.ts with parseClientSlugHeader for domain: prefix handling, robust fallback to default client when domain not found, getClientSlugFromHeaders helper, createDefaultClientContext function, and getClientFromRequestWithFallback for guaranteed client context. Middleware already handles subdomain/custom domain detection."
     },
     {
       "id": "US-018",
