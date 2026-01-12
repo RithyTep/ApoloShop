@@ -25,6 +25,9 @@ model User {
   roleId       String    @map("role_id")
   role         Role      @relation(fields: [roleId], references: [id])
   isActive     Boolean   @default(true) @map("is_active")
+  // Email verification fields
+  emailVerified    Boolean   @default(false) @map("email_verified")
+  emailVerifiedAt  DateTime? @map("email_verified_at")
   // Two-Factor Authentication (2FA) fields
   twoFactorEnabled Boolean   @default(false) @map("two_factor_enabled")
   twoFactorSecret  String?   @map("two_factor_secret") // Encrypted TOTP secret
@@ -38,6 +41,7 @@ model User {
   passwordHistory     PasswordHistory[]
   socialAccounts      SocialAccount[]
   passwordResetTokens PasswordResetToken[]
+  emailVerifyTokens   EmailVerifyToken[]
 
   @@map("users")
   @@schema("apolo")
@@ -191,6 +195,30 @@ model PasswordResetToken {
   @@schema("apolo")
 }
 
+// Email verification tokens
+model EmailVerifyToken {
+  id         String    @id @default(cuid())
+  userId     String?   @map("user_id")
+  user       User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customerId String?   @map("customer_id")
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  email      String    // The email to verify (may differ from current email)
+  token      String    @unique // Hashed token (SHA-256)
+  expiresAt  DateTime  @map("expires_at")
+  usedAt     DateTime? @map("used_at") // Null until token is used
+  ipAddress  String?   @map("ip_address")
+  userAgent  String?   @map("user_agent") @db.Text
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([customerId])
+  @@index([token])
+  @@index([email])
+  @@index([expiresAt])
+  @@map("email_verify_tokens")
+  @@schema("apolo")
+}
+
 // ============================================
 // SOCIAL ACCOUNTS (OAuth)
 // ============================================
@@ -306,6 +334,9 @@ model Customer {
   name      String
   phone     String   @unique
   email     String?
+  // Email verification fields
+  emailVerified    Boolean   @default(false) @map("email_verified")
+  emailVerifiedAt  DateTime? @map("email_verified_at")
   notes     String?  @db.Text
   tags      Json?    // ["VIP", "Frequent Buyer"]
   createdAt DateTime @default(now()) @map("created_at")
@@ -316,6 +347,7 @@ model Customer {
   reviews                 Review[]
   notificationPreferences NotificationPreference[]
   socialAccounts          SocialAccount[]
+  emailVerifyTokens       EmailVerifyToken[]
 
   @@index([clientId])
   @@index([phone])
