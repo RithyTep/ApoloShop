@@ -1260,6 +1260,1606 @@
       "priority": 80,
       "passes": false,
       "notes": "For businesses with physical retail presence"
+    },
+    {
+      "id": "US-081",
+      "title": "Referral program",
+      "description": "Customer referral system with rewards",
+      "acceptanceCriteria": [
+        "Add Referral model: referrerId, refereeId, code, status, rewardEarned",
+        "Unique referral codes per customer",
+        "Reward both referrer and referee on first purchase",
+        "Shareable referral links for social media",
+        "Referral dashboard showing earnings",
+        "Build passes: bun run build"
+      ],
+      "priority": 81,
+      "passes": false,
+      "notes": "Word-of-mouth marketing with incentives"
+    },
+    {
+      "id": "US-082",
+      "title": "Social proof widgets",
+      "description": "Display social proof to increase trust",
+      "acceptanceCriteria": [
+        "Recent purchase notifications popup",
+        "Currently viewing count on products",
+        "Items sold counter on product pages",
+        "Trust badges (secure checkout, money-back guarantee)",
+        "Configurable display rules and timing",
+        "Build passes: bun run build"
+      ],
+      "priority": 82,
+      "passes": false,
+      "notes": "Psychological triggers to boost conversions"
+    },
+    {
+      "id": "US-083",
+      "title": "Returns and refunds system",
+      "description": "Customer self-service returns management",
+      "acceptanceCriteria": [
+        "Add Return model: orderId, reason, status, refundAmount",
+        "Customer-initiated return request form",
+        "Return shipping label generation (optional)",
+        "Admin approval workflow",
+        "Automatic refund processing",
+        "Build passes: bun run build"
+      ],
+      "priority": 83,
+      "passes": false,
+      "notes": "Reduces support workload for returns"
+    },
+    {
+      "id": "US-084",
+      "title": "Tax calculation engine",
+      "description": "Automatic tax calculation based on location",
+      "acceptanceCriteria": [
+        "Add TaxRate model: country, region, rate, productType",
+        "Calculate tax based on shipping address",
+        "Support different rates per product category",
+        "Tax-inclusive and tax-exclusive pricing options",
+        "Tax report generation for accounting",
+        "Build passes: bun run build"
+      ],
+      "priority": 84,
+      "passes": false,
+      "notes": "Cambodia VAT is 10% - needs proper calculation"
+    },
+    {
+      "id": "US-085",
+      "title": "Multi-currency checkout",
+      "description": "Let customers pay in their preferred currency",
+      "acceptanceCriteria": [
+        "Auto-detect customer currency from location",
+        "Real-time exchange rate updates",
+        "Display prices in selected currency throughout",
+        "Settlement in shop's base currency",
+        "Currency conversion fees display",
+        "Build passes: bun run build"
+      ],
+      "priority": 85,
+      "passes": false,
+      "notes": "USD/KHR already supported, expand to more"
+    },
+    {
+      "id": "US-086",
+      "title": "Subscription products",
+      "description": "Recurring subscription for consumable products",
+      "acceptanceCriteria": [
+        "Add Subscription model: customerId, productId, frequency, nextDelivery",
+        "Subscribe & Save discount (e.g., 10% off)",
+        "Flexible frequency: weekly, monthly, custom",
+        "Pause, skip, or cancel subscription",
+        "Automatic order creation on schedule",
+        "Build passes: bun run build"
+      ],
+      "priority": 86,
+      "passes": false,
+      "notes": "Recurring revenue for coffee, consumables"
+    },
+    {
+      "id": "US-087",
+      "title": "Pre-order functionality",
+      "description": "Allow pre-orders for upcoming products",
+      "acceptanceCriteria": [
+        "Pre-order flag on products with release date",
+        "Deposit or full payment options",
+        "Automatic notification when product ships",
+        "Pre-order quantity limits",
+        "Countdown to release date display",
+        "Build passes: bun run build"
+      ],
+      "priority": 87,
+      "passes": false,
+      "notes": "Generate early revenue for new products"
+    },
+    {
+      "id": "US-088",
+      "title": "Back-in-stock notifications",
+      "description": "Notify customers when out-of-stock items return",
+      "acceptanceCriteria": [
+        "Add StockNotification model: productId, email, notified",
+        "'Notify me' button on out-of-stock products",
+        "Automatic email when product restocked",
+        "Admin view of notification requests",
+        "Unsubscribe option",
+        "Build passes: bun run build"
+      ],
+      "priority": 88,
+      "passes": false,
+      "notes": "Capture demand for out-of-stock items"
+    },
+    {
+      "id": "US-089",
+      "title": "Product comparison",
+      "description": "Side-by-side product comparison tool",
+      "acceptanceCriteria": [
+        "Add to compare button on product cards",
+        "Comparison table with specifications",
+        "Highlight differences between products",
+        "Max 4 products to compare",
+        "Shareable comparison link",
+        "Build passes: bun run build"
+      ],
+      "priority": 89,
+      "passes": false,
+      "notes": "Helps customers make informed decisions"
+    },
+    {
+      "id": "US-090",
+      "title": "Product questions and answers",
+      "description": "Customer Q&A on product pages",
+      "acceptanceCriteria": [
+        "Add ProductQuestion model: productId, question, answer, askedBy",
+        "Submit question form on product page",
+        "Admin answers questions",
+        "Other customers can answer too",
+        "Voting on helpful answers",
+        "Build passes: bun run build"
+      ],
+      "priority": 90,
+      "passes": false,
+      "notes": "Reduces pre-purchase questions to support"
+    },
+    {
+      "id": "US-091",
+      "title": "Size guide and fit finder",
+      "description": "Help customers choose the right size",
+      "acceptanceCriteria": [
+        "Add SizeChart model linked to products/categories",
+        "Visual size guide with measurements",
+        "Fit finder quiz recommending size",
+        "Customer size profile storage",
+        "Size comparison between brands",
+        "Build passes: bun run build"
+      ],
+      "priority": 91,
+      "passes": false,
+      "notes": "Reduces returns due to wrong size"
+    },
+    {
+      "id": "US-092",
+      "title": "Delivery date estimation",
+      "description": "Show expected delivery dates at checkout",
+      "acceptanceCriteria": [
+        "Calculate based on shipping zone and method",
+        "Account for business days and holidays",
+        "Display estimated date range on product page",
+        "Update based on selected shipping option",
+        "Integration with courier APIs for accuracy",
+        "Build passes: bun run build"
+      ],
+      "priority": 92,
+      "passes": false,
+      "notes": "Sets clear customer expectations"
+    },
+    {
+      "id": "US-093",
+      "title": "Order editing",
+      "description": "Allow order modifications before shipping",
+      "acceptanceCriteria": [
+        "Edit quantities within time window",
+        "Change shipping address before fulfillment",
+        "Add items to existing order",
+        "Cancel individual items",
+        "Recalculate totals and refund difference",
+        "Build passes: bun run build"
+      ],
+      "priority": 93,
+      "passes": false,
+      "notes": "Reduces cancellations from buyer's remorse"
+    },
+    {
+      "id": "US-094",
+      "title": "Split shipments",
+      "description": "Ship available items first",
+      "acceptanceCriteria": [
+        "Detect items with different availability",
+        "Offer split shipment at checkout",
+        "Separate tracking for each shipment",
+        "Combined or split shipping charges option",
+        "Admin fulfillment workflow for splits",
+        "Build passes: bun run build"
+      ],
+      "priority": 94,
+      "passes": false,
+      "notes": "Improves delivery speed for available items"
+    },
+    {
+      "id": "US-095",
+      "title": "Store pickup option",
+      "description": "Buy online, pickup in store (BOPIS)",
+      "acceptanceCriteria": [
+        "Store pickup as shipping option",
+        "Select pickup location from store list",
+        "Ready for pickup notifications",
+        "Pickup time slot selection",
+        "QR code for in-store verification",
+        "Build passes: bun run build"
+      ],
+      "priority": 95,
+      "passes": false,
+      "notes": "Omnichannel fulfillment option"
+    },
+    {
+      "id": "US-096",
+      "title": "Blog and content management",
+      "description": "Built-in blog for content marketing",
+      "acceptanceCriteria": [
+        "Add BlogPost model: title, content, author, publishedAt, tags",
+        "Rich text editor for posts",
+        "Categories and tags organization",
+        "SEO optimization per post",
+        "Related products in posts",
+        "Build passes: bun run build"
+      ],
+      "priority": 96,
+      "passes": false,
+      "notes": "Content marketing for SEO and engagement"
+    },
+    {
+      "id": "US-097",
+      "title": "Instagram shop integration",
+      "description": "Sync products to Instagram shopping",
+      "acceptanceCriteria": [
+        "Connect Instagram business account",
+        "Sync product catalog to Instagram",
+        "Tag products in Instagram posts",
+        "Import orders from Instagram checkout",
+        "Performance tracking per post",
+        "Build passes: bun run build"
+      ],
+      "priority": 97,
+      "passes": false,
+      "notes": "Social commerce is huge in Cambodia"
+    },
+    {
+      "id": "US-098",
+      "title": "Facebook Shop integration",
+      "description": "Sync products to Facebook Shop",
+      "acceptanceCriteria": [
+        "Connect Facebook Page",
+        "Product catalog sync to Facebook",
+        "Manage shop from admin dashboard",
+        "Order import from Facebook",
+        "Messenger integration for support",
+        "Build passes: bun run build"
+      ],
+      "priority": 98,
+      "passes": false,
+      "notes": "Facebook is primary platform in Cambodia"
+    },
+    {
+      "id": "US-099",
+      "title": "TikTok Shop integration",
+      "description": "Sync products to TikTok Shop",
+      "acceptanceCriteria": [
+        "Connect TikTok business account",
+        "Product catalog sync",
+        "Showcase products in TikTok videos",
+        "Order import from TikTok Shop",
+        "Live shopping support",
+        "Build passes: bun run build"
+      ],
+      "priority": 99,
+      "passes": false,
+      "notes": "TikTok commerce growing rapidly in SEA"
+    },
+    {
+      "id": "US-100",
+      "title": "Influencer commission tracking",
+      "description": "Track sales from influencer partnerships",
+      "acceptanceCriteria": [
+        "Add Influencer model with unique affiliate code",
+        "Commission percentage per influencer",
+        "Sales tracking and attribution",
+        "Payout report generation",
+        "Influencer dashboard for their stats",
+        "Build passes: bun run build"
+      ],
+      "priority": 100,
+      "passes": false,
+      "notes": "Influencer marketing attribution"
+    },
+    {
+      "id": "US-101",
+      "title": "Customer account dashboard",
+      "description": "Comprehensive customer self-service portal",
+      "acceptanceCriteria": [
+        "Order history with reorder button",
+        "Saved addresses management",
+        "Saved payment methods",
+        "Wishlist and recently viewed",
+        "Loyalty points and tier status",
+        "Build passes: bun run build"
+      ],
+      "priority": 101,
+      "passes": false,
+      "notes": "Improves customer experience"
+    },
+    {
+      "id": "US-102",
+      "title": "Multi-address checkout",
+      "description": "Ship to multiple addresses in one order",
+      "acceptanceCriteria": [
+        "Select different address per item",
+        "Gift messages per shipment",
+        "Separate shipping calculation per address",
+        "Combined payment for all shipments",
+        "Individual tracking per destination",
+        "Build passes: bun run build"
+      ],
+      "priority": 102,
+      "passes": false,
+      "notes": "Useful for corporate and gift orders"
+    },
+    {
+      "id": "US-103",
+      "title": "Gift wrapping service",
+      "description": "Add gift wrap option to products",
+      "acceptanceCriteria": [
+        "Gift wrap add-on with pricing",
+        "Multiple wrap styles to choose from",
+        "Gift message card included",
+        "Hide prices on gift orders",
+        "Gift receipt option",
+        "Build passes: bun run build"
+      ],
+      "priority": 103,
+      "passes": false,
+      "notes": "Additional revenue and customer delight"
+    },
+    {
+      "id": "US-104",
+      "title": "Corporate/B2B ordering",
+      "description": "Support for business customers",
+      "acceptanceCriteria": [
+        "Business account registration",
+        "Tax-exempt purchasing option",
+        "Purchase orders and invoicing",
+        "Volume pricing tiers",
+        "Net payment terms (Net 30, Net 60)",
+        "Build passes: bun run build"
+      ],
+      "priority": 104,
+      "passes": false,
+      "notes": "B2B sales channel"
+    },
+    {
+      "id": "US-105",
+      "title": "Quote request system",
+      "description": "Request for quote (RFQ) for custom orders",
+      "acceptanceCriteria": [
+        "Add Quote model: customer, items, status, validUntil",
+        "Request quote form for bulk orders",
+        "Admin quote builder with custom pricing",
+        "Convert approved quote to order",
+        "Quote expiration handling",
+        "Build passes: bun run build"
+      ],
+      "priority": 105,
+      "passes": false,
+      "notes": "B2B and custom order negotiations"
+    },
+    {
+      "id": "US-106",
+      "title": "Vendor/supplier portal",
+      "description": "Multi-vendor marketplace capabilities",
+      "acceptanceCriteria": [
+        "Add Vendor model with approval workflow",
+        "Vendor product submission",
+        "Commission structure per vendor",
+        "Vendor dashboard for orders/earnings",
+        "Vendor payout management",
+        "Build passes: bun run build"
+      ],
+      "priority": 106,
+      "passes": false,
+      "notes": "Marketplace model expansion"
+    },
+    {
+      "id": "US-107",
+      "title": "Dropshipping support",
+      "description": "Dropship orders to suppliers",
+      "acceptanceCriteria": [
+        "Add Supplier model with auto-forwarding",
+        "Automatic PO generation to supplier",
+        "Supplier inventory sync",
+        "Margin calculation on dropship items",
+        "Supplier order tracking integration",
+        "Build passes: bun run build"
+      ],
+      "priority": 107,
+      "passes": false,
+      "notes": "Sell without holding inventory"
+    },
+    {
+      "id": "US-108",
+      "title": "Multi-warehouse inventory",
+      "description": "Track inventory across multiple locations",
+      "acceptanceCriteria": [
+        "Add Warehouse model with inventory per location",
+        "Automatic warehouse selection for fulfillment",
+        "Transfer stock between warehouses",
+        "Location-based availability display",
+        "Warehouse performance analytics",
+        "Build passes: bun run build"
+      ],
+      "priority": 108,
+      "passes": false,
+      "notes": "Enterprise inventory management"
+    },
+    {
+      "id": "US-109",
+      "title": "Inventory reservations",
+      "description": "Reserve inventory for pending orders",
+      "acceptanceCriteria": [
+        "Reserve stock when added to cart",
+        "Release after cart abandonment timeout",
+        "Show reserved vs available stock",
+        "Priority reservations for VIP customers",
+        "Reservation expiry notifications",
+        "Build passes: bun run build"
+      ],
+      "priority": 109,
+      "passes": false,
+      "notes": "Prevents overselling popular items"
+    },
+    {
+      "id": "US-110",
+      "title": "Batch and lot tracking",
+      "description": "Track products by batch for recalls/expiry",
+      "acceptanceCriteria": [
+        "Add Batch model: productId, batchNumber, expiryDate, quantity",
+        "FIFO/FEFO fulfillment options",
+        "Batch-level inventory tracking",
+        "Expiry alerts for perishables",
+        "Batch recall functionality",
+        "Build passes: bun run build"
+      ],
+      "priority": 110,
+      "passes": false,
+      "notes": "Important for food and beverage"
+    },
+    {
+      "id": "US-111",
+      "title": "Serial number tracking",
+      "description": "Track individual units by serial number",
+      "acceptanceCriteria": [
+        "Add SerialNumber model linked to inventory",
+        "Assign serial on fulfillment",
+        "Serial lookup for warranty/support",
+        "Prevent duplicate serial sales",
+        "Serial history tracking",
+        "Build passes: bun run build"
+      ],
+      "priority": 111,
+      "passes": false,
+      "notes": "For electronics and high-value items"
+    },
+    {
+      "id": "US-112",
+      "title": "Inventory forecasting",
+      "description": "Predict future inventory needs",
+      "acceptanceCriteria": [
+        "Sales velocity calculation per product",
+        "Seasonal demand patterns",
+        "Reorder date predictions",
+        "Stock-out risk alerts",
+        "Recommended order quantities",
+        "Build passes: bun run build"
+      ],
+      "priority": 112,
+      "passes": false,
+      "notes": "AI-assisted inventory planning"
+    },
+    {
+      "id": "US-113",
+      "title": "Dynamic pricing engine",
+      "description": "Automated price adjustments based on rules",
+      "acceptanceCriteria": [
+        "Time-based pricing rules",
+        "Inventory level-based pricing",
+        "Competitor price matching",
+        "Customer segment pricing",
+        "Price change audit trail",
+        "Build passes: bun run build"
+      ],
+      "priority": 113,
+      "passes": false,
+      "notes": "Revenue optimization through pricing"
+    },
+    {
+      "id": "US-114",
+      "title": "Personalized product recommendations",
+      "description": "AI-powered product suggestions",
+      "acceptanceCriteria": [
+        "Collaborative filtering algorithm",
+        "Based on browsing history",
+        "Based on purchase history",
+        "Homepage personalization",
+        "Email recommendations",
+        "Build passes: bun run build"
+      ],
+      "priority": 114,
+      "passes": false,
+      "notes": "Increases AOV through relevance"
+    },
+    {
+      "id": "US-115",
+      "title": "Search personalization",
+      "description": "Personalized search results",
+      "acceptanceCriteria": [
+        "Boost products from preferred categories",
+        "Learn from click patterns",
+        "Personalized autocomplete suggestions",
+        "Recently searched products priority",
+        "Search result reranking per user",
+        "Build passes: bun run build"
+      ],
+      "priority": 115,
+      "passes": false,
+      "notes": "Better search relevance per user"
+    },
+    {
+      "id": "US-116",
+      "title": "Chatbot for customer service",
+      "description": "AI chatbot for common inquiries",
+      "acceptanceCriteria": [
+        "FAQ-based responses",
+        "Order status lookup",
+        "Product availability check",
+        "Handoff to human agent",
+        "Conversation history storage",
+        "Build passes: bun run build"
+      ],
+      "priority": 116,
+      "passes": false,
+      "notes": "24/7 automated support"
+    },
+    {
+      "id": "US-117",
+      "title": "Voice search",
+      "description": "Search products using voice",
+      "acceptanceCriteria": [
+        "Voice input button on search",
+        "Speech-to-text conversion",
+        "Natural language query processing",
+        "Khmer language support",
+        "Voice search analytics",
+        "Build passes: bun run build"
+      ],
+      "priority": 117,
+      "passes": false,
+      "notes": "Accessibility and convenience"
+    },
+    {
+      "id": "US-118",
+      "title": "Visual search",
+      "description": "Find products by uploading images",
+      "acceptanceCriteria": [
+        "Image upload for search",
+        "Camera capture for mobile",
+        "Similar product matching",
+        "Color-based filtering",
+        "Shape/pattern recognition",
+        "Build passes: bun run build"
+      ],
+      "priority": 118,
+      "passes": false,
+      "notes": "Visual discovery for fashion/decor"
+    },
+    {
+      "id": "US-119",
+      "title": "AR product preview",
+      "description": "Augmented reality product visualization",
+      "acceptanceCriteria": [
+        "3D model upload for products",
+        "AR view on mobile devices",
+        "Try-on for accessories",
+        "Place in room for furniture",
+        "Share AR screenshots",
+        "Build passes: bun run build"
+      ],
+      "priority": 119,
+      "passes": false,
+      "notes": "Reduce returns with better visualization"
+    },
+    {
+      "id": "US-120",
+      "title": "360-degree product images",
+      "description": "Interactive product spin view",
+      "acceptanceCriteria": [
+        "Multiple angle image upload",
+        "Drag to rotate interaction",
+        "Zoom on rotation view",
+        "Auto-spin animation option",
+        "Mobile touch support",
+        "Build passes: bun run build"
+      ],
+      "priority": 120,
+      "passes": false,
+      "notes": "Better product visualization"
+    },
+    {
+      "id": "US-121",
+      "title": "Product videos",
+      "description": "Video support on product pages",
+      "acceptanceCriteria": [
+        "Video upload/embed for products",
+        "YouTube/Vimeo integration",
+        "Thumbnail selection",
+        "Autoplay on hover option",
+        "Video in gallery carousel",
+        "Build passes: bun run build"
+      ],
+      "priority": 121,
+      "passes": false,
+      "notes": "Video increases engagement"
+    },
+    {
+      "id": "US-122",
+      "title": "User-generated content gallery",
+      "description": "Customer photos on product pages",
+      "acceptanceCriteria": [
+        "Customers upload photos with reviews",
+        "Instagram hashtag import",
+        "Moderation workflow for UGC",
+        "UGC gallery on product page",
+        "Permission management",
+        "Build passes: bun run build"
+      ],
+      "priority": 122,
+      "passes": false,
+      "notes": "Social proof from real customers"
+    },
+    {
+      "id": "US-123",
+      "title": "Collection/lookbook pages",
+      "description": "Curated product collections",
+      "acceptanceCriteria": [
+        "Add Collection model with products",
+        "Visual lookbook layouts",
+        "Seasonal/themed collections",
+        "Shop the look functionality",
+        "Collection landing pages",
+        "Build passes: bun run build"
+      ],
+      "priority": 123,
+      "passes": false,
+      "notes": "Merchandising and storytelling"
+    },
+    {
+      "id": "US-124",
+      "title": "Brand pages",
+      "description": "Dedicated brand landing pages",
+      "acceptanceCriteria": [
+        "Add Brand model with logo/description",
+        "Brand-filtered product listings",
+        "Brand story page",
+        "Brand search and filtering",
+        "Brand follow notifications",
+        "Build passes: bun run build"
+      ],
+      "priority": 124,
+      "passes": false,
+      "notes": "Brand awareness and navigation"
+    },
+    {
+      "id": "US-125",
+      "title": "Mega menu navigation",
+      "description": "Advanced category navigation",
+      "acceptanceCriteria": [
+        "Multi-level dropdown menus",
+        "Category images in menu",
+        "Featured products in menu",
+        "Promotional banners in menu",
+        "Mobile-friendly mega menu",
+        "Build passes: bun run build"
+      ],
+      "priority": 125,
+      "passes": false,
+      "notes": "Better navigation for large catalogs"
+    },
+    {
+      "id": "US-126",
+      "title": "Breadcrumb navigation",
+      "description": "Hierarchical page breadcrumbs",
+      "acceptanceCriteria": [
+        "Dynamic breadcrumbs on all pages",
+        "Category hierarchy display",
+        "Clickable breadcrumb links",
+        "Schema markup for SEO",
+        "Mobile-responsive truncation",
+        "Build passes: bun run build"
+      ],
+      "priority": 126,
+      "passes": false,
+      "notes": "Navigation and SEO improvement"
+    },
+    {
+      "id": "US-127",
+      "title": "Sticky add to cart",
+      "description": "Fixed add to cart on scroll",
+      "acceptanceCriteria": [
+        "Sticky bar appears on scroll",
+        "Product image and price display",
+        "Quick add to cart button",
+        "Variant selection in sticky bar",
+        "Mobile-specific sticky design",
+        "Build passes: bun run build"
+      ],
+      "priority": 127,
+      "passes": false,
+      "notes": "Improves conversion on long pages"
+    },
+    {
+      "id": "US-128",
+      "title": "Mini cart drawer",
+      "description": "Slide-out cart preview",
+      "acceptanceCriteria": [
+        "Cart drawer on add to cart",
+        "Edit quantities in drawer",
+        "Remove items from drawer",
+        "Show cart total and savings",
+        "Proceed to checkout from drawer",
+        "Build passes: bun run build"
+      ],
+      "priority": 128,
+      "passes": false,
+      "notes": "Reduces checkout friction"
+    },
+    {
+      "id": "US-129",
+      "title": "Buy now button",
+      "description": "Skip cart and go to checkout",
+      "acceptanceCriteria": [
+        "Buy Now button alongside Add to Cart",
+        "Direct to checkout with item",
+        "Configurable per product",
+        "Works with variants",
+        "Express checkout integration",
+        "Build passes: bun run build"
+      ],
+      "priority": 129,
+      "passes": false,
+      "notes": "Reduces steps to purchase"
+    },
+    {
+      "id": "US-130",
+      "title": "Cart abandonment popup",
+      "description": "Exit-intent popup to retain customers",
+      "acceptanceCriteria": [
+        "Detect exit intent on desktop",
+        "Show discount offer to stay",
+        "Email capture for follow-up",
+        "Configurable trigger rules",
+        "A/B testing for popup content",
+        "Build passes: bun run build"
+      ],
+      "priority": 130,
+      "passes": false,
+      "notes": "Last chance conversion opportunity"
+    },
+    {
+      "id": "US-131",
+      "title": "Upsell recommendations",
+      "description": "Suggest upgrades during checkout",
+      "acceptanceCriteria": [
+        "Higher-tier product suggestions",
+        "Add to order with one click",
+        "Show price difference clearly",
+        "Rule-based upsell targeting",
+        "Upsell acceptance tracking",
+        "Build passes: bun run build"
+      ],
+      "priority": 131,
+      "passes": false,
+      "notes": "Increase order value"
+    },
+    {
+      "id": "US-132",
+      "title": "Cross-sell recommendations",
+      "description": "Complementary products suggestions",
+      "acceptanceCriteria": [
+        "You may also like section",
+        "Frequently bought together",
+        "Cart page cross-sells",
+        "Post-purchase cross-sells",
+        "Cross-sell performance tracking",
+        "Build passes: bun run build"
+      ],
+      "priority": 132,
+      "passes": false,
+      "notes": "Increase items per order"
+    },
+    {
+      "id": "US-133",
+      "title": "Order bump at checkout",
+      "description": "Add-on offers at checkout",
+      "acceptanceCriteria": [
+        "Checkbox add-on below payment",
+        "Configurable bump products",
+        "Discount on bump items",
+        "One-click add to order",
+        "Bump conversion tracking",
+        "Build passes: bun run build"
+      ],
+      "priority": 133,
+      "passes": false,
+      "notes": "High-conversion add-on technique"
+    },
+    {
+      "id": "US-134",
+      "title": "Post-purchase upsell page",
+      "description": "One-time offer after purchase",
+      "acceptanceCriteria": [
+        "Special offer page after checkout",
+        "Add to existing order option",
+        "Time-limited countdown",
+        "Skip option to confirmation",
+        "Upsell funnel analytics",
+        "Build passes: bun run build"
+      ],
+      "priority": 134,
+      "passes": false,
+      "notes": "Capitalize on buying momentum"
+    },
+    {
+      "id": "US-135",
+      "title": "SMS marketing",
+      "description": "Text message marketing campaigns",
+      "acceptanceCriteria": [
+        "SMS opt-in at checkout",
+        "Campaign builder for SMS",
+        "Personalization tokens",
+        "Scheduled sends",
+        "SMS analytics dashboard",
+        "Build passes: bun run build"
+      ],
+      "priority": 135,
+      "passes": false,
+      "notes": "High open rates for SMS"
+    },
+    {
+      "id": "US-136",
+      "title": "Push notifications",
+      "description": "Browser push notifications",
+      "acceptanceCriteria": [
+        "Push opt-in prompt",
+        "New product announcements",
+        "Sale and promotion alerts",
+        "Abandoned cart reminders",
+        "Push notification analytics",
+        "Build passes: bun run build"
+      ],
+      "priority": 136,
+      "passes": false,
+      "notes": "Re-engagement without email"
+    },
+    {
+      "id": "US-137",
+      "title": "WhatsApp Business integration",
+      "description": "Customer communication via WhatsApp",
+      "acceptanceCriteria": [
+        "WhatsApp chat button on site",
+        "Order notifications via WhatsApp",
+        "WhatsApp catalog sharing",
+        "Broadcast messages to customers",
+        "WhatsApp Business API integration",
+        "Build passes: bun run build"
+      ],
+      "priority": 137,
+      "passes": false,
+      "notes": "Popular messaging app in region"
+    },
+    {
+      "id": "US-138",
+      "title": "Telegram bot enhancements",
+      "description": "Advanced Telegram bot features",
+      "acceptanceCriteria": [
+        "Product search via bot",
+        "Order placement via bot",
+        "Payment collection via bot",
+        "Inline product suggestions",
+        "Group ordering support",
+        "Build passes: bun run build"
+      ],
+      "priority": 138,
+      "passes": false,
+      "notes": "Telegram is popular in Cambodia"
+    },
+    {
+      "id": "US-139",
+      "title": "Gamification elements",
+      "description": "Game mechanics for engagement",
+      "acceptanceCriteria": [
+        "Spin-to-win discount wheel",
+        "Scratch card promotions",
+        "Achievement badges for customers",
+        "Progress bars to unlock rewards",
+        "Leaderboards for top customers",
+        "Build passes: bun run build"
+      ],
+      "priority": 139,
+      "passes": false,
+      "notes": "Increases engagement and fun"
+    },
+    {
+      "id": "US-140",
+      "title": "Countdown timer promotions",
+      "description": "Urgency timers for limited offers",
+      "acceptanceCriteria": [
+        "Countdown banner component",
+        "Per-product countdown display",
+        "Cart timer for reserved items",
+        "Email countdown in campaigns",
+        "Auto-expire promotions",
+        "Build passes: bun run build"
+      ],
+      "priority": 140,
+      "passes": false,
+      "notes": "Creates urgency to buy"
+    },
+    {
+      "id": "US-141",
+      "title": "Low stock alerts",
+      "description": "Display scarcity messaging",
+      "acceptanceCriteria": [
+        "Only X left in stock message",
+        "Configurable threshold per product",
+        "Urgency styling (red text)",
+        "Hide when stock is high",
+        "A/B test scarcity messaging",
+        "Build passes: bun run build"
+      ],
+      "priority": 141,
+      "passes": false,
+      "notes": "Scarcity drives action"
+    },
+    {
+      "id": "US-142",
+      "title": "Price drop alerts",
+      "description": "Notify customers of price changes",
+      "acceptanceCriteria": [
+        "Watch price button on products",
+        "Email when price drops",
+        "Price history display",
+        "Target price setting",
+        "Unsubscribe management",
+        "Build passes: bun run build"
+      ],
+      "priority": 142,
+      "passes": false,
+      "notes": "Captures price-sensitive customers"
+    },
+    {
+      "id": "US-143",
+      "title": "Custom product builder",
+      "description": "Build-your-own product configurator",
+      "acceptanceCriteria": [
+        "Step-by-step product builder",
+        "Component selection with pricing",
+        "Visual preview of customization",
+        "Save configuration for later",
+        "SKU generation for custom builds",
+        "Build passes: bun run build"
+      ],
+      "priority": 143,
+      "passes": false,
+      "notes": "For customizable products"
+    },
+    {
+      "id": "US-144",
+      "title": "Product personalization",
+      "description": "Add custom text/images to products",
+      "acceptanceCriteria": [
+        "Text engraving/printing options",
+        "Image upload for printing",
+        "Preview customized product",
+        "Extra charge for personalization",
+        "Customization details in order",
+        "Build passes: bun run build"
+      ],
+      "priority": 144,
+      "passes": false,
+      "notes": "Personalized products command premium"
+    },
+    {
+      "id": "US-145",
+      "title": "Digital products delivery",
+      "description": "Sell downloadable digital products",
+      "acceptanceCriteria": [
+        "Digital product type flag",
+        "Secure download links",
+        "Download limit enforcement",
+        "Link expiration",
+        "License key generation",
+        "Build passes: bun run build"
+      ],
+      "priority": 145,
+      "passes": false,
+      "notes": "No shipping for digital goods"
+    },
+    {
+      "id": "US-146",
+      "title": "Service booking",
+      "description": "Book appointments for services",
+      "acceptanceCriteria": [
+        "Service product type",
+        "Calendar availability display",
+        "Time slot selection",
+        "Booking confirmation emails",
+        "Integration with Google Calendar",
+        "Build passes: bun run build"
+      ],
+      "priority": 146,
+      "passes": false,
+      "notes": "For service-based businesses"
+    },
+    {
+      "id": "US-147",
+      "title": "Event tickets",
+      "description": "Sell tickets to events",
+      "acceptanceCriteria": [
+        "Event product type with date/venue",
+        "Ticket types (VIP, regular)",
+        "QR code ticket generation",
+        "Check-in scanning",
+        "Seat selection (optional)",
+        "Build passes: bun run build"
+      ],
+      "priority": 147,
+      "passes": false,
+      "notes": "Event commerce support"
+    },
+    {
+      "id": "US-148",
+      "title": "Membership system",
+      "description": "Paid membership with exclusive access",
+      "acceptanceCriteria": [
+        "Membership product type",
+        "Member-only products/prices",
+        "Membership tiers",
+        "Auto-renewal billing",
+        "Member benefits display",
+        "Build passes: bun run build"
+      ],
+      "priority": 148,
+      "passes": false,
+      "notes": "Recurring revenue from memberships"
+    },
+    {
+      "id": "US-149",
+      "title": "Donation products",
+      "description": "Accept donations as products",
+      "acceptanceCriteria": [
+        "Donation product type",
+        "Suggested donation amounts",
+        "Custom amount option",
+        "Donation receipt generation",
+        "Donation tracking reports",
+        "Build passes: bun run build"
+      ],
+      "priority": 149,
+      "passes": false,
+      "notes": "For charitable organizations"
+    },
+    {
+      "id": "US-150",
+      "title": "Print shipping labels",
+      "description": "Generate shipping labels in admin",
+      "acceptanceCriteria": [
+        "Carrier integration for labels",
+        "Batch label printing",
+        "Packing slip generation",
+        "Label template customization",
+        "Shipping cost calculation",
+        "Build passes: bun run build"
+      ],
+      "priority": 150,
+      "passes": false,
+      "notes": "Streamlines fulfillment process"
+    },
+    {
+      "id": "US-151",
+      "title": "Pick pack ship workflow",
+      "description": "Warehouse fulfillment workflow",
+      "acceptanceCriteria": [
+        "Pick list generation",
+        "Barcode scanning for picking",
+        "Packing station interface",
+        "Ship and update tracking",
+        "Fulfillment performance metrics",
+        "Build passes: bun run build"
+      ],
+      "priority": 151,
+      "passes": false,
+      "notes": "Efficient order fulfillment"
+    },
+    {
+      "id": "US-152",
+      "title": "Carrier rate shopping",
+      "description": "Compare shipping rates across carriers",
+      "acceptanceCriteria": [
+        "Multi-carrier API integration",
+        "Real-time rate comparison",
+        "Show cheapest/fastest options",
+        "Carrier selection at checkout",
+        "Negotiated rates support",
+        "Build passes: bun run build"
+      ],
+      "priority": 152,
+      "passes": false,
+      "notes": "Best rates for customers"
+    },
+    {
+      "id": "US-153",
+      "title": "Insurance for shipments",
+      "description": "Add shipping insurance option",
+      "acceptanceCriteria": [
+        "Insurance add-on at checkout",
+        "Value-based insurance pricing",
+        "Claim submission process",
+        "Insurance carrier integration",
+        "Insurance purchase tracking",
+        "Build passes: bun run build"
+      ],
+      "priority": 153,
+      "passes": false,
+      "notes": "Protection for high-value orders"
+    },
+    {
+      "id": "US-154",
+      "title": "Fraud detection",
+      "description": "Detect potentially fraudulent orders",
+      "acceptanceCriteria": [
+        "Risk score calculation per order",
+        "IP geolocation mismatch detection",
+        "Velocity checks (many orders quickly)",
+        "Address verification",
+        "Manual review queue for high-risk",
+        "Build passes: bun run build"
+      ],
+      "priority": 154,
+      "passes": false,
+      "notes": "Protect against chargebacks"
+    },
+    {
+      "id": "US-155",
+      "title": "Chargeback management",
+      "description": "Handle payment disputes",
+      "acceptanceCriteria": [
+        "Chargeback notification alerts",
+        "Evidence collection workflow",
+        "Response deadline tracking",
+        "Win/loss analytics",
+        "Prevention recommendations",
+        "Build passes: bun run build"
+      ],
+      "priority": 155,
+      "passes": false,
+      "notes": "Minimize chargeback losses"
+    },
+    {
+      "id": "US-156",
+      "title": "Store credit system",
+      "description": "Issue and manage store credit",
+      "acceptanceCriteria": [
+        "Add StoreCredit model per customer",
+        "Issue credit from admin",
+        "Apply credit at checkout",
+        "Credit balance display",
+        "Credit transaction history",
+        "Build passes: bun run build"
+      ],
+      "priority": 156,
+      "passes": false,
+      "notes": "Alternative to cash refunds"
+    },
+    {
+      "id": "US-157",
+      "title": "Partial payments",
+      "description": "Allow payment in installments",
+      "acceptanceCriteria": [
+        "Split payment option",
+        "Deposit with balance due later",
+        "Payment plan scheduling",
+        "Reminder notifications",
+        "Payment status tracking",
+        "Build passes: bun run build"
+      ],
+      "priority": 157,
+      "passes": false,
+      "notes": "Makes expensive items accessible"
+    },
+    {
+      "id": "US-158",
+      "title": "Buy now pay later",
+      "description": "BNPL provider integration",
+      "acceptanceCriteria": [
+        "Integrate with BNPL providers",
+        "Eligibility check at checkout",
+        "Payment plan display",
+        "Order status sync",
+        "BNPL-specific analytics",
+        "Build passes: bun run build"
+      ],
+      "priority": 158,
+      "passes": false,
+      "notes": "Popular payment method for young buyers"
+    },
+    {
+      "id": "US-159",
+      "title": "Cryptocurrency payments",
+      "description": "Accept cryptocurrency payments",
+      "acceptanceCriteria": [
+        "Bitcoin and stablecoin support",
+        "Payment processor integration",
+        "Real-time conversion display",
+        "Automatic fiat settlement",
+        "Crypto payment analytics",
+        "Build passes: bun run build"
+      ],
+      "priority": 159,
+      "passes": false,
+      "notes": "Alternative payment for tech-savvy"
+    },
+    {
+      "id": "US-160",
+      "title": "Automated email flows",
+      "description": "Triggered email sequences",
+      "acceptanceCriteria": [
+        "Welcome series automation",
+        "Post-purchase follow-up",
+        "Win-back campaigns for inactive",
+        "Birthday/anniversary emails",
+        "Flow builder interface",
+        "Build passes: bun run build"
+      ],
+      "priority": 160,
+      "passes": false,
+      "notes": "Lifecycle marketing automation"
+    },
+    {
+      "id": "US-161",
+      "title": "Customer satisfaction surveys",
+      "description": "Collect NPS and feedback",
+      "acceptanceCriteria": [
+        "Post-purchase survey emails",
+        "NPS score tracking",
+        "Product-specific feedback",
+        "Survey analytics dashboard",
+        "Integration with reviews",
+        "Build passes: bun run build"
+      ],
+      "priority": 161,
+      "passes": false,
+      "notes": "Measure and improve satisfaction"
+    },
+    {
+      "id": "US-162",
+      "title": "Customer support tickets",
+      "description": "Help desk ticket system",
+      "acceptanceCriteria": [
+        "Add Ticket model: customerId, subject, status, priority",
+        "Email-to-ticket conversion",
+        "Agent assignment workflow",
+        "SLA tracking",
+        "Ticket resolution analytics",
+        "Build passes: bun run build"
+      ],
+      "priority": 162,
+      "passes": false,
+      "notes": "Organized customer support"
+    },
+    {
+      "id": "US-163",
+      "title": "Self-service order lookup",
+      "description": "Check order status without login",
+      "acceptanceCriteria": [
+        "Order lookup by email + order number",
+        "Tracking information display",
+        "Order details view",
+        "Request support from lookup",
+        "Invoice download",
+        "Build passes: bun run build"
+      ],
+      "priority": 163,
+      "passes": false,
+      "notes": "Reduces support inquiries"
+    },
+    {
+      "id": "US-164",
+      "title": "Custom checkout fields",
+      "description": "Additional fields at checkout",
+      "acceptanceCriteria": [
+        "Admin-configurable extra fields",
+        "Field types: text, dropdown, checkbox",
+        "Required/optional setting",
+        "Display in order details",
+        "Export with orders",
+        "Build passes: bun run build"
+      ],
+      "priority": 164,
+      "passes": false,
+      "notes": "Collect custom information"
+    },
+    {
+      "id": "US-165",
+      "title": "Terms and conditions acceptance",
+      "description": "Legal compliance at checkout",
+      "acceptanceCriteria": [
+        "T&C checkbox required at checkout",
+        "Link to terms page",
+        "Record acceptance timestamp",
+        "Version tracking for terms",
+        "GDPR consent management",
+        "Build passes: bun run build"
+      ],
+      "priority": 165,
+      "passes": false,
+      "notes": "Legal compliance requirement"
+    },
+    {
+      "id": "US-166",
+      "title": "Age verification",
+      "description": "Verify age for restricted products",
+      "acceptanceCriteria": [
+        "Age gate popup for restricted items",
+        "Date of birth verification",
+        "ID verification integration (optional)",
+        "Remember verification per session",
+        "Age-restricted category flag",
+        "Build passes: bun run build"
+      ],
+      "priority": 166,
+      "passes": false,
+      "notes": "Required for alcohol, tobacco"
+    },
+    {
+      "id": "US-167",
+      "title": "Product availability by region",
+      "description": "Restrict products by location",
+      "acceptanceCriteria": [
+        "Country/region restrictions per product",
+        "Detect visitor location",
+        "Hide restricted products",
+        "Show 'not available in your area' message",
+        "Admin bulk region assignment",
+        "Build passes: bun run build"
+      ],
+      "priority": 167,
+      "passes": false,
+      "notes": "Regulatory compliance by region"
+    },
+    {
+      "id": "US-168",
+      "title": "Export compliance",
+      "description": "Export control for international orders",
+      "acceptanceCriteria": [
+        "Denied party screening",
+        "Export license management",
+        "Country embargo list",
+        "Compliance documentation",
+        "Audit trail for exports",
+        "Build passes: bun run build"
+      ],
+      "priority": 168,
+      "passes": false,
+      "notes": "Required for certain product types"
+    },
+    {
+      "id": "US-169",
+      "title": "GDPR compliance tools",
+      "description": "European privacy regulation compliance",
+      "acceptanceCriteria": [
+        "Cookie consent banner",
+        "Data export for customers",
+        "Right to deletion (data erasure)",
+        "Consent management",
+        "Privacy policy generator",
+        "Build passes: bun run build"
+      ],
+      "priority": 169,
+      "passes": false,
+      "notes": "Required for EU customers"
+    },
+    {
+      "id": "US-170",
+      "title": "ADA accessibility compliance",
+      "description": "Disability accessibility standards",
+      "acceptanceCriteria": [
+        "Automated accessibility audit",
+        "Fix common accessibility issues",
+        "Screen reader optimization",
+        "Color contrast checker",
+        "Accessibility statement page",
+        "Build passes: bun run build"
+      ],
+      "priority": 170,
+      "passes": false,
+      "notes": "Legal requirement in some regions"
+    },
+    {
+      "id": "US-171",
+      "title": "Advanced search filters",
+      "description": "Faceted search with attributes",
+      "acceptanceCriteria": [
+        "Dynamic filter generation from products",
+        "Multi-select attribute filters",
+        "Filter by custom attributes",
+        "Filter counts display",
+        "Clear all filters option",
+        "Build passes: bun run build"
+      ],
+      "priority": 171,
+      "passes": false,
+      "notes": "Better product discovery"
+    },
+    {
+      "id": "US-172",
+      "title": "Search synonyms",
+      "description": "Map alternative search terms",
+      "acceptanceCriteria": [
+        "Admin-defined synonym mappings",
+        "Automatic synonym suggestions",
+        "One-way and two-way synonyms",
+        "Import/export synonym lists",
+        "Search term analytics",
+        "Build passes: bun run build"
+      ],
+      "priority": 172,
+      "passes": false,
+      "notes": "Find products with different terms"
+    },
+    {
+      "id": "US-173",
+      "title": "Search redirects",
+      "description": "Redirect searches to specific pages",
+      "acceptanceCriteria": [
+        "Map search terms to URLs",
+        "Redirect to categories/products/pages",
+        "Promotional redirects",
+        "Redirect analytics",
+        "Bulk import redirects",
+        "Build passes: bun run build"
+      ],
+      "priority": 173,
+      "passes": false,
+      "notes": "Guide customers to right content"
+    },
+    {
+      "id": "US-174",
+      "title": "Search merchandising",
+      "description": "Control search result ordering",
+      "acceptanceCriteria": [
+        "Pin products to top of results",
+        "Boost products by attribute",
+        "Bury low-performing products",
+        "Time-based search rules",
+        "A/B test search rankings",
+        "Build passes: bun run build"
+      ],
+      "priority": 174,
+      "passes": false,
+      "notes": "Merchandising control in search"
+    },
+    {
+      "id": "US-175",
+      "title": "Revenue attribution",
+      "description": "Track revenue by marketing channel",
+      "acceptanceCriteria": [
+        "UTM parameter tracking",
+        "First-touch and last-touch attribution",
+        "Multi-touch attribution model",
+        "Channel revenue reports",
+        "ROI calculation per channel",
+        "Build passes: bun run build"
+      ],
+      "priority": 175,
+      "passes": false,
+      "notes": "Marketing spend optimization"
+    },
+    {
+      "id": "US-176",
+      "title": "Customer journey mapping",
+      "description": "Track customer touchpoints",
+      "acceptanceCriteria": [
+        "Record all customer interactions",
+        "Visualize journey timeline",
+        "Identify drop-off points",
+        "Segment by journey patterns",
+        "Journey optimization suggestions",
+        "Build passes: bun run build"
+      ],
+      "priority": 176,
+      "passes": false,
+      "notes": "Understand customer behavior"
+    },
+    {
+      "id": "US-177",
+      "title": "Real-time analytics dashboard",
+      "description": "Live store activity monitoring",
+      "acceptanceCriteria": [
+        "Real-time visitor count",
+        "Live orders feed",
+        "Current cart value total",
+        "Active users on site map",
+        "Real-time revenue counter",
+        "Build passes: bun run build"
+      ],
+      "priority": 177,
+      "passes": false,
+      "notes": "Monitor store performance live"
+    },
+    {
+      "id": "US-178",
+      "title": "Custom report builder",
+      "description": "Build custom reports with drag-drop",
+      "acceptanceCriteria": [
+        "Select metrics and dimensions",
+        "Custom date ranges",
+        "Multiple visualization types",
+        "Save and schedule reports",
+        "Share reports with team",
+        "Build passes: bun run build"
+      ],
+      "priority": 178,
+      "passes": false,
+      "notes": "Self-service analytics"
+    },
+    {
+      "id": "US-179",
+      "title": "Scheduled report emails",
+      "description": "Automated report delivery",
+      "acceptanceCriteria": [
+        "Schedule daily/weekly/monthly reports",
+        "Email delivery to stakeholders",
+        "Multiple format options (PDF, CSV)",
+        "Custom report templates",
+        "Delivery history tracking",
+        "Build passes: bun run build"
+      ],
+      "priority": 179,
+      "passes": false,
+      "notes": "Keep stakeholders informed"
+    },
+    {
+      "id": "US-180",
+      "title": "AI sales insights",
+      "description": "AI-powered business recommendations",
+      "acceptanceCriteria": [
+        "Anomaly detection in metrics",
+        "Trend predictions",
+        "Actionable recommendations",
+        "Opportunity identification",
+        "Natural language insights",
+        "Build passes: bun run build"
+      ],
+      "priority": 180,
+      "passes": false,
+      "notes": "AI-driven business intelligence"
     }
   ]
 }

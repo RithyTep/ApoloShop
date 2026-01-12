@@ -1312,3 +1312,229 @@ model BacklogItem {
   @@map("backlog_items")
   @@schema("apolo")
 }
+
+// ============================================
+// EMAIL MARKETING
+// ============================================
+
+// Newsletter subscription status
+enum SubscriptionStatusType {
+  ACTIVE        // Subscribed and receiving emails
+  UNSUBSCRIBED  // User unsubscribed
+  BOUNCED       // Email bounced
+  COMPLAINED    // User marked as spam
+
+  @@schema("apolo")
+}
+
+model NewsletterSubscriber {
+  id           String                @id @default(cuid())
+  email        String                @unique
+  name         String?               // Optional subscriber name
+  customerId   String?               @map("customer_id") // Link to customer if known
+  status       SubscriptionStatusType @default(ACTIVE)
+  source       String?               // Where they subscribed: "footer", "popup", "checkout"
+  // Preferences
+  language     String                @default("en") // Preferred language
+  // Tracking
+  confirmedAt  DateTime?             @map("confirmed_at") // Double opt-in confirmation
+  unsubscribedAt DateTime?           @map("unsubscribed_at")
+  unsubscribeToken String            @unique @map("unsubscribe_token") // For one-click unsubscribe
+  // Metadata
+  ipAddress    String?               @map("ip_address")
+  userAgent    String?               @map("user_agent") @db.Text
+  createdAt    DateTime              @default(now()) @map("created_at")
+  updatedAt    DateTime              @updatedAt @map("updated_at")
+
+  @@index([email])
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("newsletter_subscribers")
+  @@schema("apolo")
+}
+
+// Email campaign types
+enum EmailCampaignType {
+  NEWSLETTER       // Regular newsletter
+  PROMOTIONAL      // Sales/promotions
+  TRANSACTIONAL    // Order confirmations, shipping
+  WELCOME          // Welcome series
+  ABANDONED_CART   // Cart recovery
+  WINBACK          // Re-engagement
+
+  @@schema("apolo")
+}
+
+enum EmailCampaignStatus {
+  DRAFT        // Being edited
+  SCHEDULED    // Scheduled for future
+  SENDING      // Currently sending
+  SENT         // Completed
+  CANCELLED    // Cancelled before completion
+
+  @@schema("apolo")
+}
+
+model EmailCampaign {
+  id            String              @id @default(cuid())
+  name          String              // Internal name
+  type          EmailCampaignType
+  status        EmailCampaignStatus @default(DRAFT)
+  // Content
+  subjectEn     String              @map("subject_en")
+  subjectKh     String?             @map("subject_kh")
+  bodyHtmlEn    String              @map("body_html_en") @db.Text
+  bodyHtmlKh    String?             @map("body_html_kh") @db.Text
+  bodyTextEn    String?             @map("body_text_en") @db.Text // Plain text version
+  bodyTextKh    String?             @map("body_text_kh") @db.Text
+  // Targeting
+  segmentFilter Json?               @map("segment_filter") // e.g., {"tags": ["VIP"], "minOrders": 3}
+  // Scheduling
+  scheduledAt   DateTime?           @map("scheduled_at")
+  sentAt        DateTime?           @map("sent_at")
+  // Statistics
+  totalSent     Int                 @default(0) @map("total_sent")
+  totalOpened   Int                 @default(0) @map("total_opened")
+  totalClicked  Int                 @default(0) @map("total_clicked")
+  totalBounced  Int                 @default(0) @map("total_bounced")
+  totalUnsubscribed Int             @default(0) @map("total_unsubscribed")
+  // Metadata
+  createdBy     String?             @map("created_by")
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+
+  sends         EmailSend[]
+
+  @@index([type])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([createdAt])
+  @@map("email_campaigns")
+  @@schema("apolo")
+}
+
+// Track individual email sends
+enum EmailSendStatus {
+  PENDING      // Queued for sending
+  SENT         // Successfully sent
+  DELIVERED    // Confirmed delivery
+  OPENED       // Email opened
+  CLICKED      // Link clicked
+  BOUNCED      // Email bounced
+  FAILED       // Send failed
+  UNSUBSCRIBED // User unsubscribed from this email
+
+  @@schema("apolo")
+}
+
+model EmailSend {
+  id            String          @id @default(cuid())
+  campaignId    String?         @map("campaign_id")
+  campaign      EmailCampaign?  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  subscriberId  String?         @map("subscriber_id")
+  email         String          // Recipient email
+  customerId    String?         @map("customer_id")
+  // Email metadata
+  emailType     EmailCampaignType // Even for non-campaign emails
+  subject       String
+  // Status tracking
+  status        EmailSendStatus @default(PENDING)
+  sentAt        DateTime?       @map("sent_at")
+  deliveredAt   DateTime?       @map("delivered_at")
+  openedAt      DateTime?       @map("opened_at")
+  clickedAt     DateTime?       @map("clicked_at")
+  // Error handling
+  errorMessage  String?         @map("error_message") @db.Text
+  retryCount    Int             @default(0) @map("retry_count")
+  // Tracking
+  trackingId    String          @unique @map("tracking_id") // UUID for tracking opens/clicks
+  // Provider info
+  providerMessageId String?     @map("provider_message_id") // SendGrid/Mailchimp message ID
+  // Timestamps
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  @@index([campaignId])
+  @@index([subscriberId])
+  @@index([email])
+  @@index([customerId])
+  @@index([emailType])
+  @@index([status])
+  @@index([trackingId])
+  @@index([createdAt])
+  @@map("email_sends")
+  @@schema("apolo")
+}
+
+// Abandoned cart tracking for recovery emails
+enum AbandonedCartStatus {
+  ACTIVE           // Cart is still active (recently updated)
+  ABANDONED        // Cart is abandoned (no activity)
+  RECOVERED        // User completed purchase
+  EMAIL_1_SENT     // First recovery email sent (1hr)
+  EMAIL_2_SENT     // Second recovery email sent (24hr)
+  EMAIL_3_SENT     // Third recovery email sent (72hr)
+  UNRECOVERABLE    // Max emails sent, no conversion
+
+  @@schema("apolo")
+}
+
+model AbandonedCart {
+  id            String              @id @default(cuid())
+  // Customer identification
+  customerId    String?             @map("customer_id")
+  guestId       String?             @map("guest_id")
+  email         String?             // Email for recovery (may be collected at checkout)
+  // Cart contents (snapshot)
+  cartItems     Json                @map("cart_items") // Array of {productId, name, quantity, price, imageUrl}
+  cartTotal     Decimal             @map("cart_total") @db.Decimal(10, 2)
+  currency      Currency            @default(USD)
+  // Tracking
+  status        AbandonedCartStatus @default(ACTIVE)
+  lastActivityAt DateTime           @map("last_activity_at")
+  abandonedAt   DateTime?           @map("abandoned_at") // When cart was marked as abandoned
+  recoveredAt   DateTime?           @map("recovered_at") // When user completed purchase
+  orderId       String?             @map("order_id") // Link to order if recovered
+  // Email tracking
+  email1SentAt  DateTime?           @map("email_1_sent_at")
+  email2SentAt  DateTime?           @map("email_2_sent_at")
+  email3SentAt  DateTime?           @map("email_3_sent_at")
+  // Recovery token for cart restoration
+  recoveryToken String              @unique @map("recovery_token")
+  // Metadata
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+
+  @@index([customerId])
+  @@index([guestId])
+  @@index([email])
+  @@index([status])
+  @@index([lastActivityAt])
+  @@index([recoveryToken])
+  @@map("abandoned_carts")
+  @@schema("apolo")
+}
+
+// Welcome email series tracking
+model WelcomeEmailProgress {
+  id            String   @id @default(cuid())
+  customerId    String?  @map("customer_id")
+  subscriberId  String?  @map("subscriber_id")
+  email         String   @unique
+  // Progress
+  email1SentAt  DateTime? @map("email_1_sent_at") // Immediate welcome
+  email2SentAt  DateTime? @map("email_2_sent_at") // 1 day later - tips/features
+  email3SentAt  DateTime? @map("email_3_sent_at") // 3 days later - first purchase incentive
+  completedAt   DateTime? @map("completed_at")
+  // Tracking
+  firstOrderAt  DateTime? @map("first_order_at") // When they made first purchase
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([customerId])
+  @@index([subscriberId])
+  @@index([email])
+  @@map("welcome_email_progress")
+  @@schema("apolo")
+}

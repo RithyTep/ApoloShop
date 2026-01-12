@@ -750,6 +750,20 @@ export const translations = {
         bogo: "Buy One Get One",
       },
     },
+    // Newsletter
+    newsletter: {
+      title: "Stay Updated",
+      description: "Subscribe to our newsletter for the latest products and exclusive offers.",
+      placeholder: "Enter your email",
+      namePlaceholder: "Your name (optional)",
+      subscribe: "Subscribe",
+      success: "Thanks for subscribing!",
+      alreadySubscribed: "You're already subscribed",
+      invalidEmail: "Please enter a valid email",
+      unsubscribe: "Unsubscribe",
+      unsubscribed: "You have been unsubscribed",
+      preferences: "Email Preferences",
+    },
   },
   kh: {
     // Order Status
@@ -1500,6 +1514,20 @@ export const translations = {
         amountOff: "បញ្ចុះ ${amount}",
         bogo: "ទិញមួយ ទទួលមួយ",
       },
+    },
+    // Newsletter
+    newsletter: {
+      title: "ទទួលបានព័ត៌មានថ្មីៗ",
+      description: "ចុះឈ្មោះទទួលព្រឹត្តិបត្រព័ត៌មានរបស់យើងសម្រាប់ផលិតផលថ្មីៗ និងការផ្តល់ជូនពិសេស។",
+      placeholder: "បញ្ចូលអ៊ីមែលរបស់អ្នក",
+      namePlaceholder: "ឈ្មោះរបស់អ្នក (ស្រេចចិត្ត)",
+      subscribe: "ចុះឈ្មោះ",
+      success: "សូមអរគុណសម្រាប់ការចុះឈ្មោះ!",
+      alreadySubscribed: "អ្នកបានចុះឈ្មោះរួចហើយ",
+      invalidEmail: "សូមបញ្ចូលអ៊ីមែលត្រឹមត្រូវ",
+      unsubscribe: "ឈប់ជាវ",
+      unsubscribed: "អ្នកបានឈប់ជាវហើយ",
+      preferences: "ចំណូលចិត្តអ៊ីមែល",
     },
   },
 }
