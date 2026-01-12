@@ -18,6 +18,10 @@ import {
   extractIpAddress,
   LOCKOUT_CONFIG,
 } from "@/lib/account-lockout"
+import {
+  createSession,
+  parseUserAgent,
+} from "@/lib/session-service"
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -133,12 +137,12 @@ export async function POST(request: NextRequest) {
       email: user.email,
     })
 
-    await prisma.session.create({
-      data: {
-        userId: user.id,
-        token: legacyToken,
-        expiresAt: tokenPair.refreshTokenExpiresAt,
-      },
+    // Create session with device info for session management
+    const session = await createSession({
+      userId: user.id,
+      token: legacyToken,
+      ipAddress,
+      userAgent,
     })
 
     // Record successful login and clear any lockout

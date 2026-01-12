@@ -7,6 +7,7 @@ import {
   ACCESS_TOKEN_EXPIRY_MS,
 } from "@/lib/jwt"
 import { decryptSecret, verifyTOTP, verifyRecoveryCode } from "@/lib/totp"
+import { createSession, extractIpAddress } from "@/lib/session-service"
 
 const verifySchema = z.object({
   // Pending auth token from initial login (before 2FA)
@@ -119,19 +120,21 @@ export async function POST(request: NextRequest) {
       permissions,
     })
 
-    // Store session
+    // Store session with device info
     const legacyToken = signToken({
       userId: user.id,
       roleId: user.roleId,
       email: user.email,
     })
 
-    await prisma.session.create({
-      data: {
-        userId: user.id,
-        token: legacyToken,
-        expiresAt: tokenPair.refreshTokenExpiresAt,
-      },
+    const ipAddress = extractIpAddress(request.headers)
+    const userAgent = request.headers.get("user-agent") || undefined
+
+    await createSession({
+      userId: user.id,
+      token: legacyToken,
+      ipAddress,
+      userAgent,
     })
 
     // Build response

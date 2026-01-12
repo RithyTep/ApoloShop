@@ -985,3 +985,37 @@ Project: ApoloShop - Product Search Feature
   - passwordChangedAt is null for legacy accounts - treat as "no expiry" for backwards compatibility
   - PasswordStrengthIndicator shows/hides based on password input for clean UX
 ---
+
+## 2026-01-12 - US-035
+- **Implemented**: Account lockout protection against brute force attacks
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added LoginAttempt and AccountLockout models)
+  - `lib/account-lockout.ts` (new file - lockout service with tracking and validation)
+  - `app/api/auth/login/route.ts` (modified - integrated lockout checks and attempt tracking)
+  - `app/api/admin/lockouts/route.ts` (new file - admin API for managing lockouts)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **LoginAttempt model**: email, userId, ipAddress, userAgent, success, createdAt with indexes
+  - **AccountLockout model**: userId (unique), lockedAt, lockedUntil, failedAttempts, ipAddress, unlockedAt, unlockedBy
+  - **LOCKOUT_CONFIG**: Configurable maxFailedAttempts (5), lockoutDurationMinutes (15), attemptWindowMinutes (15)
+  - **extractIpAddress()**: Extracts client IP from x-forwarded-for, x-real-ip, cf-connecting-ip headers
+  - **recordLoginAttempt()**: Logs all login attempts (success or fail) with IP and user agent
+  - **checkLockoutByEmail()**: Pre-authentication check for locked accounts
+  - **handleFailedLogin()**: Records attempt, counts recent failures, triggers lockout at threshold
+  - **handleSuccessfulLogin()**: Records success, clears any existing lockout
+  - **lockAccount()/unlockAccount()**: Lock management with admin unlock tracking
+  - **sendLockoutNotification()**: Email notification when account is locked (fire-and-forget)
+  - **GET /api/admin/lockouts**: List locked accounts with summary stats (last 24h/7d lockouts, failed attempts)
+  - **GET /api/admin/lockouts?userId=**: Detailed lockout history and recent attempts for specific user
+  - **POST /api/admin/lockouts**: Manual unlock with audit logging
+  - **Login API integration**: Pre-checks lockout, records attempts, returns attemptsRemaining, 423 status when locked
+- **Learnings for future iterations**:
+  - HTTP 423 Locked is the appropriate status code for account lockout responses
+  - Fire-and-forget pattern for notifications: don't await, let them fail silently
+  - Track failed attempts even for non-existent emails to prevent user enumeration attacks
+  - Use composite index [email, success, createdAt] for efficient failed attempt counting
+  - Lockout by userId (not email) prevents locking multiple accounts sharing email
+  - Admin unlock records who unlocked (unlockedBy) for audit trail
+  - Include attemptsRemaining in 401 response so frontend can warn users
+  - cleanupOldLoginAttempts() helper for periodic maintenance (24h retention)
+---

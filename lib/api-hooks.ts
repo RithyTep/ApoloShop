@@ -2493,3 +2493,78 @@ export function useAuditLogs(params: AuditLogsParams = {}) {
     staleTime: 30000, // 30 seconds
   });
 }
+
+// ============================================
+// SESSION MANAGEMENT
+// ============================================
+
+export interface UserSession {
+  id: string;
+  deviceName: string;
+  deviceType: string;
+  location: string;
+  lastActive: string;
+  createdAt: string;
+  isCurrent: boolean;
+}
+
+export interface SessionStats {
+  totalActive: number;
+  deviceTypes: { type: string; count: number }[];
+  mostRecentActivity: string | null;
+}
+
+export interface SessionsResponse {
+  sessions: UserSession[];
+  stats: SessionStats;
+}
+
+/**
+ * Hook to fetch user's active sessions
+ */
+export function useSessions() {
+  return useQuery({
+    queryKey: ["sessions"],
+    queryFn: () => fetchAPI<SessionsResponse>("/api/sessions"),
+    staleTime: 60000, // 1 minute
+  });
+}
+
+/**
+ * Hook to revoke a specific session
+ */
+export function useRevokeSession() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (sessionId: string) =>
+      fetchAPI<{ success: boolean; message: string }>(
+        `/api/sessions/${sessionId}`,
+        { method: "DELETE" }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sessions"] });
+    },
+  });
+}
+
+/**
+ * Hook to revoke all sessions except current
+ */
+export function useRevokeAllSessions() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (currentSessionId?: string) =>
+      fetchAPI<{ success: boolean; revokedCount: number; message: string }>(
+        "/api/sessions",
+        {
+          method: "DELETE",
+          body: JSON.stringify({ currentSessionId }),
+        }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sessions"] });
+    },
+  });
+}

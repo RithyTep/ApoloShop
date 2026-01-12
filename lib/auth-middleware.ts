@@ -17,6 +17,7 @@ import {
   hasHigherOrEqualRole,
   convertLegacyPermissions,
 } from "./rbac"
+import { touchSession } from "./session-service"
 
 // User context type
 export interface AuthUser {
@@ -117,7 +118,7 @@ async function verifyAuthentication(
       },
     })
 
-    if (!session || session.expiresAt < new Date()) {
+    if (!session || session.expiresAt < new Date() || session.isRevoked) {
       return {
         success: false,
         error: "Session expired",
@@ -125,6 +126,9 @@ async function verifyAuthentication(
         status: 401,
       }
     }
+
+    // Update session activity (fire and forget)
+    touchSession(session.id).catch(() => {})
 
     if (!session.user.isActive) {
       return {

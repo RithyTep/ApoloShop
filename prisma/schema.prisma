@@ -98,11 +98,25 @@ model Session {
   userId       String   @map("user_id")
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   token        String   @unique
+  // Device and location info
+  deviceName   String?  @map("device_name") // e.g., "Chrome on Windows", "Mobile Safari on iPhone"
+  deviceType   String?  @map("device_type") // "desktop", "mobile", "tablet"
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent") @db.Text
+  location     String?  // Approximate location from IP (e.g., "Phnom Penh, KH")
+  // Session timestamps
+  lastActive   DateTime @default(now()) @map("last_active")
   expiresAt    DateTime @map("expires_at")
   createdAt    DateTime @default(now()) @map("created_at")
+  // Session status
+  isRevoked    Boolean  @default(false) @map("is_revoked")
+  revokedAt    DateTime? @map("revoked_at")
+  isCurrent    Boolean  @default(false) @map("is_current") // Marked true for current request's session
 
   @@index([userId])
   @@index([token])
+  @@index([lastActive])
+  @@index([isRevoked])
   @@map("sessions")
   @@schema("apolo")
 }
