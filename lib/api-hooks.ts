@@ -3119,3 +3119,245 @@ export function useForceLogout() {
     },
   });
 }
+
+// ============================================
+// LOYALTY PROGRAM
+// ============================================
+
+export type LoyaltyTier = "BRONZE" | "SILVER" | "GOLD" | "PLATINUM";
+
+export type LoyaltyTransactionType =
+  | "EARN"
+  | "REDEEM"
+  | "BONUS"
+  | "EXPIRE"
+  | "ADJUSTMENT"
+  | "REFUND";
+
+export interface LoyaltyTierInfo {
+  name: string;
+  nameKh: string;
+  minLifetimePoints: number;
+  multiplier: number;
+  color: string;
+}
+
+export interface LoyaltyTransaction {
+  id: string;
+  accountId: string;
+  type: LoyaltyTransactionType;
+  points: number;
+  orderId?: string | null;
+  description?: string | null;
+  metadata?: Record<string, unknown> | null;
+  expiresAt?: string | null;
+  isExpired: boolean;
+  createdBy?: string | null;
+  createdAt: string;
+}
+
+export interface LoyaltyAccount {
+  id: string;
+  customerId: string;
+  currentPoints: number;
+  lifetimePoints: number;
+  tier: LoyaltyTier;
+  tierUpdatedAt?: string | null;
+  tierInfo: LoyaltyTierInfo;
+  nextTier: {
+    nextTier: LoyaltyTier | null;
+    pointsNeeded: number;
+  };
+  redemptionInfo: {
+    minPoints: number;
+    rate: number;
+    availableDiscount: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+  transactions?: LoyaltyTransaction[];
+}
+
+export interface LoyaltyAccountResponse {
+  account: LoyaltyAccount;
+  transactions?: LoyaltyTransaction[];
+  pagination?: {
+    page: number;
+    limit: number;
+    totalCount: number;
+    totalPages: number;
+  };
+}
+
+export interface LoyaltyEarnResponse {
+  success: boolean;
+  pointsEarned: number;
+  tierUpgrade: {
+    newTier: LoyaltyTier;
+    tierInfo: LoyaltyTierInfo;
+  } | null;
+  account: {
+    currentPoints: number;
+    lifetimePoints: number;
+    tier: LoyaltyTier;
+    tierInfo: LoyaltyTierInfo;
+  };
+}
+
+export interface LoyaltyRedeemResponse {
+  success: boolean;
+  pointsRedeemed: number;
+  discountUsd: number;
+  discountKhr: number;
+  remainingPoints: number;
+}
+
+export interface LoyaltyCalculateResponse {
+  points: number;
+  discountUsd: number;
+  discountKhr: number;
+  meetsMinimum: boolean;
+}
+
+/**
+ * Hook to get loyalty account for a customer
+ */
+export function useLoyaltyAccount(
+  customerId?: string,
+  options?: { includeHistory?: boolean; page?: number; limit?: number }
+) {
+  const { includeHistory = false, page = 1, limit = 20 } = options || {};
+
+  return useQuery({
+    queryKey: ["loyalty", customerId, includeHistory, page, limit],
+    queryFn: () => {
+      if (!customerId) return null;
+      const params = new URLSearchParams({
+        customerId,
+        ...(includeHistory && { includeHistory: "true" }),
+        page: String(page),
+        limit: String(limit),
+      });
+      return fetchAPI<LoyaltyAccountResponse>(`/api/loyalty?${params}`);
+    },
+    enabled: !!customerId,
+  });
+}
+
+/**
+ * Hook to get loyalty account by phone number
+ */
+export function useLoyaltyAccountByPhone(
+  phone?: string,
+  options?: { includeHistory?: boolean }
+) {
+  const { includeHistory = false } = options || {};
+
+  return useQuery({
+    queryKey: ["loyalty-by-phone", phone, includeHistory],
+    queryFn: () => {
+      if (!phone) return null;
+      const params = new URLSearchParams({
+        phone,
+        ...(includeHistory && { includeHistory: "true" }),
+      });
+      return fetchAPI<LoyaltyAccountResponse>(`/api/loyalty?${params}`);
+    },
+    enabled: !!phone,
+  });
+}
+
+/**
+ * Hook to earn loyalty points
+ */
+export function useEarnLoyaltyPoints() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      customerId,
+      amountUsd,
+      orderId,
+      description,
+    }: {
+      customerId: string;
+      amountUsd: number;
+      orderId: string;
+      description?: string;
+    }) =>
+      fetchAPI<LoyaltyEarnResponse>("/api/loyalty", {
+        method: "POST",
+        body: JSON.stringify({
+          action: "earn",
+          customerId,
+          amountUsd,
+          orderId,
+          description,
+        }),
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["loyalty", variables.customerId],
+      });
+    },
+  });
+}
+
+/**
+ * Hook to redeem loyalty points
+ */
+export function useRedeemLoyaltyPoints() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      customerId,
+      points,
+      orderId,
+      description,
+    }: {
+      customerId: string;
+      points: number;
+      orderId?: string;
+      description?: string;
+    }) =>
+      fetchAPI<LoyaltyRedeemResponse>("/api/loyalty", {
+        method: "POST",
+        body: JSON.stringify({
+          action: "redeem",
+          customerId,
+          points,
+          orderId,
+          description,
+        }),
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["loyalty", variables.customerId],
+      });
+    },
+  });
+}
+
+/**
+ * Hook to calculate redemption value
+ */
+export function useCalculateLoyaltyRedemption() {
+  return useMutation({
+    mutationFn: ({
+      customerId,
+      points,
+    }: {
+      customerId: string;
+      points: number;
+    }) =>
+      fetchAPI<LoyaltyCalculateResponse>("/api/loyalty", {
+        method: "POST",
+        body: JSON.stringify({
+          action: "calculate",
+          customerId,
+          points,
+        }),
+      }),
+  });
+}

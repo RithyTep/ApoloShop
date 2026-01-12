@@ -1205,6 +1205,79 @@ model FlashSale {
 }
 
 // ============================================
+// LOYALTY PROGRAM
+// ============================================
+
+enum LoyaltyTier {
+  BRONZE    // Base tier (1x multiplier)
+  SILVER    // 500+ points earned (1.25x multiplier)
+  GOLD      // 2000+ points earned (1.5x multiplier)
+  PLATINUM  // 5000+ points earned (2x multiplier)
+
+  @@schema("apolo")
+}
+
+enum LoyaltyTransactionType {
+  EARN          // Points earned from purchase
+  REDEEM        // Points redeemed for discount
+  BONUS         // Bonus points (promotions, birthday, etc.)
+  EXPIRE        // Points expired (12 months)
+  ADJUSTMENT    // Manual admin adjustment
+  REFUND        // Points refunded from cancelled order
+
+  @@schema("apolo")
+}
+
+model LoyaltyAccount {
+  id            String       @id @default(cuid())
+  customerId    String       @unique @map("customer_id")
+  // Points balance
+  currentPoints Int          @default(0) @map("current_points") // Available points
+  lifetimePoints Int         @default(0) @map("lifetime_points") // Total earned (for tier calculation)
+  // Tier
+  tier          LoyaltyTier  @default(BRONZE)
+  tierUpdatedAt DateTime?    @map("tier_updated_at")
+  // Timestamps
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  transactions  LoyaltyTransaction[]
+
+  @@index([customerId])
+  @@index([tier])
+  @@map("loyalty_accounts")
+  @@schema("apolo")
+}
+
+model LoyaltyTransaction {
+  id            String                  @id @default(cuid())
+  accountId     String                  @map("account_id")
+  account       LoyaltyAccount          @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  type          LoyaltyTransactionType
+  points        Int                     // Positive for earn/bonus, negative for redeem/expire
+  // Reference to order (for EARN, REDEEM, REFUND)
+  orderId       String?                 @map("order_id")
+  // Description and metadata
+  description   String?                 @db.Text
+  metadata      Json?                   // Additional context (tier multiplier used, etc.)
+  // Expiry tracking (for EARN/BONUS points)
+  expiresAt     DateTime?               @map("expires_at") // Points expire 12 months after earning
+  isExpired     Boolean                 @default(false) @map("is_expired")
+  // Audit
+  createdBy     String?                 @map("created_by") // Admin ID for manual adjustments
+  createdAt     DateTime                @default(now()) @map("created_at")
+
+  @@index([accountId])
+  @@index([type])
+  @@index([orderId])
+  @@index([expiresAt])
+  @@index([isExpired])
+  @@index([createdAt])
+  @@map("loyalty_transactions")
+  @@schema("apolo")
+}
+
+// ============================================
 // DEVELOPER BACKLOG (Dev Only)
 // ============================================
 
