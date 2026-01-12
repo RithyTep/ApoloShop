@@ -827,8 +827,8 @@
         "Build passes: bun run build"
       ],
       "priority": 53,
-      "passes": false,
-      "notes": "Essential marketing tool for promotions"
+      "passes": true,
+      "notes": "Implemented Coupon/CouponUsage models, CRUD /api/coupons endpoint, /api/coupons/apply for validation and discount calculation, /api/coupons/use for tracking. CouponInput component with bilingual support integrated at checkout. Supports PERCENTAGE, FIXED_AMOUNT, FREE_SHIPPING, BOGO coupon types with min order, max discount, usage limits."
     },
     {
       "id": "US-054",
@@ -843,8 +843,8 @@
         "Build passes: bun run build"
       ],
       "priority": 54,
-      "passes": false,
-      "notes": "Drives urgency and increases conversions"
+      "passes": true,
+      "notes": "Implemented FlashSale model with SCHEDULED/ACTIVE/ENDED/CANCELLED status, CRUD /api/flash-sales endpoint, FlashSaleCountdown/Badge/Price components, FlashSaleBanner for homepage, FlashSalesPage admin with list/calendar views, product-grid integration with flash sale pricing"
     },
     {
       "id": "US-055",

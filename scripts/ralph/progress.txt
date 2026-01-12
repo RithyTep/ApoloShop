@@ -1648,3 +1648,66 @@ Project: ApoloShop - Product Search Feature
   - Form validation: require fullName + phone + (selected address OR new address line)
   - ShippingAddress stores full Cambodia address hierarchy: province, district, commune, street
 ---
+
+## 2026-01-12 - US-053
+- **Implemented**: Coupon and discount system
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added Coupon and CouponUsage models)
+  - `app/api/coupons/route.ts` (new file - CRUD endpoint)
+  - `app/api/coupons/[id]/route.ts` (new file - single coupon GET/PUT/DELETE)
+  - `app/api/coupons/apply/route.ts` (new file - coupon validation and discount calculation)
+  - `app/api/coupons/use/route.ts` (new file - record coupon usage)
+  - `components/coupon-input.tsx` (new file - UI component)
+  - `components/checkout-page.tsx` (modified - integrated coupon input)
+  - `lib/i18n.ts` (modified - added coupon translations EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Coupon model**: code, type (PERCENTAGE/FIXED_AMOUNT/FREE_SHIPPING/BOGO), value, minOrderUsd, maxDiscountUsd, maxUses, maxUsesPerCustomer, startsAt, expiresAt, applicableProductIds, applicableCategoryIds
+  - **CouponUsage model**: tracks couponId, customerId, guestId, orderId, discountUsd, discountKhr
+  - **CRUD /api/coupons**: List with pagination/search, create with validation, update, soft delete if used
+  - **Apply endpoint**: Validates coupon eligibility, calculates discount based on type, supports product/category restrictions
+  - **Use endpoint**: Records usage after order, increments usedCount in transaction
+  - **CouponInput component**: Expandable input field, applies coupon via API, shows applied state with remove option
+  - **Checkout integration**: Shows coupon in order summary, displays discount line, updates final total
+  - **Bilingual translations**: All coupon UI text in English and Khmer
+- **Learnings for future iterations**:
+  - Coupon types require different calculation logic: PERCENTAGE uses maxDiscountUsd cap, BOGO finds cheapest item
+  - FREE_SHIPPING type discounts the shipping amount (0 in current implementation, but structure supports it)
+  - applicableProductIds/applicableCategoryIds stored as JSON arrays in Prisma for flexible filtering
+  - CouponInput uses optimistic UI pattern - shows applied state immediately while recording usage asynchronously
+  - Guest checkout uses localStorage guestId for usage tracking
+  - Coupon code input auto-converts to uppercase for consistency
+---
+
+## 2026-01-12 - US-054
+- **Implemented**: Flash sales and time-limited deals
+- **Files changed**:
+  - `prisma/schema.prisma` (added FlashSale model with FlashSaleStatus enum)
+  - `app/api/flash-sales/route.ts` (new - CRUD endpoint with validation)
+  - `app/api/flash-sales/product/[id]/route.ts` (new - get active sale for product)
+  - `components/flash-sale-countdown.tsx` (new - countdown timer, badge, price components)
+  - `components/flash-sale-banner.tsx` (new - homepage banner with carousel)
+  - `components/pages/flash-sales-page.tsx` (new - admin page with list/calendar views)
+  - `components/admin-dashboard.tsx` (added FlashSalesPage import and case)
+  - `components/sidebar.tsx` (added Flash Sales nav item with Zap icon)
+  - `components/product-grid.tsx` (integrated flash sale badge, countdown, pricing)
+  - `lib/api-hooks.ts` (added FlashSale types and hooks)
+  - `lib/i18n.ts` (added flashSale translations EN/KH)
+- **Features**:
+  - FlashSale model: productId, salePriceUsd/Khr, startTime, endTime, quantity, soldCount, status (SCHEDULED/ACTIVE/ENDED/CANCELLED), nameEn/Kh, descriptionEn/Kh, isFeatured, bannerImageUrl
+  - CRUD API with overlap detection, price validation, status auto-calculation
+  - FlashSaleCountdown: default/compact/banner variants, auto-refresh, onExpire callback
+  - FlashSaleBadge: discount percentage display with gradient background
+  - FlashSalePrice: original price strikethrough with sale price highlight
+  - FlashSaleBanner: auto-rotating carousel for featured sales with stock progress bar
+  - Admin page: list view with table, calendar view with monthly grid, create/edit dialog, stats cards
+  - Product grid integration: badge on card, countdown, sale pricing, gradient add-to-cart button
+  - useActiveFlashSales hook: batch fetches flash sales for visible products, 1-minute refetch
+- **Learnings for future iterations**:
+  - FlashSale status determined by startTime/endTime, not manual toggle - status changes automatically
+  - Calendar view uses date range spanning (single sale can appear on multiple days)
+  - Flash sale price overrides regular price in cart (passed to onAddToCart)
+  - Overlap validation prevents multiple active flash sales on same product
+  - remainingQuantity = quantity - soldCount (null quantity = unlimited)
+  - useActiveFlashSales returns map of productId -> FlashSaleForProduct for O(1) lookup
+---
