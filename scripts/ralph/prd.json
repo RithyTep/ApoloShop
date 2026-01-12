@@ -288,8 +288,8 @@
         "Build passes: bun run build"
       ],
       "priority": 19,
-      "passes": false,
-      "notes": "Cross-selling opportunity"
+      "passes": true,
+      "notes": "Implemented /api/products/[id]/recommendations with 'customers also bought' logic using order history and same-category fallback. Created ProductRecommendations component with skeleton loading, bilingual support, 'Popular' badge for frequently co-purchased products. Integrated into product detail page."
     },
     {
       "id": "US-020",

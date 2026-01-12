@@ -403,3 +403,31 @@ Project: ApoloShop - Product Search Feature
   - Component hides itself when no products to show (returns null)
   - excludeProductId prop prevents showing current product in its own recently viewed section
 ---
+
+## 2026-01-12 - US-019
+- **Implemented**: Product recommendations
+- **Files changed**:
+  - `app/api/products/[id]/recommendations/route.ts` (new file)
+  - `components/product-recommendations.tsx` (new file)
+  - `lib/api-hooks.ts` (modified - added types and useProductRecommendations hook)
+  - `lib/i18n.ts` (modified - added recommendations translations)
+  - `app/shop/product/[id]/page.tsx` (modified - integrated ProductRecommendations)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **GET /api/products/[id]/recommendations endpoint**: Returns up to 20 products (configurable via ?limit=)
+  - **"Customers also bought" logic**: Analyzes order history to find products frequently purchased together
+  - **Same category fallback**: Fills remaining slots with products from same category
+  - **Recommendation types**: Each product tagged as "also_bought" or "same_category"
+  - **Response meta**: Includes total count, alsoBoughtCount, sameCategoryCount
+  - **ProductRecommendations component**: Grid display with skeleton loading, handles empty/error states gracefully
+  - **"Popular" badge**: Shows on "also_bought" products to indicate customer preference
+  - **Out of stock indicator**: Shows badge overlay when product inventory is zero
+  - **Bilingual support**: "You May Also Like" / "អ្នកក៏អាចចូលចិត្ត" translations
+- **Learnings for future iterations**:
+  - Co-purchase frequency analysis: Count occurrences in same orders, sort by frequency
+  - Prisma distinct: Use for getting unique order IDs containing a product
+  - Order status filter: Only completed/confirmed orders for reliable co-purchase data
+  - Combine strategies: "also_bought" first (higher conversion), then "same_category" to fill slots
+  - Return recommendationType so frontend can style differently (Popular badge)
+  - Product includes inventory for stock status display
+---
