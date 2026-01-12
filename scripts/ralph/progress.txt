@@ -69,3 +69,44 @@ Project: ApoloShop - Product Search Feature
   - Price formatting uses `Number()` conversion since Prisma Decimal comes as string
   - Search API returns max 5 results via `limit=5` param for dropdown brevity
 ---
+
+## 2026-01-12 - US-004
+- **Implemented**: Search result click navigation with keyboard support
+- **Files changed**:
+  - `components/search-dropdown.tsx` (modified - added navigation and keyboard)
+  - `components/header.tsx` (modified - added onProductSelect handler)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - Click on search result navigates to `/shop/product/[id]`
+  - Dropdown closes after navigation
+  - Search input clears after navigation via `onProductSelect` callback
+  - Keyboard navigation: Arrow Up/Down to highlight results
+  - Enter key selects highlighted result and navigates
+  - Escape key closes dropdown
+  - Visual highlight on currently selected item (`bg-muted` class)
+- **Learnings for future iterations**:
+  - `useRouter` from `next/navigation` for App Router navigation
+  - `useCallback` for memoizing handler passed to useEffect deps
+  - `highlightedIndex` state tracks keyboard-selected item (-1 = none)
+  - Keyboard events use `document.addEventListener` for global capture
+  - `onProductSelect` optional callback lets parent know when navigation happens
+---
+
+## 2026-01-12 - US-005
+- **Implemented**: Search translations for bilingual support
+- **Files changed**:
+  - `lib/i18n.ts` (modified - added search translations)
+  - `components/header.tsx` (modified - use translations for placeholder)
+  - `components/search-dropdown.tsx` (modified - use translations for noResults, searching)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - Added `search` section to both EN and KH translations
+  - Translations include: placeholder, noResults, searching, viewAll
+  - English: "Search products...", "No results found", "Searching...", "View all results"
+  - Khmer: "ស្វែងរកផលិតផល...", "រកមិនឃើញលទ្ធផល", "កំពុងស្វែងរក...", "មើលលទ្ធផលទាំងអស់"
+  - Components now import from `lib/i18n.ts` instead of hardcoding strings
+- **Learnings for future iterations**:
+  - Language prop is "EN" | "KH" in components but i18n keys are "en" | "kh" (lowercase)
+  - Use `translations[language === "EN" ? "en" : "kh"]` for mapping
+  - Keep translation structure consistent with existing sections (orderStatus, receipt, etc.)
+---

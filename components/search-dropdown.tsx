@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Product } from "@/lib/api-hooks"
+import { translations } from "@/lib/i18n"
 
 interface SearchResult {
   products: Product[]
@@ -135,8 +136,9 @@ export function SearchDropdown({
     return language === "EN" ? product.nameEn : product.nameKh
   }
 
-  const noResultsText = language === "EN" ? "No results found" : "រកមិនឃើញលទ្ធផល"
-  const searchingText = language === "EN" ? "Searching..." : "កំពុងស្វែងរក..."
+  const t = translations[language === "EN" ? "en" : "kh"]
+  const noResultsText = t.search.noResults
+  const searchingText = t.search.searching
 
   return (
     <div

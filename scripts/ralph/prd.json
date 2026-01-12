@@ -62,8 +62,8 @@
         "Build passes: bun run build"
       ],
       "priority": 4,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Click navigates to /shop/product/[id], keyboard nav with Arrow Up/Down and Enter, Escape to close"
     },
     {
       "id": "US-005",
@@ -76,8 +76,8 @@
         "Build passes: bun run build"
       ],
       "priority": 5,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added search translations (placeholder, noResults, searching, viewAll) to lib/i18n.ts for EN/KH. Updated header.tsx and search-dropdown.tsx to use translations."
     },
     {
       "id": "US-006",

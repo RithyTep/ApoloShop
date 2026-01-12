@@ -58,6 +58,13 @@ export const translations = {
       print: "Print Receipt",
       thankyou: "Thank you for your order!",
     },
+    // Search
+    search: {
+      placeholder: "Search products...",
+      noResults: "No results found",
+      searching: "Searching...",
+      viewAll: "View all results",
+    },
   },
   kh: {
     // Order Status
@@ -116,6 +123,13 @@ export const translations = {
       paid: "បានបង់ប្រាក់",
       print: "បោះពុម្ពឯកសារលម្អិត",
       thankyou: "សូមអរគុណដែលបានទិញលម្អិត!",
+    },
+    // Search
+    search: {
+      placeholder: "ស្វែងរកផលិតផល...",
+      noResults: "រកមិនឃើញលទ្ធផល",
+      searching: "កំពុងស្វែងរក...",
+      viewAll: "មើលលទ្ធផលទាំងអស់",
     },
   },
 }

@@ -5,6 +5,7 @@ import { StoreStatus } from "@/components/shop/store-status"
 import { Input } from "@/components/ui/input"
 import { useState } from "react"
 import { SearchDropdown } from "@/components/search-dropdown"
+import { translations } from "@/lib/i18n"
 
 interface HeaderProps {
   cartCount: number
@@ -62,7 +63,8 @@ export function Header({
     setIsSearchOpen(false)
   }
 
-  const searchPlaceholder = language === "EN" ? "Search products..." : "ស្វែងរកផលិតផល..."
+  const t = translations[language === "EN" ? "en" : "kh"]
+  const searchPlaceholder = t.search.placeholder
   return (
     <header className="fixed top-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-b border-border z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
