@@ -1531,3 +1531,61 @@ export function useInventoryReport(options?: { threshold?: number; categoryId?: 
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
+
+// ============================================
+// CLIENT THEME (Multi-tenant whitelabel)
+// ============================================
+
+export interface ClientTheme {
+  primaryColor: string | null;
+  secondaryColor: string | null;
+  logoUrl: string | null;
+  faviconUrl: string | null;
+}
+
+export interface ClientContext {
+  id: string;
+  name: string;
+  slug: string;
+  domain: string | null;
+  theme: ClientTheme | null;
+  isActive: boolean;
+}
+
+export interface ClientThemeResponse {
+  client: ClientContext | null;
+  theme: ClientTheme | null;
+}
+
+/**
+ * Hook to fetch client theme from API
+ * Used for multi-tenant shops to get client-specific branding
+ */
+export function useClientTheme(clientSlug?: string) {
+  const params = new URLSearchParams();
+  if (clientSlug) params.set("slug", clientSlug);
+
+  return useQuery({
+    queryKey: ["client-theme", clientSlug],
+    queryFn: () =>
+      fetchAPI<ClientThemeResponse>(`/api/client/theme?${params.toString()}`),
+    staleTime: 10 * 60 * 1000, // 10 minutes - themes don't change often
+  });
+}
+
+/**
+ * Hook to update client theme (admin only)
+ */
+export function useUpdateClientTheme() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ clientId, theme }: { clientId: string; theme: Partial<ClientTheme> }) =>
+      fetchAPI<{ success: boolean; theme: ClientTheme }>("/api/client/theme", {
+        method: "PUT",
+        body: JSON.stringify({ clientId, theme }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["client-theme"] });
+    },
+  });
+}

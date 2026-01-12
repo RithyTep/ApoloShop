@@ -7,6 +7,7 @@ import { CartDrawer } from "./cart-drawer"
 import { CheckoutPage } from "./checkout-page"
 import {
   useShopCustomization,
+  useClientTheme as useClientThemeQuery,
   HeroConfig,
   PromotionsConfig,
   ProductsConfig,
@@ -15,6 +16,7 @@ import {
   AboutConfig,
   TeamConfig,
 } from "@/lib/api-hooks"
+import { useClientThemeStyles } from "@/lib/use-client-theme"
 import { HeroRenderer } from "./customizer/renderers/hero-renderer"
 import { PromotionsRenderer } from "./customizer/renderers/promotions-renderer"
 import { ProductsRenderer } from "./customizer/renderers/products-renderer"
@@ -47,6 +49,10 @@ export function ShopApp() {
   const config = customization?.config
   const sections = config?.sections?.filter((s) => s.enabled).sort((a, b) => a.order - b.order) || []
 
+  // Load and apply client-specific theme (multi-tenant whitelabel)
+  const { data: clientThemeData } = useClientThemeQuery()
+  useClientThemeStyles(clientThemeData?.theme)
+
   const addToCart = (id: string, name: string, price: number, image: string) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.id === id)
@@ -73,16 +79,28 @@ export function ShopApp() {
     setCart([])
   }
 
-  // Build custom theme styles
+  // Build custom theme styles (shop customization overrides client theme)
+  // Client theme provides base branding, shop customization allows further tweaks
+  const clientTheme = clientThemeData?.theme
   const themeStyles = config?.theme
     ? {
-        "--primary": config.theme.primaryColor,
-        "--accent": config.theme.accentColor,
+        // Use client theme as base, allow shop customization to override
+        "--primary": config.theme.primaryColor || clientTheme?.primaryColor,
+        "--accent": config.theme.accentColor || clientTheme?.secondaryColor,
         "--background": config.theme.backgroundColor,
         "--foreground": config.theme.textColor,
         "--radius": `${config.theme.borderRadius}px`,
       }
+    : clientTheme
+    ? {
+        // Fallback to client theme only if no shop customization
+        "--primary": clientTheme.primaryColor,
+        "--accent": clientTheme.secondaryColor,
+      }
     : {}
+
+  // Determine logo: shop customization > client theme > default
+  const effectiveLogoUrl = config?.theme?.logoUrl || clientTheme?.logoUrl
 
   return (
     <div
@@ -105,13 +123,16 @@ export function ShopApp() {
         onLanguageChange={setLanguage}
         currency={currency}
         onCurrencyChange={setCurrency}
-        shopName={config?.theme?.shopName}
-        logoUrl={config?.theme?.logoUrl}
-        primaryColor={config?.theme?.primaryColor}
+        shopName={config?.theme?.shopName || clientThemeData?.client?.name}
+        logoUrl={effectiveLogoUrl}
+        primaryColor={config?.theme?.primaryColor || clientTheme?.primaryColor}
         searchBranding={config?.theme ? {
-          primaryColor: config.theme.primaryColor,
-          accentColor: config.theme.accentColor,
+          primaryColor: config.theme.primaryColor || clientTheme?.primaryColor,
+          accentColor: config.theme.accentColor || clientTheme?.secondaryColor,
           borderRadius: config.theme.borderRadius,
+        } : clientTheme ? {
+          primaryColor: clientTheme.primaryColor || undefined,
+          accentColor: clientTheme.secondaryColor || undefined,
         } : undefined}
       />
 

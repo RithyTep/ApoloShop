@@ -8,6 +8,7 @@ export interface ClientContext {
   slug: string
   domain: string | null
   settings: ClientSettings | null
+  theme: ClientTheme | null
   isActive: boolean
 }
 
@@ -15,6 +16,14 @@ export interface ClientSettings {
   currency?: "USD" | "KHR"
   language?: "EN" | "KH"
   timezone?: string
+}
+
+// Client theme for whitelabel branding
+export interface ClientTheme {
+  primaryColor: string | null
+  secondaryColor: string | null
+  logoUrl: string | null
+  faviconUrl: string | null
 }
 
 // Header name for client ID injection
@@ -84,6 +93,10 @@ export async function findClientByIdentifier(
           slug: true,
           domain: true,
           settings: true,
+          primaryColor: true,
+          secondaryColor: true,
+          logoUrl: true,
+          faviconUrl: true,
           isActive: true,
         },
       })
@@ -97,6 +110,10 @@ export async function findClientByIdentifier(
           slug: true,
           domain: true,
           settings: true,
+          primaryColor: true,
+          secondaryColor: true,
+          logoUrl: true,
+          faviconUrl: true,
           isActive: true,
         },
       })
@@ -110,6 +127,12 @@ export async function findClientByIdentifier(
       slug: client.slug,
       domain: client.domain,
       settings: client.settings as ClientSettings | null,
+      theme: {
+        primaryColor: client.primaryColor,
+        secondaryColor: client.secondaryColor,
+        logoUrl: client.logoUrl,
+        faviconUrl: client.faviconUrl,
+      },
       isActive: client.isActive,
     }
   } catch (error) {
@@ -137,6 +160,10 @@ export async function getClientFromRequest(
         slug: true,
         domain: true,
         settings: true,
+        primaryColor: true,
+        secondaryColor: true,
+        logoUrl: true,
+        faviconUrl: true,
         isActive: true,
       },
     })
@@ -148,6 +175,12 @@ export async function getClientFromRequest(
         slug: client.slug,
         domain: client.domain,
         settings: client.settings as ClientSettings | null,
+        theme: {
+          primaryColor: client.primaryColor,
+          secondaryColor: client.secondaryColor,
+          logoUrl: client.logoUrl,
+          faviconUrl: client.faviconUrl,
+        },
         isActive: client.isActive,
       }
     }

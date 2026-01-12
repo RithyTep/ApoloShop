@@ -392,6 +392,11 @@ model Client {
   slug         String   @unique // Used for subdomains: {slug}.apoloshop.com
   domain       String?  @unique // Custom domain: shop.example.com
   settings     Json?    // Client-specific settings (currency, language, etc.)
+  // Theme fields for whitelabel branding
+  primaryColor   String?  @map("primary_color")      // e.g., "oklch(0.72 0.16 356)"
+  secondaryColor String?  @map("secondary_color")    // e.g., "oklch(0.65 0.15 250)"
+  logoUrl        String?  @map("logo_url")           // URL to client's logo
+  faviconUrl     String?  @map("favicon_url")        // URL to client's favicon
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")

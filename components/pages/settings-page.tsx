@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch"
 import { useSettings, useUpdateSettings, useComponentRegistry, useUpdateComponentRegistry, ComponentRegistryConfigData } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
 import { getAllComponents, getDefaultConfig, mergeWithDefaults, type ComponentRegistration } from "@/lib/component-registry"
+import { ClientThemeEditor } from "@/components/client-theme-editor"
 
 export function SettingsPage() {
   const { toast } = useToast()
@@ -328,6 +329,9 @@ export function SettingsPage() {
           </p>
         )}
       </Card>
+
+      {/* Client Theme (Multi-tenant) */}
+      <ClientThemeEditor />
     </div>
   )
 }
