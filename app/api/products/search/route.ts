@@ -141,17 +141,34 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Search in nameEn, nameKh, descriptionEn, descriptionKh fields
+    // Check for inStock filter
+    const inStockParam = searchParams.get("inStock")
+    const inStockOnly = inStockParam === "true"
+
+    // Build where clause with whitelabel filtering:
+    // - isActive: true (only active products)
+    // - inStock filter: products with inventory.quantity > 0
+    // - Note: Single-tenant system - no shopId filtering needed
+    const whereClause: Parameters<typeof prisma.product.findMany>[0]["where"] = {
+      isActive: true,
+      OR: [
+        { nameEn: { contains: query, mode: "insensitive" } },
+        { nameKh: { contains: query, mode: "insensitive" } },
+        { descriptionEn: { contains: query, mode: "insensitive" } },
+        { descriptionKh: { contains: query, mode: "insensitive" } },
+      ],
+    }
+
+    // Add in-stock filter if requested
+    if (inStockOnly) {
+      whereClause.inventory = {
+        quantity: { gt: 0 },
+      }
+    }
+
+    // Search products with whitelabel filtering applied
     const products = await prisma.product.findMany({
-      where: {
-        isActive: true,
-        OR: [
-          { nameEn: { contains: query, mode: "insensitive" } },
-          { nameKh: { contains: query, mode: "insensitive" } },
-          { descriptionEn: { contains: query, mode: "insensitive" } },
-          { descriptionKh: { contains: query, mode: "insensitive" } },
-        ],
-      },
+      where: whereClause,
       include: {
         category: {
           select: {
@@ -159,6 +176,11 @@ export async function GET(request: NextRequest) {
             nameEn: true,
             nameKh: true,
             slug: true,
+          },
+        },
+        inventory: {
+          select: {
+            quantity: true,
           },
         },
       },
