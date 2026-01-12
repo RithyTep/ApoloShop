@@ -619,8 +619,8 @@
         "Build passes: bun run build"
       ],
       "priority": 40,
-      "passes": false,
-      "notes": "Easier signup/login for customers"
+      "passes": true,
+      "notes": "Implemented SocialAccount model, lib/oauth.ts config, lib/oauth-service.ts for account linking/creation, Google/Facebook OAuth endpoints with state verification, social-accounts API for management, encrypted token storage (AES-256-GCM), React hooks for frontend integration"
     },
     {
       "id": "US-041",

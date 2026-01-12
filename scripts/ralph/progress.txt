@@ -1170,3 +1170,58 @@ Project: ApoloShop - Product Search Feature
   - X-API-Key header as alternative to Authorization: Bearer for compatibility
   - Timing-safe comparison prevents timing attacks on key validation
 ---
+
+## 2026-01-12 - US-040
+- **Implemented**: OAuth2 social login with Google and Facebook
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added SocialAccount model, OAuthProvider enum)
+  - `lib/oauth.ts` (new file - OAuth configuration and utilities)
+  - `lib/oauth-service.ts` (new file - account linking/creation/login service)
+  - `app/api/auth/oauth/route.ts` (new file - list available providers)
+  - `app/api/auth/oauth/google/route.ts` (new file - initiate Google OAuth)
+  - `app/api/auth/oauth/google/callback/route.ts` (new file - Google callback handler)
+  - `app/api/auth/oauth/facebook/route.ts` (new file - initiate Facebook OAuth)
+  - `app/api/auth/oauth/facebook/callback/route.ts` (new file - Facebook callback handler)
+  - `app/api/auth/social-accounts/route.ts` (new file - manage linked accounts)
+  - `lib/api-hooks.ts` (modified - added OAuth types and hooks)
+  - `lib/i18n.ts` (modified - added oauth translations EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **SocialAccount model**: provider (GOOGLE/FACEBOOK), providerUserId, email, name, avatarUrl, tokens (encrypted), rawProfile
+  - **OAuth config** (lib/oauth.ts):
+    - OAUTH_CONFIG with Google and Facebook provider settings
+    - generateOAuthState/verifyOAuthState with HMAC signature and expiry (10 min)
+    - getGoogleAuthUrl/getFacebookAuthUrl for authorization URLs
+    - exchangeGoogleCode/exchangeFacebookCode for token exchange
+    - fetchGoogleProfile/fetchFacebookProfile for user data
+    - encryptOAuthToken/decryptOAuthToken with AES-256-GCM
+    - getAvailableProviders/isProviderConfigured helpers
+  - **OAuth service** (lib/oauth-service.ts):
+    - processOAuthLogin: Complete login/signup flow
+    - Flow: Check existing social account -> Link by email -> Create new customer
+    - linkSocialAccountToUser/linkSocialAccountToCustomer for account linking
+    - unlinkSocialAccount for disconnecting providers
+    - getUserSocialAccounts/getCustomerSocialAccounts for listing
+  - **OAuth API endpoints**:
+    - GET /api/auth/oauth - list enabled providers
+    - GET /api/auth/oauth/google - redirect to Google OAuth
+    - GET /api/auth/oauth/google/callback - handle Google callback
+    - GET /api/auth/oauth/facebook - redirect to Facebook OAuth
+    - GET /api/auth/oauth/facebook/callback - handle Facebook callback
+    - GET/DELETE /api/auth/social-accounts - manage linked accounts
+  - **React hooks**: useOAuthProviders, useSocialAccounts, useUnlinkSocialAccount
+  - **Helper**: initiateOAuthLogin(provider, options) for easy OAuth initiation
+  - **Env vars**: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, FACEBOOK_APP_ID, FACEBOOK_APP_SECRET, OAUTH_STATE_SECRET
+  - **Bilingual support**: Full EN/KH translations for OAuth UI
+- **Learnings for future iterations**:
+  - OAuth state parameter uses HMAC-SHA256 signature with timestamp for CSRF protection
+  - State encodes provider, returnUrl, and optional linkUserId/linkCustomerId for account linking
+  - Token encryption uses AES-256-GCM with random IV stored alongside ciphertext
+  - Facebook Graph API v19.0 requires explicit fields parameter for user data
+  - Google returns refresh_token only on first authorization (requires prompt=consent)
+  - Social account linking checks both userId and customerId to prevent cross-linking
+  - Email matching automatically links social account to existing user/customer
+  - Customer phone is required in schema - use oauth_{provider}_{userId} placeholder for OAuth-created customers
+  - OAuth login creates session using existing session-service for consistency
+  - Callback routes set oauth-login cookie (1 min expiry) for client-side success detection
+---
