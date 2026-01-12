@@ -1376,3 +1376,65 @@ export function useSalesReport(options?: { startDate?: string; endDate?: string 
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
+
+// ============================================
+// CUSTOMER ANALYTICS REPORTS
+// ============================================
+
+export interface CustomerReportSummary {
+  totalCustomers: number;
+  newCustomers: number;
+  newCustomersChange: number;
+  returningCustomers: number;
+  activeCustomers: number;
+  retentionRate: number;
+  avgCustomerLifetimeValue: number;
+  dateRange: {
+    start: string;
+    end: string;
+  };
+}
+
+export interface TopCustomerData {
+  rank: number;
+  id: string;
+  name: string;
+  totalSpent: number;
+  orderCount: number;
+  avgOrderValue: number;
+  lastOrderDate: string | null;
+}
+
+export interface CustomerGrowthData {
+  date: string;
+  newCustomers: number;
+  totalCustomers: number;
+}
+
+export interface CustomerSegments {
+  vip: number;
+  active: number;
+  atRisk: number;
+  churned: number;
+  newCustomers: number;
+}
+
+export interface CustomerReportData {
+  summary: CustomerReportSummary;
+  topCustomers: TopCustomerData[];
+  customerGrowthData: CustomerGrowthData[];
+  segments: CustomerSegments;
+}
+
+export function useCustomerReport(options?: { startDate?: string; endDate?: string }) {
+  const params = new URLSearchParams();
+  if (options?.startDate) params.set("startDate", options.startDate);
+  if (options?.endDate) params.set("endDate", options.endDate);
+
+  return useQuery({
+    queryKey: ["customer-report", options],
+    queryFn: () =>
+      fetchAPI<CustomerReportData>(`/api/reports/customers?${params.toString()}`),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}

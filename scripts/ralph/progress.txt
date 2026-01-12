@@ -249,3 +249,54 @@ Project: ApoloShop - Product Search Feature
   - Accordion for FAQ uses simple state with Set<string> for tracking open items
   - Feature icons are stored as string identifiers and mapped to components at render time
 ---
+
+## 2026-01-12 - US-012
+- **Implemented**: Admin sales report dashboard
+- **Files changed**:
+  - `app/api/reports/sales/route.ts` (new file)
+  - `lib/api-hooks.ts` (modified - added SalesReport types and useSalesReport hook)
+  - `components/pages/reports-page.tsx` (modified - complete rewrite to use dedicated sales API)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **GET /api/reports/sales endpoint**: Accepts startDate/endDate query params, defaults to last 30 days
+  - **Summary metrics**: totalRevenue, totalRevenueKhr, orderCount, cancelledOrders, averageOrderValue
+  - **Comparison metrics**: revenueChange and orderCountChange vs previous period
+  - **topProducts**: Top 10 products by revenue with rank, quantity, category info, imageUrl
+  - **salesByCategory**: Revenue and percentage breakdown by product category
+  - **salesByChannel**: Revenue and percentage breakdown by order channel (WEBSITE, TELEGRAM, etc.)
+  - **topCustomers**: Top 10 customers by revenue with order count and AOV
+  - **chartData**: Daily sales data for time-series charts (date, revenue, orderCount, averageOrderValue)
+  - **Reports page visualizations**: AreaChart (revenue trend), BarChart (orders by day), PieCharts (category/channel distribution), LineChart (AOV trend), Tables (top products/customers)
+  - **CSV export**: Uses existing /api/export endpoint with type=sales
+- **Learnings for future iterations**:
+  - Prisma Decimal types need Number() conversion for arithmetic operations
+  - Use Map<string, T> for efficient grouping and aggregation in memory
+  - Previous period comparison calculated using same duration window before startDate
+  - Charts use Recharts library (already installed) - AreaChart good for trends, BarChart for counts, PieChart for distributions
+  - reports-page.tsx already existed but used dashboard API; rewrote to use dedicated sales API for proper separation of concerns
+---
+
+## 2026-01-12 - US-013
+- **Implemented**: Admin customer analytics report
+- **Files changed**:
+  - `app/api/reports/customers/route.ts` (new file)
+  - `lib/api-hooks.ts` (modified - added CustomerReport types and useCustomerReport hook)
+  - `components/pages/reports-page.tsx` (modified - added Customers tab with full analytics UI)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **GET /api/reports/customers endpoint**: Accepts startDate/endDate query params, defaults to last 30 days
+  - **Summary metrics**: totalCustomers, newCustomers, newCustomersChange, returningCustomers, activeCustomers, retentionRate, avgCustomerLifetimeValue
+  - **Top customers by LTV**: Ranked list with totalSpent, orderCount, avgOrderValue, lastOrderDate
+  - **Customer growth over time**: Monthly data with newCustomers and totalCustomers cumulative count
+  - **Customer segments**: VIP (5+ orders, $100+ spent), Active (ordered in last 30 days), At Risk (30-90 days since last order), Churned (90+ days), New (created in last 30 days, no orders)
+  - **Tabbed reports UI**: Added Sales and Customers tabs with TabsList from Shadcn
+  - **Retention rate visualization**: Circular progress ring showing percentage of returning customers
+  - **Segments pie chart**: Color-coded with icons for each segment type
+- **Learnings for future iterations**:
+  - Customer segmentation logic uses recency (lastOrderDate) and frequency (orderCount) metrics
+  - Retention rate = (customers who ordered in both previous and current period) / (customers who ordered in previous period)
+  - Customer growth chart uses monthly aggregation via YYYY-MM date keys
+  - Tab-based UI pattern: useQuery hooks fetch both datasets immediately, renders based on active tab
+  - LTV (Lifetime Value) calculated as sum of all completed order totals per customer
+  - Segment thresholds are currently hardcoded - could be made configurable in future
+---

@@ -183,8 +183,8 @@
         "Build passes: bun run build"
       ],
       "priority": 12,
-      "passes": false,
-      "notes": "Key admin feature for business insights"
+      "passes": true,
+      "notes": "Implemented /api/reports/sales with date range, totalRevenue/orderCount/averageOrderValue/topProducts, salesByCategory/salesByChannel/topCustomers. Updated reports-page.tsx with AreaChart, BarChart, LineChart, PieChart. CSV export via /api/export."
     },
     {
       "id": "US-013",
@@ -198,8 +198,8 @@
         "Build passes: bun run build"
       ],
       "priority": 13,
-      "passes": false,
-      "notes": "Customer insights for retention strategies"
+      "passes": true,
+      "notes": "Implemented /api/reports/customers with summary (totalCustomers, newCustomers, returningCustomers, retentionRate, avgCustomerLifetimeValue), topCustomers by LTV, customerGrowthData (monthly), and customer segments (VIP, active, atRisk, churned, new). Added useCustomerReport hook and Customers tab in reports-page.tsx with retention rate ring, segments pie chart, growth area chart."
     },
     {
       "id": "US-014",
