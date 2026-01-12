@@ -491,3 +491,35 @@ Project: ApoloShop - Product Search Feature
   - Replaced old inline Dialog in product-grid.tsx with reusable ProductQuickView component
   - QuickViewButton uses `e.preventDefault()` and `e.stopPropagation()` to prevent card click propagation
 ---
+
+## 2026-01-12 - US-022
+- **Implemented**: Advanced product filtering
+- **Files changed**:
+  - `components/filter-sidebar.tsx` (new file - FilterSidebar and MobileFilterTrigger components)
+  - `components/ui/slider.tsx` (new file - Shadcn Slider component)
+  - `components/ui/checkbox.tsx` (new file - Shadcn Checkbox component)
+  - `components/ui/collapsible.tsx` (new file - Shadcn Collapsible component)
+  - `app/shop/products/page.tsx` (new file - Products page with filters)
+  - `components/shop/products-page-client.tsx` (new file - Client component for products page)
+  - `lib/i18n.ts` (modified - added filters translations EN/KH)
+  - `lib/server-utils.ts` (modified - added getCategories function)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **FilterSidebar component**: Collapsible sections using Shadcn Collapsible
+  - **Price range slider**: Dual-handle slider with min/max input fields, currency display
+  - **Category checkbox filter**: Multi-select categories via Shadcn Checkbox
+  - **Sort options**: 6 options (newest, price_asc, price_desc, popular, name_asc, name_desc)
+  - **In-stock filter**: Toggle to show only products with inventory
+  - **URL query params sync**: Filters persist to URL for shareable links
+  - **Mobile support**: MobileFilterTrigger button opens filter dialog on small screens
+  - **Bilingual support**: All UI text in English and Khmer
+  - **Products page**: /shop/products with sidebar layout (desktop) and dialog (mobile)
+- **Learnings for future iterations**:
+  - Shadcn Slider supports dual handles via array value: `value={[min, max]}`
+  - useSearchParams() hook for reading URL params on mount
+  - router.push() with scroll: false to update URL without scrolling
+  - Collapsible component needs CollapsibleTrigger and CollapsibleContent children
+  - ShopClientWrapper provides cart/language/currency context, not a separate ShopProvider
+  - getCategories added to server-utils.ts for server-side category fetching
+  - Filter state synced to URL on every change for shareable filtered views
+---

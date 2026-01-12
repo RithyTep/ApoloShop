@@ -335,8 +335,8 @@
         "Build passes: bun run build"
       ],
       "priority": 22,
-      "passes": false,
-      "notes": "Essential for shops with many products"
+      "passes": true,
+      "notes": "Implemented FilterSidebar with collapsible sections, price range slider, category checkboxes, sort options (6 options), in-stock filter, URL query params sync. Created /shop/products page. Added Shadcn slider, checkbox, collapsible components. Bilingual support (EN/KH)."
     },
     {
       "id": "US-023",
