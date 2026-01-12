@@ -381,8 +381,8 @@
         "Build passes: bun run build"
       ],
       "priority": 25,
-      "passes": false,
-      "notes": "Personalized admin experience"
+      "passes": true,
+      "notes": "Implemented DashboardWidgets component with SalesOverview, RecentOrders, LowStock, TopProducts widgets. Drag-and-drop reordering via @dnd-kit, layout persistence to settings API, 5-minute auto-refresh, customize dialog."
     },
     {
       "id": "US-026",

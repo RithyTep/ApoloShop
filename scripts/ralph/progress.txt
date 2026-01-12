@@ -595,3 +595,32 @@ Project: ApoloShop - Product Search Feature
   - Prisma unique constraint on [customerId, channel] ensures one preference per customer per channel
   - Tabs component from Shadcn works well for organizing related content in dialogs
 ---
+
+## 2026-01-12 - US-025
+- **Implemented**: Admin dashboard widgets with drag-and-drop
+- **Files changed**:
+  - `components/dashboard-widgets.tsx` (new file - main widgets component)
+  - `components/pages/dashboard-page.tsx` (modified - simplified to use DashboardWidgets)
+  - `lib/api-hooks.ts` (modified - added widget types and layout hooks)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **DashboardWidgetType**: sales_overview, recent_orders, low_stock, top_products
+  - **DashboardWidgetConfig**: id, type, order, enabled, size properties
+  - **SalesOverviewWidget**: KPIs showing today orders, revenue, pending orders, low stock items with trends
+  - **RecentOrdersWidget**: Table of latest 5 orders with status badges
+  - **LowStockWidget**: List of products below min inventory with critical/warning status
+  - **TopProductsWidget**: Bar chart of orders by day using Recharts
+  - **Drag-and-drop**: Using @dnd-kit/core and @dnd-kit/sortable with rectSortingStrategy
+  - **Layout persistence**: Saves to settings API with useDashboardLayout/useUpdateDashboardLayout hooks
+  - **Auto-refresh**: 5-minute interval via useEffect + setInterval, with manual refresh button
+  - **Customize dialog**: Toggle widget visibility, shows all widgets with descriptions
+  - **SortableWidget wrapper**: Combines drag handle, visibility switch, and content rendering
+- **Learnings for future iterations**:
+  - rectSortingStrategy works better for grid layouts than verticalListSortingStrategy
+  - Layout persistence via settings API is simple and works well for per-user preferences
+  - Widget configs use defaultDashboardWidgets as fallback when no saved layout exists
+  - useLowStockItems hook already existed and was reused for LowStockWidget
+  - Auto-refresh pattern: useEffect with setInterval cleanup, plus manual refetch function
+  - Switch component for visibility toggle provides immediate feedback
+  - DndContext + SortableContext pattern is consistent with existing customizer implementation
+---
