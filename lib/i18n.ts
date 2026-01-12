@@ -65,6 +65,24 @@ export const translations = {
       searching: "Searching...",
       viewAll: "View all results",
     },
+    // Flash Sales
+    flashSale: {
+      title: "Flash Sale",
+      endsIn: "Ends in",
+      saleEnded: "Sale Ended",
+      days: "d",
+      hours: "h",
+      minutes: "m",
+      seconds: "s",
+      limitedTime: "Limited Time Offer",
+      shopNow: "Shop Now",
+      viewAll: "View All Deals",
+      remaining: "remaining",
+      soldOut: "Sold Out",
+      off: "OFF",
+      hurry: "Hurry up!",
+      save: "Save",
+    },
     // Recently Viewed
     recentlyViewed: {
       title: "Recently Viewed",
@@ -741,6 +759,24 @@ export const translations = {
       noResults: "រកមិនឃើញលទ្ធផល",
       searching: "កំពុងស្វែងរក...",
       viewAll: "មើលលទ្ធផលទាំងអស់",
+    },
+    // Flash Sales
+    flashSale: {
+      title: "ការលក់ភ្លាម",
+      endsIn: "នៅសល់",
+      saleEnded: "ការលក់បានបញ្ចប់",
+      days: "ថ្ងៃ",
+      hours: "ម៉ោង",
+      minutes: "នាទី",
+      seconds: "វិនាទី",
+      limitedTime: "ការផ្តល់ជូនមានពេលកំណត់",
+      shopNow: "ទិញឥឡូវ",
+      viewAll: "មើលការផ្តល់ជូនទាំងអស់",
+      remaining: "នៅសល់",
+      soldOut: "អស់ស្តុក",
+      off: "បញ្ចុះ",
+      hurry: "ប្រញាប់ឡើង!",
+      save: "សន្សំ",
     },
     // Recently Viewed
     recentlyViewed: {

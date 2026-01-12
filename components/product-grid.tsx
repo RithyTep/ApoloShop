@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ShoppingCart } from "lucide-react"
-import { useProducts, useCategories, useProductRatings, Product } from "@/lib/api-hooks"
+import { useProducts, useCategories, useProductRatings, useActiveFlashSales, Product } from "@/lib/api-hooks"
 import { cn } from "@/lib/utils"
 import { WishlistButton } from "@/components/wishlist-button"
 import { ProductQuickView, QuickViewButton } from "@/components/product-quick-view"
 import { StarRating } from "@/components/star-rating"
+import { FlashSaleBadge, FlashSaleCountdown, FlashSalePrice } from "@/components/flash-sale-countdown"
 
 interface ProductGridProps {
   onAddToCart: (id: string, name: string, price: number, image: string) => void
@@ -35,6 +36,9 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
   // Fetch ratings for all visible products
   const productIds = products.map((p) => p.id)
   const { data: ratingsData } = useProductRatings(productIds)
+
+  // Fetch active flash sales for visible products
+  const { data: flashSalesData } = useActiveFlashSales(productIds)
 
   // Preload images utility
   const preloadImages = (imageUrls: string[]) => {
@@ -203,11 +207,19 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {products.map((product, index) => {
               const inStock = (product.inventory?.quantity || 0) > 0
+              const flashSale = flashSalesData?.[product.id]
+              const hasFlashSale = !!flashSale
+              // Use flash sale price if active
+              const displayPriceUsd = hasFlashSale ? flashSale.salePriceUsd : product.priceUsd
+              const displayPriceKhr = hasFlashSale ? flashSale.salePriceKhr : product.priceKhr
 
               return (
                 <div
                   key={product.id}
-                  className="bg-card border border-border flex flex-col group animate-in fade-in-0 slide-in-from-bottom-2"
+                  className={cn(
+                    "bg-card border border-border flex flex-col group animate-in fade-in-0 slide-in-from-bottom-2",
+                    hasFlashSale && "ring-2 ring-orange-500/50"
+                  )}
                   style={{ animationDelay: `${index * 30}ms`, animationDuration: "300ms" }}
                 >
                   {/* Image with Quick View on hover */}
@@ -220,6 +232,14 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
                         loading={index < 8 ? "eager" : "lazy"}
                       />
                     </div>
+                    {/* Flash Sale Badge */}
+                    {hasFlashSale && flashSale.discount && (
+                      <FlashSaleBadge
+                        discountPercentage={flashSale.discount.percentage}
+                        language={language}
+                        className="absolute top-2 left-2 z-10"
+                      />
+                    )}
                     {/* Hover overlay with Quick View button */}
                     <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors duration-200 pointer-events-none">
                       <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
@@ -251,10 +271,36 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
                       </div>
                     )}
 
+                    {/* Flash Sale Countdown */}
+                    {hasFlashSale && (
+                      <div className="mb-2">
+                        <FlashSaleCountdown
+                          endTime={flashSale.endTime}
+                          language={language}
+                          variant="compact"
+                          className="justify-start"
+                        />
+                      </div>
+                    )}
+
                     {/* Price */}
-                    <p className="text-lg sm:text-xl font-bold text-primary mb-3">
-                      {currency === "USD" ? `$${Number(product.priceUsd).toFixed(2)}` : `${Number(product.priceKhr).toLocaleString()}៛`}
-                    </p>
+                    {hasFlashSale ? (
+                      <div className="mb-3">
+                        <FlashSalePrice
+                          originalPriceUsd={Number(product.priceUsd)}
+                          originalPriceKhr={Number(product.priceKhr)}
+                          salePriceUsd={flashSale.salePriceUsd}
+                          salePriceKhr={flashSale.salePriceKhr}
+                          currency={currency}
+                          language={language}
+                          size="md"
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-lg sm:text-xl font-bold text-primary mb-3">
+                        {currency === "USD" ? `$${Number(product.priceUsd).toFixed(2)}` : `${Number(product.priceKhr).toLocaleString()}៛`}
+                      </p>
+                    )}
 
                     {/* Stock Badge */}
                     <div className="mb-3">
@@ -276,9 +322,12 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
 
                     {/* Add to Cart Button */}
                     <Button
-                      onClick={() => onAddToCart(product.id, product.nameEn, product.priceUsd, product.imageUrl || "")}
+                      onClick={() => onAddToCart(product.id, product.nameEn, Number(displayPriceUsd), product.imageUrl || "")}
                       disabled={!inStock}
-                      className="w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-auto transition-transform active:scale-95"
+                      className={cn(
+                        "w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-auto transition-transform active:scale-95",
+                        hasFlashSale && "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                      )}
                     >
                       <ShoppingCart size={16} />
                       <span className="text-sm sm:text-base">{language === "EN" ? "Add to Cart" : "បន្ថែមទៅរទុក"}</span>

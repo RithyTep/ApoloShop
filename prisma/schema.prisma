@@ -1157,6 +1157,54 @@ model SecurityLog {
 }
 
 // ============================================
+// FLASH SALES
+// ============================================
+
+enum FlashSaleStatus {
+  SCHEDULED   // Not yet started
+  ACTIVE      // Currently running
+  ENDED       // Completed
+  CANCELLED   // Manually cancelled
+
+  @@schema("apolo")
+}
+
+model FlashSale {
+  id            String          @id @default(cuid())
+  productId     String          @map("product_id")
+  // Sale pricing
+  salePriceUsd  Decimal         @map("sale_price_usd") @db.Decimal(10, 2)
+  salePriceKhr  Int             @map("sale_price_khr")
+  // Time window
+  startTime     DateTime        @map("start_time")
+  endTime       DateTime        @map("end_time")
+  // Quantity limit (optional)
+  quantity      Int?            // Max units available at flash price (null = unlimited)
+  soldCount     Int             @default(0) @map("sold_count") // Units sold at flash price
+  // Status and metadata
+  status        FlashSaleStatus @default(SCHEDULED)
+  nameEn        String?         @map("name_en") // Optional sale name for banners
+  nameKh        String?         @map("name_kh")
+  descriptionEn String?         @map("description_en") @db.Text
+  descriptionKh String?         @map("description_kh") @db.Text
+  // Featured on homepage banner
+  isFeatured    Boolean         @default(false) @map("is_featured")
+  bannerImageUrl String?        @map("banner_image_url")
+  // Audit
+  createdBy     String?         @map("created_by")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  @@index([productId])
+  @@index([startTime])
+  @@index([endTime])
+  @@index([status])
+  @@index([isFeatured])
+  @@map("flash_sales")
+  @@schema("apolo")
+}
+
+// ============================================
 // DEVELOPER BACKLOG (Dev Only)
 // ============================================
 

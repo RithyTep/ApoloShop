@@ -1972,6 +1972,126 @@ export function useUpdateDashboardLayout() {
 }
 
 // ============================================
+// FLASH SALES
+// ============================================
+
+export interface FlashSale {
+  id: string;
+  productId: string;
+  salePriceUsd: number;
+  salePriceKhr: number;
+  startTime: string;
+  endTime: string;
+  quantity: number | null;
+  soldCount: number;
+  remainingQuantity: number | null;
+  status: "SCHEDULED" | "ACTIVE" | "ENDED" | "CANCELLED";
+  nameEn: string | null;
+  nameKh: string | null;
+  descriptionEn: string | null;
+  descriptionKh: string | null;
+  isFeatured: boolean;
+  bannerImageUrl: string | null;
+  product: {
+    id: string;
+    nameEn: string;
+    nameKh: string;
+    priceUsd: number;
+    priceKhr: number;
+    imageUrl: string | null;
+    category?: Category;
+    inventory?: Inventory;
+  } | null;
+}
+
+export interface FlashSaleForProduct {
+  id: string;
+  salePriceUsd: number;
+  salePriceKhr: number;
+  startTime: string;
+  endTime: string;
+  quantity: number | null;
+  soldCount: number;
+  remainingQuantity: number | null;
+  nameEn: string | null;
+  nameKh: string | null;
+  isFeatured: boolean;
+  discount: {
+    amountUsd: number;
+    amountKhr: number;
+    percentage: number;
+  } | null;
+}
+
+/**
+ * Hook to fetch active flash sales for products
+ * Returns a map of productId to flash sale info for quick lookup
+ */
+export function useActiveFlashSales(productIds: string[]) {
+  return useQuery({
+    queryKey: ["flash-sales-by-products", productIds.sort().join(",")],
+    queryFn: async () => {
+      const flashSales = await Promise.all(
+        productIds.map(async (productId) => {
+          try {
+            const response = await fetchAPI<{
+              hasFlashSale: boolean;
+              flashSale: FlashSaleForProduct | null;
+            }>(`/api/flash-sales/product/${productId}`);
+            return { productId, ...response };
+          } catch {
+            return { productId, hasFlashSale: false, flashSale: null };
+          }
+        })
+      );
+      return flashSales.reduce(
+        (acc, item) => {
+          if (item.hasFlashSale && item.flashSale) {
+            acc[item.productId] = item.flashSale;
+          }
+          return acc;
+        },
+        {} as Record<string, FlashSaleForProduct>
+      );
+    },
+    enabled: productIds.length > 0,
+    staleTime: 60 * 1000, // 1 minute (flash sales can change quickly)
+    refetchInterval: 60 * 1000, // Refetch every minute to check for expired sales
+  });
+}
+
+/**
+ * Hook to fetch flash sale for a single product
+ */
+export function useProductFlashSale(productId: string | undefined) {
+  return useQuery({
+    queryKey: ["flash-sale-product", productId],
+    queryFn: () =>
+      fetchAPI<{ hasFlashSale: boolean; flashSale: FlashSaleForProduct | null }>(
+        `/api/flash-sales/product/${productId}`
+      ),
+    enabled: !!productId,
+    staleTime: 30 * 1000, // 30 seconds
+    refetchInterval: 60 * 1000, // Refetch every minute
+  });
+}
+
+/**
+ * Hook to fetch featured/active flash sales for banner display
+ */
+export function useFeaturedFlashSales() {
+  return useQuery({
+    queryKey: ["flash-sales-featured"],
+    queryFn: () =>
+      fetchAPI<{ flashSales: FlashSale[] }>(
+        "/api/flash-sales?active=true&featured=true&limit=5"
+      ),
+    staleTime: 60 * 1000, // 1 minute
+    refetchInterval: 60 * 1000,
+  });
+}
+
+// ============================================
 // PRODUCT IMPORT/EXPORT
 // ============================================
 

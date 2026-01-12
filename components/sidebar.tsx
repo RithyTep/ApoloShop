@@ -23,6 +23,7 @@ import {
   Shield,
   ShieldCheck,
   ShieldAlert,
+  Zap,
   type LucideIcon,
 } from "lucide-react"
 import { useState } from "react"
@@ -49,6 +50,7 @@ type NavItem =
   | "audit-logs"
   | "role-permissions"
   | "security-dashboard"
+  | "flash-sales"
 
 interface SidebarProps {
   activeNav: NavItem
@@ -99,6 +101,7 @@ export function Sidebar({ activeNav, setActiveNav, orderCount = 0, lowStockCount
     {
       label: "Marketing",
       items: [
+        { id: "flash-sales", label: "Flash Sales", icon: Zap },
         { id: "promotions", label: "Promotions", icon: Gift },
         { id: "content", label: "Content", icon: FileText },
         { id: "customizer", label: "Customizer", icon: Palette },
