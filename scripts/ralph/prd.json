@@ -955,7 +955,7 @@
         "Build passes: bun run build"
       ],
       "priority": 61,
-      "passes": false,
+      "passes": true,
       "notes": "Reduces support load with self-service"
     },
     {

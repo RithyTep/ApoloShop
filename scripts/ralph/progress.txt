@@ -1899,3 +1899,38 @@ Project: ApoloShop - Product Search Feature
   - Chat status flow: ACTIVE (chatting) -> WAITING (customer waiting) -> RESOLVED (closed)
   - OFFLINE status is separate for messages submitted when no agents online
 ---
+
+## 2026-01-12 - US-061
+- **Implemented**: Help center and FAQ system
+- **Files changed**:
+  - `prisma/schema.prisma` (added HelpCategory, HelpArticle models)
+  - `app/api/help/categories/route.ts` (new - CRUD API)
+  - `app/api/help/articles/route.ts` (new - CRUD API with search)
+  - `app/api/help/articles/view/route.ts` (new - view tracking)
+  - `app/api/help/articles/feedback/route.ts` (new - helpful/not helpful)
+  - `lib/api-hooks.ts` (added help center hooks)
+  - `lib/i18n.ts` (added help translations EN/KH)
+  - `components/pages/help-center-page.tsx` (new - admin page)
+  - `components/help-center.tsx` (new - customer-facing component)
+  - `components/admin-dashboard.tsx` (added help-center nav)
+  - `components/sidebar.tsx` (added help-center nav item)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **HelpCategory model**: nameEn, nameKh, slug, description, sortOrder, iconName, isActive
+  - **HelpArticle model**: titleEn, titleKh, slug, contentEn, contentKh, status, viewCount, helpfulYes/No, isFeatured
+  - **Search API**: Full-text search across title and content in both languages
+  - **Category filtering**: Articles organized by category
+  - **View tracking**: Automatic increment on article view
+  - **Feedback system**: Helpful yes/no voting
+  - **Admin page**: Tabbed interface for articles and categories management
+  - **Customer page**: Searchable FAQ with featured articles, categories, popular articles
+  - **Bilingual**: Full EN/KH translation support
+- **Learnings for future iterations**:
+  - Created both HelpCategory and HelpArticle models for proper organization
+  - Added SEO fields (metaTitleEn/Kh, metaDescEn/Kh) for future SEO features
+  - Searchable FAQ uses case-insensitive contains on title and content fields
+  - View tracking is non-blocking - done via separate POST endpoint
+  - Featured articles displayed prominently on help center home
+  - Popular articles sorted by viewCount for engagement insights
+  - Admin page follows existing pattern from content-page.tsx with dialog modals
+---
