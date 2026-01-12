@@ -459,8 +459,8 @@
         "Build passes: bun run build"
       ],
       "priority": 30,
-      "passes": false,
-      "notes": "Improved mobile UX, especially in Cambodia with spotty internet"
+      "passes": true,
+      "notes": "Implemented manifest.ts with SVG icons, service worker (sw.js) with caching strategies, offline page with cached products, PWA install prompt component, update banner, and offline indicator. Bilingual support (EN/KH)."
     },
     {
       "id": "US-031",
@@ -475,8 +475,8 @@
         "Build passes: bun run build"
       ],
       "priority": 31,
-      "passes": false,
-      "notes": "Stateless auth for better horizontal scaling"
+      "passes": true,
+      "notes": "Implemented generateTokenPair (access 15m + refresh 7d), refresh-token httpOnly cookie, POST /api/auth/refresh endpoint with token rotation, verifyAccessToken/verifyRefreshToken in lib/jwt.ts, withAuth middleware supports both Bearer token and legacy cookie, AccessTokenPayload includes role and permissions"
     },
     {
       "id": "US-032",

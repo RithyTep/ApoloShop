@@ -12,9 +12,10 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Clear cookie
+    // Clear all auth cookies
     const response = NextResponse.json({ success: true })
     response.cookies.delete("auth-token")
+    response.cookies.delete("refresh-token")
 
     return response
   } catch (error) {

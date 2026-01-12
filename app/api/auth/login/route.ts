@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
-import { signToken } from "@/lib/jwt"
+import {
+  generateTokenPair,
+  signToken,
+  REFRESH_TOKEN_EXPIRY_MS,
+  ACCESS_TOKEN_EXPIRY_MS,
+} from "@/lib/jwt"
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -40,38 +45,62 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
-    // Create session
-    const token = signToken({
+    // Parse permissions from role
+    const permissions = (user.role.permissions as Record<string, string[]>) || {}
+
+    // Generate JWT token pair (access + refresh)
+    const tokenPair = generateTokenPair({
+      userId: user.id,
+      roleId: user.roleId,
+      email: user.email,
+      role: user.role.name,
+      permissions,
+    })
+
+    // Store refresh token in session for tracking/revocation
+    // Also store access token for legacy compatibility with session-based validation
+    const legacyToken = signToken({
       userId: user.id,
       roleId: user.roleId,
       email: user.email,
     })
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
 
     await prisma.session.create({
       data: {
         userId: user.id,
-        token,
-        expiresAt,
+        token: legacyToken,
+        expiresAt: tokenPair.refreshTokenExpiresAt,
       },
     })
 
-    // Set cookie
+    // Set cookies
     const response = NextResponse.json({
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
         role: user.role.name,
-        permissions: user.role.permissions,
+        permissions,
       },
+      accessToken: tokenPair.accessToken,
+      expiresIn: Math.floor(ACCESS_TOKEN_EXPIRY_MS / 1000), // seconds
     })
 
-    response.cookies.set("auth-token", token, {
+    // Set refresh token as httpOnly cookie (secure, cannot be accessed by JS)
+    response.cookies.set("refresh-token", tokenPair.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      expires: tokenPair.refreshTokenExpiresAt,
+      path: "/",
+    })
+
+    // Keep legacy auth-token cookie for backwards compatibility
+    response.cookies.set("auth-token", legacyToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      expires: expiresAt,
+      expires: tokenPair.refreshTokenExpiresAt,
       path: "/",
     })
 

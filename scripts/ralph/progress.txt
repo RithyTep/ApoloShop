@@ -758,3 +758,69 @@ Project: ApoloShop - Product Search Feature
   - ScrollArea component from Shadcn for JSON viewer overflow
   - Audit logs stored indefinitely - may need retention policy for production
 ---
+
+## 2026-01-12 - US-030
+- **Implemented**: PWA offline support
+- **Files changed**:
+  - `app/manifest.ts` (new file - Next.js PWA manifest)
+  - `public/sw.js` (new file - service worker with caching strategies)
+  - `app/offline/page.tsx` (new file - offline page with cached products)
+  - `lib/use-pwa.ts` (new file - PWA hooks for install prompt, online status)
+  - `components/pwa-install-prompt.tsx` (new file - install banner, iOS instructions, update banner)
+  - `components/shop-app.tsx` (modified - integrated PWA components)
+  - `lib/i18n.ts` (modified - added pwa translations EN/KH)
+  - `public/icons/icon-512x512.svg` (new file - PWA icon)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **manifest.ts**: Next.js App Router manifest with name, theme_color, SVG icons, shortcuts
+  - **Service worker (sw.js)**: Three caching strategies - networkFirst (API), cacheFirst (static), staleWhileRevalidate (products)
+  - **Cache management**: STATIC_CACHE, DYNAMIC_CACHE, PRODUCT_CACHE with versioning
+  - **Offline page**: Shows cached products from IndexedDB/Cache API, handles online/offline status
+  - **usePWA hook**: Service worker registration, install prompt handling, online status, cache management
+  - **PWAInstallPrompt**: Shows after 30 seconds if installable, iOS-specific instructions dialog
+  - **PWAUpdateBanner**: Shows when new service worker version available
+  - **OfflineIndicator**: Fixed banner when offline
+  - **Product caching**: Products cached via postMessage to service worker
+  - **Bilingual support**: EN/KH translations for all PWA UI text
+- **Learnings for future iterations**:
+  - Next.js App Router uses manifest.ts (not public/manifest.json) for typed manifest
+  - SVG icons work well for PWA manifest with sizes: "any"
+  - Service worker strategies: networkFirst for APIs, cacheFirst for static assets, staleWhileRevalidate for products
+  - beforeinstallprompt event must be captured and stored for later use
+  - iOS Safari doesn't support beforeinstallprompt, show manual instructions instead
+  - Service worker message passing for product caching: postMessage({ type: "CACHE_PRODUCTS", products })
+  - Use navigator.onLine for initial status, online/offline events for updates
+  - matchMedia("(display-mode: standalone)") to detect if already installed
+---
+
+## 2026-01-12 - US-031
+- **Implemented**: JWT token authentication with access/refresh token pair
+- **Files changed**:
+  - `lib/jwt.ts` (modified - added access/refresh token system)
+  - `lib/auth-middleware.ts` (modified - supports both Bearer tokens and legacy cookies)
+  - `app/api/auth/login/route.ts` (modified - generates token pair, sets refresh-token cookie)
+  - `app/api/auth/logout/route.ts` (modified - clears refresh-token cookie)
+  - `app/api/auth/refresh/route.ts` (new file - token refresh endpoint)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Access token (15min)**: signAccessToken with userId, roleId, email, role, permissions, type:"access"
+  - **Refresh token (7 days)**: signRefreshToken with userId, type:"refresh", optional tokenVersion
+  - **generateTokenPair()**: Creates both tokens with expiry timestamps
+  - **Token rotation**: Refresh endpoint rotates refresh token when < 1 day until expiry
+  - **POST /api/auth/refresh**: Verifies refresh token from httpOnly cookie, returns new access token
+  - **verifyAccessToken/verifyRefreshToken**: Separate verification with type checking
+  - **isTokenExpiredError()**: Type guard for handling expired tokens
+  - **extractBearerToken()**: Parses Authorization: Bearer <token> header
+  - **Middleware support**: withAuth tries Bearer token first, falls back to legacy auth-token cookie
+  - **AUTH_ERROR_CODES**: Specific error codes (ACCESS_TOKEN_EXPIRED, SESSION_EXPIRED, etc.) for client handling
+  - **hasPermission/hasRole**: Helper functions for authorization checks
+  - **Backwards compatible**: Legacy session-based auth still works alongside new JWT flow
+- **Learnings for future iterations**:
+  - Use separate secrets for access and refresh tokens (JWT_REFRESH_SECRET env var)
+  - Access tokens are stateless (no DB lookup), refresh tokens require user validation
+  - Token rotation on refresh improves security by limiting refresh token lifetime
+  - Include permissions in access token to avoid DB lookup on every request
+  - Return expiry time in seconds for frontend token refresh scheduling
+  - SameSite: "strict" for refresh token cookie, "lax" for legacy auth-token
+  - Keep legacy auth flow for backwards compatibility with existing sessions
+---

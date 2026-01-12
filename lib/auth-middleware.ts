@@ -1,66 +1,202 @@
 import { NextRequest, NextResponse } from "next/server"
-import { verifyToken, TokenPayload } from "./jwt"
+import {
+  verifyToken,
+  verifyAccessToken,
+  extractBearerToken,
+  isTokenExpiredError,
+  TokenPayload,
+} from "./jwt"
 import { prisma } from "./prisma"
 
-export type AuthenticatedRequest = NextRequest & {
-  user: {
-    id: string
-    email: string
-    name: string
-    role: string
-    permissions: Record<string, string[]>
-  }
+// User context type
+export interface AuthUser {
+  id: string
+  email: string
+  name: string
+  role: string
+  permissions: Record<string, string[]>
 }
 
-export function withAuth(
-  handler: (request: AuthenticatedRequest) => Promise<NextResponse>
-) {
-  return async (request: NextRequest) => {
+export type AuthenticatedRequest = NextRequest & {
+  user: AuthUser
+}
+
+// Auth error codes for client handling
+export const AUTH_ERROR_CODES = {
+  NO_TOKEN: "NO_TOKEN",
+  INVALID_TOKEN: "INVALID_TOKEN",
+  ACCESS_TOKEN_EXPIRED: "ACCESS_TOKEN_EXPIRED",
+  SESSION_EXPIRED: "SESSION_EXPIRED",
+  ACCOUNT_DISABLED: "ACCOUNT_DISABLED",
+  INSUFFICIENT_PERMISSIONS: "INSUFFICIENT_PERMISSIONS",
+} as const
+
+export type AuthErrorCode = (typeof AUTH_ERROR_CODES)[keyof typeof AUTH_ERROR_CODES]
+
+/**
+ * Verify authentication from request
+ * Supports both:
+ * - Authorization: Bearer <access_token> header (JWT - preferred)
+ * - auth-token cookie (session - legacy fallback)
+ */
+async function verifyAuthentication(
+  request: NextRequest
+): Promise<
+  | { success: true; user: AuthUser }
+  | { success: false; error: string; code: AuthErrorCode; status: number }
+> {
+  // Try Authorization header first (new JWT flow)
+  const authHeader = request.headers.get("Authorization")
+  const bearerToken = extractBearerToken(authHeader)
+
+  if (bearerToken) {
     try {
-      const token = request.cookies.get("auth-token")?.value
+      // Verify JWT access token
+      const payload = verifyAccessToken(bearerToken)
 
-      if (!token) {
-        return NextResponse.json(
-          { error: "Authentication required" },
-          { status: 401 }
-        )
-      }
-
-      const payload = verifyToken(token) as TokenPayload
-
-      // Verify session exists and is valid
-      const session = await prisma.session.findUnique({
-        where: { token },
-        include: {
-          user: {
-            include: { role: true },
-          },
+      return {
+        success: true,
+        user: {
+          id: payload.userId,
+          email: payload.email,
+          name: payload.email.split("@")[0], // Fallback name from email
+          role: payload.role,
+          permissions: payload.permissions,
         },
-      })
-
-      if (!session || session.expiresAt < new Date()) {
-        return NextResponse.json({ error: "Session expired" }, { status: 401 })
       }
-
-      if (!session.user.isActive) {
-        return NextResponse.json({ error: "Account disabled" }, { status: 403 })
+    } catch (error) {
+      if (isTokenExpiredError(error)) {
+        return {
+          success: false,
+          error: "Access token expired",
+          code: AUTH_ERROR_CODES.ACCESS_TOKEN_EXPIRED,
+          status: 401,
+        }
       }
+      return {
+        success: false,
+        error: "Invalid access token",
+        code: AUTH_ERROR_CODES.INVALID_TOKEN,
+        status: 401,
+      }
+    }
+  }
 
-      // Attach user to request
-      const authenticatedRequest = request as AuthenticatedRequest
-      authenticatedRequest.user = {
+  // Fallback to legacy auth-token cookie
+  const legacyToken = request.cookies.get("auth-token")?.value
+
+  if (!legacyToken) {
+    return {
+      success: false,
+      error: "Authentication required",
+      code: AUTH_ERROR_CODES.NO_TOKEN,
+      status: 401,
+    }
+  }
+
+  try {
+    verifyToken(legacyToken) as TokenPayload
+
+    // Verify session exists and is valid
+    const session = await prisma.session.findUnique({
+      where: { token: legacyToken },
+      include: {
+        user: {
+          include: { role: true },
+        },
+      },
+    })
+
+    if (!session || session.expiresAt < new Date()) {
+      return {
+        success: false,
+        error: "Session expired",
+        code: AUTH_ERROR_CODES.SESSION_EXPIRED,
+        status: 401,
+      }
+    }
+
+    if (!session.user.isActive) {
+      return {
+        success: false,
+        error: "Account disabled",
+        code: AUTH_ERROR_CODES.ACCOUNT_DISABLED,
+        status: 403,
+      }
+    }
+
+    return {
+      success: true,
+      user: {
         id: session.user.id,
         email: session.user.email,
         name: session.user.name,
         role: session.user.role.name,
         permissions: session.user.role.permissions as Record<string, string[]>,
-      }
-
-      return handler(authenticatedRequest)
-    } catch (error) {
-      console.error("Auth error:", error)
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+      },
     }
+  } catch {
+    return {
+      success: false,
+      error: "Invalid token",
+      code: AUTH_ERROR_CODES.INVALID_TOKEN,
+      status: 401,
+    }
+  }
+}
+
+/**
+ * Higher-order function to protect API routes with authentication
+ * Supports both JWT access tokens and legacy session tokens
+ */
+export function withAuth(
+  handler: (request: AuthenticatedRequest) => Promise<NextResponse>
+) {
+  return async (request: NextRequest) => {
+    const result = await verifyAuthentication(request)
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error, code: result.code },
+        { status: result.status }
+      )
+    }
+
+    // Attach user to request
+    const authenticatedRequest = request as AuthenticatedRequest
+    authenticatedRequest.user = result.user
+
+    return handler(authenticatedRequest)
+  }
+}
+
+/**
+ * Enhanced withAuth that also supports route params (for dynamic routes)
+ */
+export function withAuthAndParams(
+  handler: (
+    request: AuthenticatedRequest,
+    context: { params: Promise<Record<string, string>> }
+  ) => Promise<NextResponse>
+) {
+  return async (
+    request: NextRequest,
+    context: { params: Promise<Record<string, string>> }
+  ) => {
+    const result = await verifyAuthentication(request)
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error, code: result.code },
+        { status: result.status }
+      )
+    }
+
+    // Attach user to request
+    const authenticatedRequest = request as AuthenticatedRequest
+    authenticatedRequest.user = result.user
+
+    return handler(authenticatedRequest, context)
   }
 }
 
@@ -71,9 +207,13 @@ export function requirePermission(resource: string, action: string) {
     return async (request: AuthenticatedRequest) => {
       const permissions = request.user.permissions
 
-      if (!permissions[resource] || !permissions[resource].includes(action)) {
+      const resourcePerms = permissions[resource] || []
+      if (!resourcePerms.includes(action) && !resourcePerms.includes("*")) {
         return NextResponse.json(
-          { error: "Insufficient permissions" },
+          {
+            error: "Insufficient permissions",
+            code: AUTH_ERROR_CODES.INSUFFICIENT_PERMISSIONS,
+          },
           { status: 403 }
         )
       }
@@ -83,13 +223,57 @@ export function requirePermission(resource: string, action: string) {
   }
 }
 
-// Helper to extract user from request without requiring auth
-export async function getOptionalUser(request: NextRequest) {
+/**
+ * Check if user has specific permission
+ */
+export function hasPermission(
+  user: AuthUser,
+  resource: string,
+  action: string
+): boolean {
+  const resourcePerms = user.permissions[resource] || []
+  return resourcePerms.includes(action) || resourcePerms.includes("*")
+}
+
+/**
+ * Check if user has any of the specified roles
+ */
+export function hasRole(user: AuthUser, roles: string[]): boolean {
+  return roles.includes(user.role)
+}
+
+/**
+ * Helper to extract user from request without requiring auth
+ * Supports both JWT access tokens and legacy session tokens
+ */
+export async function getOptionalUser(
+  request: NextRequest
+): Promise<AuthUser | null> {
+  // Try Authorization header first (new JWT flow)
+  const authHeader = request.headers.get("Authorization")
+  const bearerToken = extractBearerToken(authHeader)
+
+  if (bearerToken) {
+    try {
+      const payload = verifyAccessToken(bearerToken)
+      return {
+        id: payload.userId,
+        email: payload.email,
+        name: payload.email.split("@")[0],
+        role: payload.role,
+        permissions: payload.permissions,
+      }
+    } catch {
+      // Token invalid or expired, try legacy fallback
+    }
+  }
+
+  // Fallback to legacy auth-token cookie
   try {
     const token = request.cookies.get("auth-token")?.value
     if (!token) return null
 
-    const payload = verifyToken(token)
+    verifyToken(token)
 
     const session = await prisma.session.findUnique({
       where: { token },
