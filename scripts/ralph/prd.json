@@ -971,8 +971,8 @@
         "Build passes: bun run build"
       ],
       "priority": 62,
-      "passes": false,
-      "notes": "Shipping costs affect cart abandonment"
+      "passes": true,
+      "notes": "Implemented ShippingZone model with 3 rate types (FLAT_RATE, WEIGHT_BASED, FREE), free shipping threshold, delivery time estimates. Full Cambodia province/district data (25 provinces). Admin page with preset region selection. Calculate endpoint for cart integration."
     },
     {
       "id": "US-063",

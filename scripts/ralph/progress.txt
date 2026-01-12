@@ -1934,3 +1934,33 @@ Project: ApoloShop - Product Search Feature
   - Popular articles sorted by viewCount for engagement insights
   - Admin page follows existing pattern from content-page.tsx with dialog modals
 ---
+
+## 2026-01-12 - US-062
+- **Implemented**: Shipping zone configuration with flexible rates by location
+- **Files changed**:
+  - `prisma/schema.prisma` (added ShippingZone model, ShippingRateType enum)
+  - `app/api/shipping-zones/route.ts` (new - CRUD API for zones)
+  - `app/api/shipping-zones/calculate/route.ts` (new - shipping cost calculation)
+  - `lib/api-hooks.ts` (added shipping zone hooks and types)
+  - `lib/cambodia-regions.ts` (new - 25 provinces with districts)
+  - `components/pages/shipping-zones-page.tsx` (new - admin page)
+  - `components/admin-dashboard.tsx` (added shipping-zones nav)
+  - `components/sidebar.tsx` (added shipping-zones nav item with Truck icon)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **ShippingZone model**: nameEn, nameKh, regions (JSON array), rateType, flat/weight-based pricing, free threshold, delivery time
+  - **3 rate types**: FLAT_RATE (fixed per order), WEIGHT_BASED (per kg), FREE
+  - **Free shipping threshold**: freeThresholdUsd/Khr triggers free shipping over amount
+  - **Delivery time estimates**: minDeliveryDays, maxDeliveryDays per zone
+  - **Cambodia data**: All 25 provinces with districts, preset groups (Phnom Penh, Central, etc.)
+  - **Calculate endpoint**: POST /api/shipping-zones/calculate returns shipping options for region/cart
+  - **Admin page**: Province selector with presets, rate type configuration, delivery time settings
+- **Learnings for future iterations**:
+  - Prisma stores regions as Json - use array filter on application side
+  - Cambodia has 25 provinces (khet) including Phnom Penh as capital (reach thani)
+  - Shipping zone presets useful for quick setup (Phnom Penh only, Central provinces, All provinces)
+  - Calculate endpoint returns multiple options if multiple zones cover a region
+  - Weight-based shipping needs baseWeightKg for "first X kg free" pricing
+  - sortOrder important for determining which zone shows first to customer
+  - Admin page pattern: Dialog with ScrollArea for long province list
+---
