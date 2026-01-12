@@ -3537,3 +3537,336 @@ export function useLogError() {
       }),
   });
 }
+
+// ============================================
+// LIVE CHAT SUPPORT
+// ============================================
+
+export type ChatSessionStatus = "ACTIVE" | "WAITING" | "RESOLVED" | "OFFLINE";
+export type ChatMessageSender = "CUSTOMER" | "AGENT" | "SYSTEM";
+
+export interface ChatMessage {
+  id: string;
+  sessionId: string;
+  sender: ChatMessageSender;
+  senderId?: string;
+  senderName?: string;
+  content: string;
+  isRead: boolean;
+  readAt?: string;
+  createdAt: string;
+}
+
+export interface ChatSession {
+  id: string;
+  customerId?: string;
+  guestId?: string;
+  customerName?: string;
+  customerEmail?: string;
+  agentId?: string;
+  agentName?: string;
+  status: ChatSessionStatus;
+  subject?: string;
+  pageUrl?: string;
+  lastActivityAt: string;
+  resolvedAt?: string;
+  createdAt: string;
+  messages?: ChatMessage[];
+  _count?: {
+    messages: number;
+  };
+}
+
+export interface CannedResponse {
+  id: string;
+  title: string;
+  contentEn: string;
+  contentKh?: string;
+  category?: string;
+  shortcut?: string;
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+/**
+ * Hook to check if any agents are online
+ */
+export function useAgentStatus() {
+  return useQuery({
+    queryKey: ["agent-status"],
+    queryFn: () =>
+      fetchAPI<{ agentsOnline: boolean; onlineCount: number }>(
+        "/api/chat/agent-status"
+      ),
+    refetchInterval: 30000, // Check every 30 seconds
+  });
+}
+
+/**
+ * Hook to send agent heartbeat (keep online status)
+ */
+export function useAgentHeartbeat() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, isOnline }: { userId: string; isOnline?: boolean }) =>
+      fetchAPI<{ status: { isOnline: boolean } }>("/api/chat/agent-status", {
+        method: "POST",
+        body: JSON.stringify({ userId, isOnline }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["agent-status"] });
+    },
+  });
+}
+
+/**
+ * Hook to get chat sessions (admin)
+ */
+export function useChatSessions(params?: {
+  status?: ChatSessionStatus;
+  limit?: number;
+  offset?: number;
+}) {
+  const searchParams = new URLSearchParams();
+  if (params?.status) searchParams.set("status", params.status);
+  if (params?.limit) searchParams.set("limit", params.limit.toString());
+  if (params?.offset) searchParams.set("offset", params.offset.toString());
+
+  return useQuery({
+    queryKey: ["chat-sessions", params],
+    queryFn: () =>
+      fetchAPI<{
+        sessions: ChatSession[];
+        unreadCount: number;
+        pagination: {
+          total: number;
+          limit: number;
+          offset: number;
+          hasMore: boolean;
+        };
+      }>(`/api/chat/sessions?${searchParams.toString()}`),
+    refetchInterval: 5000, // Poll every 5 seconds for new messages
+  });
+}
+
+/**
+ * Hook to get a single chat session with messages
+ */
+export function useChatSession(sessionId?: string) {
+  return useQuery({
+    queryKey: ["chat-session", sessionId],
+    queryFn: () =>
+      fetchAPI<{ session: ChatSession }>(
+        `/api/chat/sessions?sessionId=${sessionId}`
+      ),
+    enabled: !!sessionId,
+    refetchInterval: 3000, // Poll every 3 seconds for new messages
+  });
+}
+
+/**
+ * Hook to get or create session for guest
+ */
+export function useGuestChatSession(guestId?: string) {
+  return useQuery({
+    queryKey: ["guest-chat-session", guestId],
+    queryFn: () =>
+      fetchAPI<{ session: ChatSession | null }>(
+        `/api/chat/sessions?guestId=${guestId}`
+      ),
+    enabled: !!guestId,
+    refetchInterval: 3000,
+  });
+}
+
+/**
+ * Hook to create a new chat session
+ */
+export function useCreateChatSession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      guestId?: string;
+      customerId?: string;
+      customerName?: string;
+      customerEmail?: string;
+      subject?: string;
+      pageUrl?: string;
+      initialMessage?: string;
+      isOffline?: boolean;
+    }) =>
+      fetchAPI<{ session: ChatSession }>("/api/chat/sessions", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["chat-sessions"] });
+      if (variables.guestId) {
+        queryClient.invalidateQueries({
+          queryKey: ["guest-chat-session", variables.guestId],
+        });
+      }
+    },
+  });
+}
+
+/**
+ * Hook to update chat session (assign agent, change status)
+ */
+export function useUpdateChatSession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      sessionId: string;
+      status?: ChatSessionStatus;
+      agentId?: string;
+      agentName?: string;
+    }) =>
+      fetchAPI<{ session: ChatSession }>("/api/chat/sessions", {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["chat-sessions"] });
+      queryClient.invalidateQueries({
+        queryKey: ["chat-session", variables.sessionId],
+      });
+    },
+  });
+}
+
+/**
+ * Hook to send a chat message
+ */
+export function useSendChatMessage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      sessionId: string;
+      sender: ChatMessageSender;
+      senderId?: string;
+      senderName?: string;
+      content: string;
+    }) =>
+      fetchAPI<{ message: ChatMessage }>("/api/chat/messages", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["chat-session", variables.sessionId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["chat-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["guest-chat-session"] });
+    },
+  });
+}
+
+/**
+ * Hook to mark messages as read
+ */
+export function useMarkMessagesRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { sessionId: string; sender?: ChatMessageSender }) =>
+      fetchAPI<{ updated: number }>("/api/chat/messages", {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["chat-session", variables.sessionId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["chat-sessions"] });
+    },
+  });
+}
+
+/**
+ * Hook to get canned responses
+ */
+export function useCannedResponses(params?: {
+  category?: string;
+  includeInactive?: boolean;
+}) {
+  const searchParams = new URLSearchParams();
+  if (params?.category) searchParams.set("category", params.category);
+  if (params?.includeInactive) searchParams.set("includeInactive", "true");
+
+  return useQuery({
+    queryKey: ["canned-responses", params],
+    queryFn: () =>
+      fetchAPI<{ responses: CannedResponse[]; categories: string[] }>(
+        `/api/chat/canned-responses?${searchParams.toString()}`
+      ),
+  });
+}
+
+/**
+ * Hook to create a canned response
+ */
+export function useCreateCannedResponse() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      title: string;
+      contentEn: string;
+      contentKh?: string;
+      category?: string;
+      shortcut?: string;
+      sortOrder?: number;
+      createdBy?: string;
+    }) =>
+      fetchAPI<{ response: CannedResponse }>("/api/chat/canned-responses", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["canned-responses"] });
+    },
+  });
+}
+
+/**
+ * Hook to update a canned response
+ */
+export function useUpdateCannedResponse() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      id: string;
+      title?: string;
+      contentEn?: string;
+      contentKh?: string;
+      category?: string;
+      shortcut?: string;
+      sortOrder?: number;
+      isActive?: boolean;
+    }) =>
+      fetchAPI<{ response: CannedResponse }>("/api/chat/canned-responses", {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["canned-responses"] });
+    },
+  });
+}
+
+/**
+ * Hook to delete a canned response
+ */
+export function useDeleteCannedResponse() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchAPI<{ deleted: boolean }>(
+        `/api/chat/canned-responses?id=${id}`,
+        { method: "DELETE" }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["canned-responses"] });
+    },
+  });
+}

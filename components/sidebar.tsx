@@ -53,6 +53,7 @@ type NavItem =
   | "security-dashboard"
   | "flash-sales"
   | "performance"
+  | "chat"
 
 interface SidebarProps {
   activeNav: NavItem
@@ -90,6 +91,7 @@ export function Sidebar({ activeNav, setActiveNav, orderCount = 0, lowStockCount
         { id: "orders", label: "Orders", icon: ShoppingBag, badge: orderCount > 0 ? orderCount : undefined },
         { id: "customers", label: "Customers", icon: Users },
         { id: "reviews", label: "Reviews", icon: MessageSquare, badge: reviewCount > 0 ? reviewCount : undefined },
+        { id: "chat", label: "Live Chat", icon: MessageSquare },
       ],
     },
     {

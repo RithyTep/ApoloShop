@@ -923,8 +923,8 @@
         "Build passes: bun run build"
       ],
       "priority": 59,
-      "passes": false,
-      "notes": "Can't improve what you don't measure"
+      "passes": true,
+      "notes": "Implemented PerformanceMetric and ErrorLog Prisma models, lib/performance.ts service with Web Vital thresholds, POST/GET/PATCH /api/performance endpoints, WebVitalsReporter component for client-side metrics (uses web-vitals package), performance hooks in api-hooks.ts, PerformancePage admin dashboard with Overview/Web Vitals/API/Database/Errors tabs, and sidebar nav item"
     },
     {
       "id": "US-060",
@@ -939,8 +939,8 @@
         "Build passes: bun run build"
       ],
       "priority": 60,
-      "passes": false,
-      "notes": "Instant support increases trust and conversions"
+      "passes": true,
+      "notes": "Implemented ChatSession/ChatMessage/CannedResponse/AgentStatus Prisma models, chat API endpoints (sessions, messages, agent-status, canned-responses), ChatWidget component for shop pages with offline form, ChatPage admin dashboard with canned responses management, sidebar nav item, i18n translations for EN/KH"
     },
     {
       "id": "US-061",

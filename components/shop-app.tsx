@@ -26,6 +26,7 @@ import { AboutRenderer } from "./customizer/renderers/about-renderer"
 import { TeamRenderer } from "./customizer/renderers/team-renderer"
 import { AnnouncementBanner } from "./shop/announcement-banner"
 import { PWAInstallPrompt, PWAUpdateBanner, OfflineIndicator } from "./pwa-install-prompt"
+import { ChatWidget } from "./chat-widget"
 import { usePWA } from "@/lib/use-pwa"
 
 export interface CartItem {
@@ -266,6 +267,9 @@ export function ShopApp() {
       <PWAInstallPrompt language={language} />
       <PWAUpdateBanner language={language} />
       <OfflineIndicator language={language} />
+
+      {/* Live Chat Widget */}
+      <ChatWidget language={language} />
     </div>
   )
 }

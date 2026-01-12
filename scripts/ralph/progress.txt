@@ -1833,3 +1833,69 @@ Project: ApoloShop - Product Search Feature
   - fetchPriority="high" for above-fold images, "auto" for lazy loaded
   - Native loading="lazy" + IntersectionObserver = best lazy loading support
 ---
+
+## 2026-01-12 - US-059
+- **Implemented**: Performance monitoring and error tracking
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added PerformanceMetric and ErrorLog models)
+  - `lib/performance.ts` (new file - performance service)
+  - `app/api/performance/route.ts` (new file - main API endpoint)
+  - `app/api/performance/errors/route.ts` (new file - errors endpoint)
+  - `lib/api-hooks.ts` (modified - added performance hooks)
+  - `components/web-vitals-reporter.tsx` (new file - client-side Web Vitals)
+  - `components/pages/performance-page.tsx` (new file - admin dashboard)
+  - `components/admin-dashboard.tsx` (modified - added PerformancePage)
+  - `components/sidebar.tsx` (modified - added Performance nav item)
+  - `package.json` (modified - added web-vitals dependency)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Core Web Vitals**: LCP, FID, CLS, FCP, TTFB, INP with thresholds and ratings
+  - **API response time tracking**: logApiResponseTime with rating based on duration
+  - **Database query logging**: logDatabaseQuery with performance ratings
+  - **Error tracking**: ErrorLog model with fingerprinting for grouping similar errors
+  - **Performance dashboard**: 5 tabs (Overview, Web Vitals, API, Database, Errors)
+  - **WebVitalsReporter component**: Client-side metrics collection with batching
+  - **Error boundaries**: Global error and unhandledrejection handlers
+- **Learnings for future iterations**:
+  - web-vitals package provides onCLS, onFCP, onLCP, onTTFB, onINP for easy integration
+  - Metrics are batched for 5 seconds before sending to reduce API calls
+  - Error fingerprinting normalizes numbers in messages for better grouping
+  - Performance thresholds: API <100ms good, <500ms needs work; DB <50ms good, <200ms needs work
+  - Use visibilitychange event to flush metrics when user leaves page
+---
+
+## 2026-01-12 - US-060
+- **Implemented**: Live chat support
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added ChatSession, ChatMessage, CannedResponse, AgentStatus models)
+  - `app/api/chat/sessions/route.ts` (new file - sessions API)
+  - `app/api/chat/messages/route.ts` (new file - messages API)
+  - `app/api/chat/agent-status/route.ts` (new file - agent online status API)
+  - `app/api/chat/canned-responses/route.ts` (new file - canned responses CRUD)
+  - `lib/api-hooks.ts` (modified - added chat hooks)
+  - `lib/i18n.ts` (modified - added chat translations EN/KH)
+  - `components/chat-widget.tsx` (new file - customer chat widget)
+  - `components/pages/chat-page.tsx` (new file - admin chat dashboard)
+  - `components/shop-app.tsx` (modified - integrated ChatWidget)
+  - `components/admin-dashboard.tsx` (modified - added ChatPage)
+  - `components/sidebar.tsx` (modified - added Live Chat nav item)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **ChatSession model**: Tracks customer/guest sessions with status (ACTIVE, WAITING, RESOLVED, OFFLINE)
+  - **ChatMessage model**: Stores messages with sender type (CUSTOMER, AGENT, SYSTEM)
+  - **CannedResponse model**: Pre-defined responses with shortcuts and categories
+  - **AgentStatus model**: Tracks agent online status via heartbeat
+  - **Chat widget**: Floating bubble on shop pages, opens chat window with messages
+  - **Offline form**: When agents offline, customers can leave name/email/message
+  - **Admin dashboard**: View all sessions, join chats, send messages, manage canned responses
+  - **Quick responses**: Press "/" in message input to insert canned responses
+  - **Bilingual support**: Full EN/KH translations for all chat UI
+- **Learnings for future iterations**:
+  - Session polling at 3-5 second intervals works well for near-real-time without overwhelming server
+  - Agent heartbeat (30s interval) with 2-minute threshold for offline detection
+  - Guest ID stored in localStorage for session persistence across page refreshes
+  - Canned response shortcuts (e.g., /hello) allow quick insertion of common replies
+  - System messages (e.g., "Agent joined the chat") provide context for customer
+  - Chat status flow: ACTIVE (chatting) -> WAITING (customer waiting) -> RESOLVED (closed)
+  - OFFLINE status is separate for messages submitted when no agents online
+---

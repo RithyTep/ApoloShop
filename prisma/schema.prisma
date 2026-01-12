@@ -1622,3 +1622,118 @@ model ErrorLog {
   @@map("error_logs")
   @@schema("apolo")
 }
+
+// ============================================
+// LIVE CHAT SUPPORT
+// ============================================
+
+enum ChatSessionStatus {
+  ACTIVE       // Chat is active (customer or agent online)
+  WAITING      // Waiting for agent response
+  RESOLVED     // Chat resolved/closed
+  OFFLINE      // Offline message submitted
+
+  @@schema("apolo")
+}
+
+enum ChatMessageSender {
+  CUSTOMER     // Message from customer
+  AGENT        // Message from support agent
+  SYSTEM       // System message (e.g., "Agent joined")
+
+  @@schema("apolo")
+}
+
+model ChatSession {
+  id            String            @id @default(cuid())
+  // Customer identification
+  customerId    String?           @map("customer_id")
+  guestId       String?           @map("guest_id") // For non-logged-in visitors
+  customerName  String?           @map("customer_name")
+  customerEmail String?           @map("customer_email")
+  // Agent assignment
+  agentId       String?           @map("agent_id") // User ID of assigned agent
+  agentName     String?           @map("agent_name")
+  // Status
+  status        ChatSessionStatus @default(ACTIVE)
+  // Metadata
+  subject       String?           // Optional subject/topic
+  pageUrl       String?           @map("page_url") // Page where chat was started
+  userAgent     String?           @map("user_agent") @db.Text
+  ipAddress     String?           @map("ip_address")
+  // Timestamps
+  lastActivityAt DateTime         @default(now()) @map("last_activity_at")
+  resolvedAt    DateTime?         @map("resolved_at")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  messages      ChatMessage[]
+
+  @@index([customerId])
+  @@index([guestId])
+  @@index([agentId])
+  @@index([status])
+  @@index([lastActivityAt])
+  @@index([createdAt])
+  @@map("chat_sessions")
+  @@schema("apolo")
+}
+
+model ChatMessage {
+  id          String            @id @default(cuid())
+  sessionId   String            @map("session_id")
+  session     ChatSession       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  // Sender info
+  sender      ChatMessageSender
+  senderId    String?           @map("sender_id") // User ID for agents, customer/guest ID for customers
+  senderName  String?           @map("sender_name")
+  // Content
+  content     String            @db.Text
+  // Read status
+  isRead      Boolean           @default(false) @map("is_read")
+  readAt      DateTime?         @map("read_at")
+  // Timestamps
+  createdAt   DateTime          @default(now()) @map("created_at")
+
+  @@index([sessionId])
+  @@index([sender])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("chat_messages")
+  @@schema("apolo")
+}
+
+// Canned responses for quick replies
+model CannedResponse {
+  id          String   @id @default(cuid())
+  title       String   // Short title for selection
+  contentEn   String   @map("content_en") @db.Text // English response
+  contentKh   String?  @map("content_kh") @db.Text // Khmer response
+  category    String?  // Category for organization (e.g., "Shipping", "Returns")
+  shortcut    String?  @unique // Keyboard shortcut (e.g., "/hello", "/thanks")
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdBy   String?  @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@index([shortcut])
+  @@index([isActive])
+  @@map("canned_responses")
+  @@schema("apolo")
+}
+
+// Agent online status tracking
+model AgentStatus {
+  id          String   @id @default(cuid())
+  userId      String   @unique @map("user_id") // Admin user ID
+  isOnline    Boolean  @default(false) @map("is_online")
+  lastSeenAt  DateTime @default(now()) @map("last_seen_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([isOnline])
+  @@index([lastSeenAt])
+  @@map("agent_statuses")
+  @@schema("apolo")
+}
