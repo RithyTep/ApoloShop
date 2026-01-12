@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Database migration from Railway to Neon** - Serverless PostgreSQL for better Vercel integration
+  - Updated Prisma schema with `directUrl` for connection pooling
+  - Added migration guide at `docs/database/neon-migration.md`
+
 ### Added
 - **Shop Customizer (White Label)** - Visual page builder for shop frontend
   - Hero banner section with image/video support

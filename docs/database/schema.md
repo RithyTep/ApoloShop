@@ -1,12 +1,14 @@
 # Database Schema
 
-> PostgreSQL with Prisma ORM | Schema: `apolo`
+> PostgreSQL with Prisma ORM | Schema: `apolo` | Hosted on **Neon** (Serverless)
 
 | Meta | Value |
 |------|-------|
 | **Format** | Markdown |
-| **Updated** | 2024-12-23 |
+| **Updated** | 2025-01-12 |
 | **Author** | ApoloDev Team |
+| **Hosting** | Neon (neon.tech) |
+| **Deployment** | Vercel |
 
 ## Tables Overview
 
