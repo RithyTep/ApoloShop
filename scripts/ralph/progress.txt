@@ -1330,3 +1330,26 @@ Project: ApoloShop - Product Search Feature
   - Security recommendations returned with "not me" reports to guide users
   - Country/city detection would require external IP geolocation service (not implemented - fields prepared)
 ---
+
+## 2026-01-12 - US-044
+- **Implemented**: IP whitelisting for admin access
+- **Files changed**:
+  - `prisma/schema.prisma` (added allowedIPs field to User model)
+  - `lib/ip-whitelist.ts` (new file - IP validation and CIDR support)
+  - `lib/auth-middleware.ts` (added IP whitelist middleware)
+  - `app/api/admin/ip-whitelist/route.ts` (new file - admin API)
+- **Features**:
+  - `allowedIPs` JSON field on User model (array of IP/CIDR strings)
+  - IPv4 and IPv6 address validation
+  - CIDR notation support for IP ranges (e.g., "192.168.1.0/24")
+  - `withIPWhitelist` middleware for admin routes
+  - Super admin users bypass IP restrictions entirely
+  - Blocked access attempts logged to audit_logs table
+  - GET/POST/DELETE /api/admin/ip-whitelist for management
+- **Learnings for future iterations**:
+  - IP from request via `x-forwarded-for`, `x-real-ip`, `cf-connecting-ip` headers
+  - CIDR matching uses bitwise operations for efficient comparison
+  - JWT tokens don't include allowedIPs (fetched from session or DB lookup)
+  - Empty allowedIPs array = all IPs allowed (whitelist disabled)
+  - Combined middleware patterns: `withAuthAndIPWhitelist`, `withAuthIPWhitelistAndCSRF`
+---

@@ -683,8 +683,8 @@
         "Build passes: bun run build"
       ],
       "priority": 44,
-      "passes": false,
-      "notes": "Extra layer of admin protection"
+      "passes": true,
+      "notes": "Implemented allowedIPs JSON field on User model, lib/ip-whitelist.ts with CIDR support (IPv4), withIPWhitelist/withAuthAndIPWhitelist/withAuthIPWhitelistAndCSRF middleware, super admin bypass via isSuperAdmin check, blocked access logging to audit_logs table, /api/admin/ip-whitelist endpoint for CRUD operations"
     },
     {
       "id": "US-045",
