@@ -1066,3 +1066,30 @@ Project: ApoloShop - Product Search Feature
   - IP extraction priority: x-forwarded-for > x-real-ip > cf-connecting-ip
   - AlertDialog from Shadcn works well for confirmation flows (revoke session, log out all)
 ---
+
+## 2026-01-12 - US-037
+- **Implemented**: Security headers middleware
+- **Files changed**:
+  - `middleware.ts` (modified - added security headers to all responses)
+  - `lib/security-headers.ts` (new file - reusable security header utilities)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Content-Security-Policy (CSP)**: Comprehensive CSP with directives for default-src, script-src (with unsafe-inline for Next.js, unsafe-eval only in dev), style-src, img-src (self, data, blob, https), font-src, connect-src (with WebSocket in dev, Telegram API), media-src, object-src (none), frame-ancestors (none), form-action, base-uri, manifest-src, worker-src, child-src
+  - **X-Content-Type-Options**: nosniff - prevents MIME type sniffing attacks
+  - **X-Frame-Options**: DENY - prevents clickjacking by blocking iframe embedding
+  - **Strict-Transport-Security (HSTS)**: max-age=31536000 (1 year) with includeSubDomains and preload flags (production only, max-age=0 in dev)
+  - **X-XSS-Protection**: 1; mode=block - legacy browser XSS protection
+  - **Permissions-Policy**: Controls browser features - allows camera, geolocation, payment, fullscreen for self; disables microphone, USB, display-capture, accelerometer, gyroscope, magnetometer; opts out of FLoC
+  - **Referrer-Policy**: strict-origin-when-cross-origin - controls referrer information
+  - **X-DNS-Prefetch-Control**: on - enables DNS prefetching for performance
+  - **lib/security-headers.ts**: Standalone module with generateCSP(), generatePermissionsPolicy(), getSecurityHeaders(), applySecurityHeaders(), getSecurityHeadersArray() for Next.js config, generateNonce() for future CSP nonces
+- **Learnings for future iterations**:
+  - Next.js middleware applies to all matched routes, making it ideal for security headers
+  - HSTS should only be enabled in production to avoid localhost HTTPS issues
+  - CSP unsafe-inline is required for Next.js inline scripts and Tailwind CSS
+  - CSP unsafe-eval is needed in development for hot reload but should be removed in production
+  - Permissions-Policy replaces the deprecated Feature-Policy header
+  - interest-cohort=() opts out of Google's FLoC tracking
+  - frame-ancestors in CSP is modern replacement for X-Frame-Options but both included for compatibility
+  - Middleware runs at edge runtime, so keep functions simple (no complex imports)
+---

@@ -572,8 +572,8 @@
         "Build passes: bun run build"
       ],
       "priority": 37,
-      "passes": false,
-      "notes": "Defense in depth against common attacks"
+      "passes": true,
+      "notes": "Implemented all security headers in middleware.ts: CSP with script/style/img/connect directives, X-Content-Type-Options: nosniff, X-Frame-Options: DENY, HSTS with 1yr max-age (production only), X-XSS-Protection: 1; mode=block, Permissions-Policy for camera/geolocation/payment/fullscreen, Referrer-Policy: strict-origin-when-cross-origin, X-DNS-Prefetch-Control: on. Also created lib/security-headers.ts for reusable exports."
     },
     {
       "id": "US-038",
