@@ -14,6 +14,7 @@ import {
 import { ShoppingCart, Plus, Minus } from "lucide-react"
 import { useProducts, useCategories, Product } from "@/lib/api-hooks"
 import { cn } from "@/lib/utils"
+import { WishlistButton } from "@/components/wishlist-button"
 
 interface ProductGridProps {
   onAddToCart: (id: string, name: string, price: number, image: string) => void
@@ -215,17 +216,22 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
                   style={{ animationDelay: `${index * 30}ms`, animationDuration: "300ms" }}
                 >
                   {/* Image - Click to open dialog */}
-                  <button
-                    onClick={() => openProductDialog(product)}
-                    className="aspect-square overflow-hidden bg-muted block w-full cursor-pointer"
-                  >
-                    <img
-                      src={product.imageUrl || "/placeholder.svg"}
-                      alt={product.nameEn}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      loading={index < 8 ? "eager" : "lazy"}
-                    />
-                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => openProductDialog(product)}
+                      className="aspect-square overflow-hidden bg-muted block w-full cursor-pointer"
+                    >
+                      <img
+                        src={product.imageUrl || "/placeholder.svg"}
+                        alt={product.nameEn}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading={index < 8 ? "eager" : "lazy"}
+                      />
+                    </button>
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <WishlistButton productId={product.id} size="sm" language={language} />
+                    </div>
+                  </div>
 
                   {/* Content */}
                   <div className="p-3 sm:p-4 flex flex-col flex-1">
@@ -290,12 +296,15 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
             return (
               <div className="flex flex-col md:flex-row">
                 {/* Product Image */}
-                <div className="md:w-1/2 aspect-square bg-muted">
+                <div className="md:w-1/2 aspect-square bg-muted relative">
                   <img
                     src={selectedProduct.imageUrl || "/placeholder.svg"}
                     alt={selectedProduct.nameEn}
                     className="w-full h-full object-cover"
                   />
+                  <div className="absolute top-3 right-3">
+                    <WishlistButton productId={selectedProduct.id} size="md" language={language} />
+                  </div>
                 </div>
 
                 {/* Product Details */}

@@ -78,6 +78,19 @@ export const translations = {
       similarProducts: "Similar Products",
       noRecommendations: "No recommendations available",
     },
+    // Wishlist
+    wishlist: {
+      title: "My Wishlist",
+      empty: "Your wishlist is empty",
+      items: "items",
+      clearAll: "Clear All",
+      emptyTitle: "Your wishlist is empty",
+      emptyDescription: "Browse our products and save your favorites",
+      addedToWishlist: "Added to wishlist",
+      removedFromWishlist: "Removed from wishlist",
+      save: "Save",
+      saved: "Saved",
+    },
   },
   kh: {
     // Order Status
@@ -156,6 +169,19 @@ export const translations = {
       alsoBought: "អតិថិជនក៏បានទិញ",
       similarProducts: "ផលិតផលស្រដៀងគ្នា",
       noRecommendations: "មិនមានការណែនាំ",
+    },
+    // Wishlist
+    wishlist: {
+      title: "បញ្ជីប្រាថ្នារបស់ខ្ញុំ",
+      empty: "បញ្ជីប្រាថ្នារបស់អ្នកគឺទទេ",
+      items: "មុខទំនិញ",
+      clearAll: "សម្អាតទាំងអស់",
+      emptyTitle: "បញ្ជីប្រាថ្នារបស់អ្នកគឺទទេ",
+      emptyDescription: "រកមើលផលិតផលរបស់យើងហើយរក្សាទុកអ្វីដែលអ្នកចូលចិត្ត",
+      addedToWishlist: "បានបន្ថែមទៅបញ្ជីប្រាថ្នា",
+      removedFromWishlist: "បានដកចេញពីបញ្ជីប្រាថ្នា",
+      save: "រក្សាទុក",
+      saved: "បានរក្សាទុក",
     },
   },
 }

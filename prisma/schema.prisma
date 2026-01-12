@@ -102,6 +102,7 @@ model Product {
 
   inventory     Inventory?
   orderItems    OrderItem[]
+  wishlists     Wishlist[]
 
   @@index([clientId])
   @@index([categoryId])
@@ -140,6 +141,7 @@ model Customer {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   orders    Order[]
+  wishlists Wishlist[]
 
   @@index([clientId])
   @@index([phone])
@@ -449,6 +451,28 @@ model SearchLog {
   @@index([createdAt])
   @@index([query])
   @@map("search_logs")
+  @@schema("apolo")
+}
+
+// ============================================
+// WISHLIST
+// ============================================
+
+model Wishlist {
+  id         String   @id @default(cuid())
+  customerId String?  @map("customer_id")
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  productId  String   @map("product_id")
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  guestId    String?  @map("guest_id") // For guest users (stored in localStorage)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([customerId, productId]) // One entry per customer-product pair
+  @@unique([guestId, productId]) // One entry per guest-product pair
+  @@index([customerId])
+  @@index([guestId])
+  @@index([productId])
+  @@map("wishlists")
   @@schema("apolo")
 }
 

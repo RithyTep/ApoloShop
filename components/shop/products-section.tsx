@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { useCart, useLanguage, useCurrency } from "@/lib/shop-context"
 import type { ProductsConfig, Product } from "@/lib/api-hooks"
+import { WishlistButton } from "@/components/wishlist-button"
 
 interface ProductsSectionProps {
   config: ProductsConfig
@@ -73,12 +74,15 @@ export function ProductsSection({ config, initialProducts }: ProductsSectionProp
                 className="bg-card border border-border flex flex-col group"
               >
                 {/* Image */}
-                <div className="aspect-square overflow-hidden bg-muted">
+                <div className="aspect-square overflow-hidden bg-muted relative">
                   <img
                     src={product.imageUrl || "/placeholder.svg"}
                     alt={language === "EN" ? product.nameEn : product.nameKh}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <WishlistButton productId={product.id} size="sm" language={language} />
+                  </div>
                 </div>
 
                 {/* Content */}

@@ -304,8 +304,8 @@
         "Build passes: bun run build"
       ],
       "priority": 20,
-      "passes": false,
-      "notes": "Popular e-commerce feature for engagement"
+      "passes": true,
+      "notes": "Implemented Wishlist model with guestId support, GET/POST/DELETE /api/wishlist endpoint, useWishlist hook with localStorage + API sync, WishlistButton component on product cards (product-grid.tsx, products-section.tsx), wishlist page at /shop/wishlist with WishlistContent component, bilingual translations (EN/KH)"
     },
     {
       "id": "US-021",

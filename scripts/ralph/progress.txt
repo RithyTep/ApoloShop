@@ -431,3 +431,36 @@ Project: ApoloShop - Product Search Feature
   - Return recommendationType so frontend can style differently (Popular badge)
   - Product includes inventory for stock status display
 ---
+
+## 2026-01-12 - US-020
+- **Implemented**: Wishlist functionality
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added Wishlist model with relations)
+  - `app/api/wishlist/route.ts` (new file - GET/POST/DELETE endpoint)
+  - `lib/use-wishlist.ts` (new file - localStorage + API sync hook)
+  - `components/wishlist-button.tsx` (new file - heart icon button)
+  - `components/product-grid.tsx` (modified - added WishlistButton)
+  - `components/shop/products-section.tsx` (modified - added WishlistButton)
+  - `app/shop/wishlist/page.tsx` (new file - wishlist page)
+  - `components/wishlist-content.tsx` (new file - wishlist page content)
+  - `lib/i18n.ts` (modified - added wishlist translations EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Wishlist model**: id, customerId (optional), productId, guestId (optional), createdAt
+  - **Dual unique constraints**: customerId+productId and guestId+productId for both user types
+  - **GET /api/wishlist**: Fetch wishlist items with product details (category, inventory)
+  - **POST /api/wishlist**: Add product to wishlist with duplicate check
+  - **DELETE /api/wishlist**: Remove by wishlist ID or productId+guestId/customerId
+  - **useWishlist hook**: Optimistic updates with localStorage, non-blocking API sync
+  - **WishlistButton**: Icon variant (on product card hover) and button variant
+  - **Heart animation**: Fill animation when product is wishlisted
+  - **Wishlist page**: Grid display with product cards, add-to-cart, remove buttons
+  - **Bilingual support**: EN/KH translations for all wishlist UI text
+- **Learnings for future iterations**:
+  - Guest ID generation: Use timestamp + random string for uniqueness
+  - Optimistic updates: Update local state immediately, sync API in background
+  - localStorage for guests: Persist IDs locally, fetch full data from API when needed
+  - Group hover pattern: Use `group-hover:opacity-100` for show-on-hover UI elements
+  - Wishlist API returns filtered products (only isActive=true)
+  - guestId stored in separate localStorage key for consistent identification
+---
