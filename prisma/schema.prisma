@@ -441,6 +441,7 @@ model Order {
 
   items       OrderItem[]
   payments    Payment[]
+  tracking    OrderTracking?
 
   @@index([clientId])
   @@index([customerId])
@@ -1780,6 +1781,84 @@ model ShippingZone {
   @@index([isActive])
   @@index([sortOrder])
   @@map("shipping_zones")
+  @@schema("apolo")
+}
+
+// ============================================
+// ORDER TRACKING
+// ============================================
+
+// Courier/shipping provider
+enum CourierProvider {
+  JT_EXPRESS        // J&T Express Cambodia
+  NINJA_VAN         // Ninja Van Cambodia
+  WING_DELIVERY     // Wing delivery service
+  OTHER             // Custom/other provider
+
+  @@schema("apolo")
+}
+
+// Tracking status for shipments
+enum TrackingStatus {
+  PENDING           // Waiting to be picked up
+  PICKED_UP         // Picked up from sender
+  IN_TRANSIT        // In transit to destination
+  OUT_FOR_DELIVERY  // Out for delivery
+  DELIVERED         // Successfully delivered
+  FAILED_DELIVERY   // Delivery attempt failed
+  RETURNED          // Returned to sender
+
+  @@schema("apolo")
+}
+
+model OrderTracking {
+  id              String          @id @default(cuid())
+  orderId         String          @unique @map("order_id")
+  order           Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  // Tracking information
+  trackingNumber  String?         @map("tracking_number")
+  courier         CourierProvider @default(OTHER)
+  courierName     String?         @map("courier_name") // Custom name if OTHER
+  // Current status
+  status          TrackingStatus  @default(PENDING)
+  // Estimated delivery
+  estimatedDeliveryDate DateTime? @map("estimated_delivery_date")
+  actualDeliveryDate    DateTime? @map("actual_delivery_date")
+  // Shipping address (snapshot)
+  shippingAddress Json?           @map("shipping_address")
+  // Customer notification preferences
+  notifyOnStatusChange Boolean    @default(true) @map("notify_on_status_change")
+  notifyViaTelegram    Boolean    @default(true) @map("notify_via_telegram")
+  notifyViaSms         Boolean    @default(false) @map("notify_via_sms")
+  // Timestamps
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  // Status history
+  statusHistory   TrackingStatusHistory[]
+
+  @@index([orderId])
+  @@index([trackingNumber])
+  @@index([status])
+  @@index([courier])
+  @@map("order_tracking")
+  @@schema("apolo")
+}
+
+model TrackingStatusHistory {
+  id              String         @id @default(cuid())
+  trackingId      String         @map("tracking_id")
+  tracking        OrderTracking  @relation(fields: [trackingId], references: [id], onDelete: Cascade)
+  status          TrackingStatus
+  location        String?        // Location/hub where status changed
+  notes           String?        @db.Text
+  notificationSent Boolean       @default(false) @map("notification_sent")
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  @@index([trackingId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("tracking_status_history")
   @@schema("apolo")
 }
 

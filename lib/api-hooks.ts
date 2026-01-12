@@ -4243,3 +4243,184 @@ export function useCalculateShipping() {
       }),
   });
 }
+
+// ============================================
+// ORDER TRACKING
+// ============================================
+
+export type CourierProvider = "JT_EXPRESS" | "NINJA_VAN" | "WING_DELIVERY" | "OTHER";
+export type TrackingStatus =
+  | "PENDING"
+  | "PICKED_UP"
+  | "IN_TRANSIT"
+  | "OUT_FOR_DELIVERY"
+  | "DELIVERED"
+  | "FAILED_DELIVERY"
+  | "RETURNED";
+
+export interface TrackingStatusHistory {
+  id: string;
+  trackingId: string;
+  status: TrackingStatus;
+  location?: string;
+  notes?: string;
+  notificationSent: boolean;
+  createdAt: string;
+}
+
+export interface OrderTracking {
+  id: string;
+  orderId: string;
+  trackingNumber?: string;
+  courier: CourierProvider;
+  courierName?: string;
+  status: TrackingStatus;
+  estimatedDeliveryDate?: string;
+  actualDeliveryDate?: string;
+  shippingAddress?: {
+    fullName: string;
+    phone: string;
+    province?: string;
+    district?: string;
+    addressLine: string;
+  };
+  notifyOnStatusChange: boolean;
+  notifyViaTelegram: boolean;
+  notifyViaSms: boolean;
+  createdAt: string;
+  updatedAt: string;
+  order?: Order;
+  statusHistory?: TrackingStatusHistory[];
+}
+
+export interface PublicTracking {
+  trackingNumber?: string;
+  courier: CourierProvider;
+  courierName?: string;
+  status: TrackingStatus;
+  estimatedDeliveryDate?: string;
+  actualDeliveryDate?: string;
+  order: {
+    orderNumber: string;
+    status: string;
+    createdAt: string;
+    itemCount: number;
+    items: { name: string; nameKh?: string; quantity: number }[];
+  };
+  statusHistory: {
+    status: TrackingStatus;
+    location?: string;
+    notes?: string;
+    timestamp: string;
+  }[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Hook to fetch all order tracking records (admin)
+ */
+export function useOrderTrackings(filters?: { status?: TrackingStatus }) {
+  const params = new URLSearchParams();
+  if (filters?.status) params.set("status", filters.status);
+
+  return useQuery({
+    queryKey: ["order-trackings", filters],
+    queryFn: () =>
+      fetchAPI<{ trackings: OrderTracking[]; pagination: { page: number; limit: number; total: number; totalPages: number } }>(
+        `/api/tracking?${params.toString()}`
+      ),
+  });
+}
+
+/**
+ * Hook to fetch tracking by order ID
+ */
+export function useOrderTracking(orderId: string) {
+  return useQuery({
+    queryKey: ["order-tracking", orderId],
+    queryFn: () => fetchAPI<OrderTracking>(`/api/tracking?orderId=${orderId}`),
+    enabled: !!orderId,
+  });
+}
+
+/**
+ * Hook to lookup tracking publicly (by order number or tracking number)
+ */
+export function useTrackingLookup(params: { orderNumber?: string; trackingNumber?: string }) {
+  const searchParams = new URLSearchParams();
+  if (params.orderNumber) searchParams.set("orderNumber", params.orderNumber);
+  if (params.trackingNumber) searchParams.set("trackingNumber", params.trackingNumber);
+
+  return useQuery({
+    queryKey: ["tracking-lookup", params],
+    queryFn: () => fetchAPI<PublicTracking>(`/api/tracking/lookup?${searchParams.toString()}`),
+    enabled: !!(params.orderNumber || params.trackingNumber),
+  });
+}
+
+/**
+ * Hook to create order tracking
+ */
+export function useCreateOrderTracking() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      orderId: string;
+      trackingNumber?: string;
+      courier?: CourierProvider;
+      courierName?: string;
+      estimatedDeliveryDate?: string;
+      shippingAddress?: {
+        fullName: string;
+        phone: string;
+        province?: string;
+        district?: string;
+        addressLine: string;
+      };
+      notifyOnStatusChange?: boolean;
+      notifyViaTelegram?: boolean;
+      notifyViaSms?: boolean;
+    }) =>
+      fetchAPI<OrderTracking>("/api/tracking", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["order-trackings"] });
+      queryClient.invalidateQueries({ queryKey: ["order-tracking", variables.orderId] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
+/**
+ * Hook to update order tracking
+ */
+export function useUpdateOrderTracking() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      id: string;
+      trackingNumber?: string;
+      courier?: CourierProvider;
+      courierName?: string;
+      status?: TrackingStatus;
+      estimatedDeliveryDate?: string | null;
+      location?: string;
+      notes?: string;
+      notifyOnStatusChange?: boolean;
+      notifyViaTelegram?: boolean;
+      notifyViaSms?: boolean;
+    }) =>
+      fetchAPI<OrderTracking>("/api/tracking", {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["order-trackings"] });
+      queryClient.invalidateQueries({ queryKey: ["order-tracking"] });
+      queryClient.invalidateQueries({ queryKey: ["tracking-lookup"] });
+    },
+  });
+}

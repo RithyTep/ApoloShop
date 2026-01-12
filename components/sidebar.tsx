@@ -27,6 +27,7 @@ import {
   Activity,
   HelpCircle,
   Truck,
+  MapPin,
   type LucideIcon,
 } from "lucide-react"
 import { useState } from "react"
@@ -58,6 +59,7 @@ type NavItem =
   | "chat"
   | "help-center"
   | "shipping-zones"
+  | "order-tracking"
 
 interface SidebarProps {
   activeNav: NavItem
@@ -93,6 +95,7 @@ export function Sidebar({ activeNav, setActiveNav, orderCount = 0, lowStockCount
       label: "Sales",
       items: [
         { id: "orders", label: "Orders", icon: ShoppingBag, badge: orderCount > 0 ? orderCount : undefined },
+        { id: "order-tracking", label: "Order Tracking", icon: MapPin },
         { id: "customers", label: "Customers", icon: Users },
         { id: "shipping-zones", label: "Shipping Zones", icon: Truck },
         { id: "reviews", label: "Reviews", icon: MessageSquare, badge: reviewCount > 0 ? reviewCount : undefined },
