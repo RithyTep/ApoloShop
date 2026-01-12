@@ -1293,3 +1293,86 @@ export function useUpdateComponentRegistry() {
     },
   });
 }
+
+// ============================================
+// SALES REPORTS
+// ============================================
+
+export interface SalesReportSummary {
+  totalRevenue: number;
+  totalRevenueKhr: number;
+  orderCount: number;
+  cancelledOrders: number;
+  averageOrderValue: number;
+  revenueChange: number;
+  orderCountChange: number;
+  dateRange: {
+    start: string;
+    end: string;
+  };
+}
+
+export interface TopProduct {
+  rank: number;
+  id: string;
+  nameEn: string;
+  nameKh: string;
+  imageUrl: string | null;
+  category: { id: string; nameEn: string; nameKh: string } | null;
+  quantity: number;
+  revenue: number;
+}
+
+export interface CategorySales {
+  id: string;
+  nameEn: string;
+  nameKh: string;
+  revenue: number;
+  orderCount: number;
+  percentage: number;
+}
+
+export interface ChannelSales {
+  channel: string;
+  revenue: number;
+  orderCount: number;
+  percentage: number;
+}
+
+export interface TopCustomer {
+  rank: number;
+  id: string;
+  name: string;
+  revenue: number;
+  orderCount: number;
+  averageOrderValue: number;
+}
+
+export interface SalesChartData {
+  date: string;
+  revenue: number;
+  orderCount: number;
+  averageOrderValue: number;
+}
+
+export interface SalesReportData {
+  summary: SalesReportSummary;
+  topProducts: TopProduct[];
+  salesByCategory: CategorySales[];
+  salesByChannel: ChannelSales[];
+  topCustomers: TopCustomer[];
+  chartData: SalesChartData[];
+}
+
+export function useSalesReport(options?: { startDate?: string; endDate?: string }) {
+  const params = new URLSearchParams();
+  if (options?.startDate) params.set("startDate", options.startDate);
+  if (options?.endDate) params.set("endDate", options.endDate);
+
+  return useQuery({
+    queryKey: ["sales-report", options],
+    queryFn: () =>
+      fetchAPI<SalesReportData>(`/api/reports/sales?${params.toString()}`),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
