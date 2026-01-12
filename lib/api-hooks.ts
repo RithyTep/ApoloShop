@@ -2188,3 +2188,151 @@ export function getClientImpersonation(): { clientId: string; clientSlug: string
   }
   return null;
 }
+
+// ============================================
+// SUBSCRIPTION & BILLING
+// ============================================
+
+export type SubscriptionPlan = "FREE" | "STARTER" | "PRO";
+export type SubscriptionStatus = "ACTIVE" | "CANCELLED" | "EXPIRED" | "PAST_DUE";
+
+export interface SubscriptionPlanLimits {
+  maxProducts: number;
+  maxOrdersPerMonth: number;
+  maxCustomers: number;
+  features: {
+    customDomain: boolean;
+    advancedAnalytics: boolean;
+    prioritySupport: boolean;
+    customBranding: boolean;
+    apiAccess: boolean;
+    multipleUsers: boolean;
+    exportReports: boolean;
+    bulkImport: boolean;
+  };
+}
+
+export interface SubscriptionPlanPricing {
+  monthly: number;
+  yearly: number;
+  yearlyDiscount: number;
+}
+
+export interface SubscriptionPlanInfo {
+  name: string;
+  description: string;
+  badge?: string;
+}
+
+export interface SubscriptionUsageMetric {
+  used: number;
+  limit: number;
+  percentage: number;
+  isUnlimited: boolean;
+  isApproachingLimit: boolean;
+  isAtLimit: boolean;
+}
+
+export interface SubscriptionUsage {
+  products: SubscriptionUsageMetric;
+  ordersThisMonth: SubscriptionUsageMetric;
+  customers: SubscriptionUsageMetric;
+}
+
+export interface SubscriptionUpgradeRecommendation {
+  shouldUpgrade: boolean;
+  reason?: string;
+  suggestedPlan?: SubscriptionPlan;
+  blockedAction?: string;
+}
+
+export interface Subscription {
+  id: string;
+  clientId: string;
+  plan: SubscriptionPlan;
+  status: SubscriptionStatus;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  productsUsed: number;
+  ordersThisMonth: number;
+  createdAt: string;
+  cancelledAt: string | null;
+}
+
+export interface SubscriptionResponse {
+  subscription: Subscription | null;
+  planInfo: SubscriptionPlanInfo;
+  planLimits: SubscriptionPlanLimits;
+  planPricing: SubscriptionPlanPricing;
+  usage: SubscriptionUsage;
+  upgradeRecommendation: SubscriptionUpgradeRecommendation;
+  allPlans: Array<{
+    plan: SubscriptionPlan;
+    info: SubscriptionPlanInfo;
+    limits: SubscriptionPlanLimits;
+    pricing: SubscriptionPlanPricing;
+  }>;
+}
+
+/**
+ * Hook to fetch current subscription and usage for a client
+ */
+export function useSubscription(clientId?: string) {
+  return useQuery({
+    queryKey: ["subscription", clientId],
+    queryFn: () => {
+      const params = clientId ? `?clientId=${clientId}` : "";
+      return fetchAPI<SubscriptionResponse>(`/api/subscription${params}`);
+    },
+    enabled: !!clientId,
+  });
+}
+
+/**
+ * Hook to upgrade/change subscription plan
+ */
+export function useUpdateSubscription() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      clientId: string;
+      plan: SubscriptionPlan;
+      billingCycle?: "monthly" | "yearly";
+    }) =>
+      fetchAPI<{
+        success: boolean;
+        subscription: Subscription;
+        planInfo: SubscriptionPlanInfo;
+        planLimits: SubscriptionPlanLimits;
+      }>("/api/subscription", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["subscription", variables.clientId] });
+    },
+  });
+}
+
+/**
+ * Hook to cancel subscription
+ */
+export function useCancelSubscription() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (clientId: string) =>
+      fetchAPI<{
+        success: boolean;
+        message: string;
+        subscription: {
+          id: string;
+          status: SubscriptionStatus;
+          currentPeriodEnd: string;
+          cancelledAt: string | null;
+        };
+      }>(`/api/subscription?clientId=${clientId}`, { method: "DELETE" }),
+    onSuccess: (_, clientId) => {
+      queryClient.invalidateQueries({ queryKey: ["subscription", clientId] });
+    },
+  });
+}

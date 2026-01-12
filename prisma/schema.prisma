@@ -411,11 +411,60 @@ model Client {
   orders       Order[]
   customers    Customer[]
   customizations ShopCustomization[]
+  subscription Subscription?
 
   @@index([slug])
   @@index([domain])
   @@index([isActive])
   @@map("clients")
+  @@schema("apolo")
+}
+
+// ============================================
+// SUBSCRIPTION & BILLING
+// ============================================
+
+enum SubscriptionPlan {
+  FREE
+  STARTER
+  PRO
+
+  @@schema("apolo")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PAST_DUE
+
+  @@schema("apolo")
+}
+
+model Subscription {
+  id            String             @id @default(cuid())
+  clientId      String             @unique @map("client_id")
+  client        Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  plan          SubscriptionPlan   @default(FREE)
+  status        SubscriptionStatus @default(ACTIVE)
+  // Billing cycle
+  currentPeriodStart DateTime      @map("current_period_start")
+  currentPeriodEnd   DateTime      @map("current_period_end")
+  // Usage tracking for limit enforcement
+  productsUsed   Int               @default(0) @map("products_used")
+  ordersThisMonth Int              @default(0) @map("orders_this_month")
+  // External payment provider reference (for future integration)
+  stripeCustomerId    String?      @map("stripe_customer_id")
+  stripeSubscriptionId String?     @map("stripe_subscription_id")
+  // Timestamps
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+  cancelledAt   DateTime?          @map("cancelled_at")
+
+  @@index([clientId])
+  @@index([plan])
+  @@index([status])
+  @@map("subscriptions")
   @@schema("apolo")
 }
 
