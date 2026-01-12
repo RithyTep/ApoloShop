@@ -2336,3 +2336,87 @@ export function useCancelSubscription() {
     },
   });
 }
+
+// ============================================
+// AUDIT LOGS
+// ============================================
+
+export type AuditAction =
+  | "CREATE"
+  | "UPDATE"
+  | "DELETE"
+  | "LOGIN"
+  | "LOGOUT"
+  | "SETTINGS_CHANGE";
+
+export interface AuditLog {
+  id: string;
+  userId: string | null;
+  userName: string | null;
+  action: AuditAction;
+  resource: string;
+  resourceId: string | null;
+  details: Record<string, unknown> | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: string;
+}
+
+export interface AuditLogsPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface AuditLogsSummary {
+  total: number;
+  byAction: Record<string, number>;
+  byResource: Record<string, number>;
+  hourlyActivity: Array<{ hour: number; count: number }>;
+}
+
+export interface AuditLogsResponse {
+  logs: AuditLog[];
+  pagination: AuditLogsPagination;
+  summary: AuditLogsSummary;
+  filters: {
+    validActions: AuditAction[];
+    validResources: string[];
+  };
+}
+
+export interface AuditLogsParams {
+  page?: number;
+  limit?: number;
+  userId?: string;
+  action?: AuditAction;
+  resource?: string;
+  resourceId?: string;
+  startDate?: string;
+  endDate?: string;
+  search?: string;
+}
+
+/**
+ * Hook to fetch audit logs with filtering and pagination
+ */
+export function useAuditLogs(params: AuditLogsParams = {}) {
+  const queryString = new URLSearchParams();
+  if (params.page) queryString.set("page", String(params.page));
+  if (params.limit) queryString.set("limit", String(params.limit));
+  if (params.userId) queryString.set("userId", params.userId);
+  if (params.action) queryString.set("action", params.action);
+  if (params.resource) queryString.set("resource", params.resource);
+  if (params.resourceId) queryString.set("resourceId", params.resourceId);
+  if (params.startDate) queryString.set("startDate", params.startDate);
+  if (params.endDate) queryString.set("endDate", params.endDate);
+  if (params.search) queryString.set("search", params.search);
+
+  return useQuery({
+    queryKey: ["audit-logs", params],
+    queryFn: () =>
+      fetchAPI<AuditLogsResponse>(`/api/audit-logs?${queryString.toString()}`),
+    staleTime: 30000, // 30 seconds
+  });
+}

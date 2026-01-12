@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
+import { logProductAudit, createChangeDiff, extractRequestInfo } from "@/lib/audit-service"
 
 const productCreateSchema = z.object({
   nameEn: z.string().min(1, "English name is required"),
@@ -118,6 +119,11 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    // Log audit (non-blocking)
+    logProductAudit("CREATE", product.id, undefined, undefined, {
+      product: { nameEn: product.nameEn, sku: product.sku, priceUsd: Number(product.priceUsd) },
+    }, request)
+
     return NextResponse.json(product, { status: 201 })
   } catch (error) {
     console.error("Create product error:", error)
@@ -179,6 +185,17 @@ export async function PUT(request: NextRequest) {
       },
     })
 
+    // Log audit with diff (non-blocking)
+    const changes = createChangeDiff(
+      existing as unknown as Record<string, unknown>,
+      product as unknown as Record<string, unknown>
+    )
+    logProductAudit("UPDATE", id, undefined, undefined, {
+      changes,
+      sku: product.sku,
+      name: product.nameEn,
+    }, request)
+
     return NextResponse.json(product)
   } catch (error) {
     console.error("Update product error:", error)
@@ -215,6 +232,15 @@ export async function DELETE(request: NextRequest) {
         where: { id },
         data: { isActive: false },
       })
+
+      // Log soft delete audit
+      logProductAudit("UPDATE", id, undefined, undefined, {
+        action: "soft_delete",
+        sku: existing.sku,
+        name: existing.nameEn,
+        reason: "Product has existing orders",
+      }, request)
+
       return NextResponse.json({ success: true, softDeleted: true, hasOrders: true })
     }
 
@@ -234,6 +260,14 @@ export async function DELETE(request: NextRequest) {
       // Delete product (orderItems.productId will be set to null via onDelete: SetNull)
       await tx.product.delete({ where: { id } })
     })
+
+    // Log delete audit
+    logProductAudit("DELETE", id, undefined, undefined, {
+      sku: existing.sku,
+      name: existing.nameEn,
+      forceDelete: hasOrders,
+      hadOrders: hasOrders,
+    }, request)
 
     return NextResponse.json({ success: true, forceDeleted: hasOrders })
   } catch (error) {

@@ -6,6 +6,7 @@ import {
   type OrderNotificationData,
   type OrderStatusType,
 } from "@/lib/notification-service"
+import { logOrderAudit } from "@/lib/audit-service"
 
 const orderItemSchema = z.object({
   productId: z.string().min(1),
@@ -184,6 +185,15 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // Log audit (non-blocking)
+    logOrderAudit("CREATE", order.id, undefined, undefined, {
+      orderNumber: order.orderNumber,
+      customer: { name: order.customer.name, phone: order.customer.phone },
+      totalUsd: Number(order.totalUsd),
+      channel: order.channel,
+      itemCount: order.items.length,
+    }, request)
+
     return NextResponse.json(order, { status: 201 })
   } catch (error) {
     console.error("Create order error:", error)
@@ -282,6 +292,14 @@ export async function PUT(request: NextRequest) {
       sendOrderStatusNotification(notificationData).catch((err) => {
         console.error("[Orders API] Failed to send notification:", err)
       })
+    }
+
+    // Log audit for status change (non-blocking)
+    if (status && status !== existing.status) {
+      logOrderAudit("UPDATE", id, undefined, undefined, {
+        orderNumber: order.orderNumber,
+        statusChange: { from: existing.status, to: status },
+      }, request)
     }
 
     return NextResponse.json(order)

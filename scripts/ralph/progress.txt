@@ -687,3 +687,74 @@ Project: ApoloShop - Product Search Feature
   - Developer section: Super admin only visible in development mode (via process.env.NODE_ENV)
   - Dialog state pattern: Separate state for create/edit/view/delete dialogs for clean UX
 ---
+
+## 2026-01-12 - US-028
+- **Implemented**: Client subscription/billing model
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added Subscription model, SubscriptionPlan/SubscriptionStatus enums)
+  - `lib/subscription.ts` (new file - plan limits, pricing, usage helpers)
+  - `app/api/subscription/route.ts` (new file - GET/POST/DELETE endpoint)
+  - `lib/api-hooks.ts` (modified - added subscription types and hooks)
+  - `components/subscription-usage-card.tsx` (new file - SubscriptionUsageCard and UpgradePrompt)
+  - `lib/i18n.ts` (modified - added subscription translations EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Subscription model**: clientId, plan (FREE/STARTER/PRO), status (ACTIVE/CANCELLED/EXPIRED/PAST_DUE), currentPeriodStart/End, usage tracking
+  - **Plan limits configuration**: 
+    - FREE: 20 products, 50 orders/month, 100 customers
+    - STARTER: 100 products, 500 orders/month, 1000 customers, custom domain, analytics, branding, exports
+    - PRO: Unlimited everything, all features including API access, priority support, multiple users
+  - **Plan pricing**: $0/$19/$49 monthly, yearly discounts (17-20%)
+  - **GET /api/subscription**: Returns subscription with usage stats, limits, upgrade recommendations
+  - **POST /api/subscription**: Create/upgrade subscription with plan and billing cycle
+  - **DELETE /api/subscription**: Cancel subscription (soft cancel at period end)
+  - **Usage calculation**: calculateUsageStatus with approaching limit (80%) and at limit detection
+  - **Upgrade recommendations**: getUpgradeRecommendation returns shouldUpgrade, reason, suggestedPlan, blockedAction
+  - **SubscriptionUsageCard**: Full subscription dashboard with usage progress bars
+  - **UpgradePrompt**: Inline upgrade prompts with plan comparison dialog
+  - **Bilingual support**: EN/KH translations for all subscription UI
+- **Learnings for future iterations**:
+  - Subscription model uses unique clientId constraint for one-to-one relation with Client
+  - Plan limits use -1 for unlimited (PRO tier)
+  - Usage status calculated from actual product/order/customer counts via Prisma
+  - Approaching limit threshold at 80% to warn users before hard limit
+  - Plan comparison uses allPlans array for consistent display across upgrade dialogs
+  - Feature flags in PlanLimits allow conditional UI based on subscription tier
+  - Stripe integration fields (stripeCustomerId, stripeSubscriptionId) ready for future payment integration
+---
+
+## 2026-01-12 - US-029
+- **Implemented**: Audit log for admin actions
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added AuditLog model and AuditAction enum)
+  - `lib/audit-service.ts` (new file - logging utility functions)
+  - `app/api/audit-logs/route.ts` (new file - GET endpoint with filtering/pagination)
+  - `app/api/products/route.ts` (modified - added audit logging to CREATE/UPDATE/DELETE)
+  - `app/api/orders/route.ts` (modified - added audit logging to CREATE and status UPDATE)
+  - `app/api/settings/route.ts` (modified - added audit logging to PUT)
+  - `lib/api-hooks.ts` (modified - added AuditLog types and useAuditLogs hook)
+  - `lib/i18n.ts` (modified - added auditLog translations EN/KH)
+  - `components/pages/audit-logs-page.tsx` (new file - admin audit log UI)
+  - `components/sidebar.tsx` (modified - added audit-logs nav item)
+  - `components/admin-dashboard.tsx` (modified - integrated AuditLogsPage)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **AuditLog model**: userId, userName, action (AuditAction enum), resource, resourceId, details (JSON), ipAddress, userAgent, createdAt
+  - **AuditAction enum**: CREATE, UPDATE, DELETE, LOGIN, LOGOUT, SETTINGS_CHANGE
+  - **Audit service helpers**: logAudit (base), logProductAudit, logOrderAudit, logSettingsAudit, logUserAudit, etc.
+  - **extractRequestInfo**: Extracts IP address and user agent from request headers
+  - **createChangeDiff**: Creates before/after diff for UPDATE actions
+  - **GET /api/audit-logs**: Filtering by userId, action, resource, resourceId, date range, search; pagination; summary stats by action/resource/hourly
+  - **Summary charts**: PieChart for action distribution, BarChart for resource distribution, AreaChart for hourly activity
+  - **AuditLogsPage UI**: Filters card, log list with action icons, pagination, detail dialog with JSON viewer
+  - **Non-blocking logging**: Fire-and-forget pattern to avoid impacting API response times
+  - **Bilingual support**: EN/KH translations for all UI labels
+- **Learnings for future iterations**:
+  - Fire-and-forget pattern: `logAudit({...})` without await to not block main operation
+  - createChangeDiff skips internal fields (id, createdAt, updatedAt) to focus on business data
+  - Prisma groupBy aggregations work well for summary stats
+  - Raw SQL query for hourly activity grouping (EXTRACT(HOUR FROM created_at))
+  - actionIcons and actionColors maps for visual differentiation
+  - ScrollArea component from Shadcn for JSON viewer overflow
+  - Audit logs stored indefinitely - may need retention policy for production
+---

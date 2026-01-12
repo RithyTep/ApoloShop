@@ -20,6 +20,7 @@ import {
   ClipboardList,
   MessageSquare,
   Building2,
+  Shield,
   type LucideIcon,
 } from "lucide-react"
 import { useState } from "react"
@@ -43,6 +44,7 @@ type NavItem =
   | "backlog"
   | "reviews"
   | "super-admin"
+  | "audit-logs"
 
 interface SidebarProps {
   activeNav: NavItem
@@ -105,6 +107,7 @@ export function Sidebar({ activeNav, setActiveNav, orderCount = 0, lowStockCount
         { id: "users", label: "Users", icon: UserCog },
         { id: "payments", label: "Payments", icon: CreditCard },
         { id: "reports", label: "Reports", icon: BarChart3 },
+        { id: "audit-logs", label: "Audit Logs", icon: Shield },
         { id: "settings", label: "Settings", icon: Settings },
       ],
     },

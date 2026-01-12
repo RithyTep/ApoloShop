@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { logSettingsAudit } from "@/lib/audit-service"
 
 // GET /api/settings - Get all settings
 export async function GET() {
@@ -34,6 +35,15 @@ export async function PUT(request: NextRequest) {
     )
 
     await Promise.all(updates)
+
+    // Log audit for each setting change (non-blocking)
+    const settingKeys = Object.keys(body)
+    for (const key of settingKeys) {
+      logSettingsAudit(key, undefined, undefined, {
+        key,
+        newValue: body[key],
+      }, request)
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

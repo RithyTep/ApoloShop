@@ -428,8 +428,8 @@
         "Build passes: bun run build"
       ],
       "priority": 28,
-      "passes": false,
-      "notes": "Monetization foundation for SaaS"
+      "passes": true,
+      "notes": "Implemented Subscription model with FREE/STARTER/PRO plans, GET/POST/DELETE /api/subscription endpoint, plan limits (products/orders/customers/features), pricing config, SubscriptionUsageCard with usage bars and upgrade prompts, bilingual translations"
     },
     {
       "id": "US-029",
@@ -444,8 +444,8 @@
         "Build passes: bun run build"
       ],
       "priority": 29,
-      "passes": false,
-      "notes": "Security and accountability tracking"
+      "passes": true,
+      "notes": "Implemented AuditLog model with AuditAction enum, audit-service.ts for logging helpers, GET /api/audit-logs with filtering/pagination/summary stats, AuditLogsPage with charts and detail dialog, integrated in sidebar and admin dashboard"
     },
     {
       "id": "US-030",
