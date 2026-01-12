@@ -12,6 +12,7 @@ import { useSettings, useUpdateSettings, useComponentRegistry, useUpdateComponen
 import { useToast } from "@/components/ui/use-toast"
 import { getAllComponents, getDefaultConfig, mergeWithDefaults, type ComponentRegistration } from "@/lib/component-registry"
 import { ClientThemeEditor } from "@/components/client-theme-editor"
+import { type GA4Settings } from "@/providers/ga4-provider"
 
 export function SettingsPage() {
   const { toast } = useToast()
@@ -39,6 +40,14 @@ export function SettingsPage() {
     enableUsd: true,
   })
 
+  // GA4 Analytics settings
+  const [ga4Settings, setGa4Settings] = useState<GA4Settings>({
+    enabled: false,
+    measurementId: "",
+    enhancedConversions: true,
+    debugMode: false,
+  })
+
   // Component registry state
   const [componentConfig, setComponentConfig] = useState<ComponentRegistryConfigData>(() => getDefaultConfig())
 
@@ -52,21 +61,31 @@ export function SettingsPage() {
   // Load settings when data is available
   useEffect(() => {
     if (data?.settings) {
-      const s = data.settings
+      const s = data.settings as Record<string, unknown>
       setShopInfo({
-        shopName: s.shopName || "",
-        address: s.address || "",
-        phone: s.phone || "",
-        facebookUrl: s.socialLinks?.facebook || "",
-        telegramUrl: s.socialLinks?.telegram || "",
-        instagramUrl: s.socialLinks?.instagram || "",
+        shopName: (s.shopName as string) || "",
+        address: (s.address as string) || "",
+        phone: (s.phone as string) || "",
+        facebookUrl: (s.socialLinks as Record<string, string>)?.facebook || "",
+        telegramUrl: (s.socialLinks as Record<string, string>)?.telegram || "",
+        instagramUrl: (s.socialLinks as Record<string, string>)?.instagram || "",
       })
       setCurrencySettings({
-        defaultCurrency: s.defaultCurrency || "USD",
-        usdToKhrRate: s.exchangeRate || 4100,
-        enableKhr: s.enableKhr ?? true,
-        enableUsd: s.enableUsd ?? true,
+        defaultCurrency: (s.defaultCurrency as string) || "USD",
+        usdToKhrRate: (s.exchangeRate as number) || 4100,
+        enableKhr: (s.enableKhr as boolean) ?? true,
+        enableUsd: (s.enableUsd as boolean) ?? true,
       })
+      // Load GA4 settings
+      if (s.ga4) {
+        const ga4 = s.ga4 as GA4Settings
+        setGa4Settings({
+          enabled: ga4.enabled ?? false,
+          measurementId: ga4.measurementId || "",
+          enhancedConversions: ga4.enhancedConversions ?? true,
+          debugMode: ga4.debugMode ?? false,
+        })
+      }
     }
   }, [data])
 
@@ -97,6 +116,35 @@ export function SettingsPage() {
         enableUsd: currencySettings.enableUsd,
       })
       toast({ title: "Currency settings saved successfully" })
+    } catch (error) {
+      toast({ title: "Error", description: (error as Error).message, variant: "destructive" })
+    }
+  }
+
+  const handleSaveGA4 = async () => {
+    // Validate measurement ID format if enabled
+    if (ga4Settings.enabled && ga4Settings.measurementId) {
+      const isValidId = /^G-[A-Z0-9]{10}$/.test(ga4Settings.measurementId.toUpperCase())
+      if (!isValidId) {
+        toast({
+          title: "Invalid Measurement ID",
+          description: "GA4 Measurement ID should be in format G-XXXXXXXXXX",
+          variant: "destructive",
+        })
+        return
+      }
+    }
+
+    try {
+      await updateMutation.mutateAsync({
+        ga4: {
+          enabled: ga4Settings.enabled,
+          measurementId: ga4Settings.measurementId.toUpperCase(),
+          enhancedConversions: ga4Settings.enhancedConversions,
+          debugMode: ga4Settings.debugMode,
+        },
+      })
+      toast({ title: "Google Analytics settings saved successfully" })
     } catch (error) {
       toast({ title: "Error", description: (error as Error).message, variant: "destructive" })
     }
@@ -275,6 +323,97 @@ export function SettingsPage() {
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             {updateMutation.isPending ? "Saving..." : "Save Changes"}
+          </Button>
+        </div>
+      </Card>
+
+      {/* Google Analytics 4 Settings */}
+      <Card className="p-6">
+        <h2 className="text-lg font-bold text-foreground mb-4">Google Analytics 4</h2>
+        <p className="text-muted-foreground text-sm mb-4">
+          Track user behavior and e-commerce events with Google Analytics 4.
+        </p>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="ga4Enabled" className="font-medium">Enable GA4 Tracking</Label>
+              <p className="text-sm text-muted-foreground">
+                Inject GA4 tracking code into your shop
+              </p>
+            </div>
+            <Switch
+              id="ga4Enabled"
+              checked={ga4Settings.enabled}
+              onCheckedChange={(checked) => setGa4Settings({ ...ga4Settings, enabled: checked })}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="measurementId">Measurement ID</Label>
+            <Input
+              id="measurementId"
+              placeholder="G-XXXXXXXXXX"
+              value={ga4Settings.measurementId}
+              onChange={(e) => setGa4Settings({ ...ga4Settings, measurementId: e.target.value })}
+              className="border-border mt-1 font-mono"
+              disabled={!ga4Settings.enabled}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Find this in Google Analytics &gt; Admin &gt; Data Streams
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="enhancedConversions" className="font-medium">Enhanced Conversions</Label>
+              <p className="text-sm text-muted-foreground">
+                Improve conversion attribution with hashed customer data
+              </p>
+            </div>
+            <Switch
+              id="enhancedConversions"
+              checked={ga4Settings.enhancedConversions}
+              onCheckedChange={(checked) => setGa4Settings({ ...ga4Settings, enhancedConversions: checked })}
+              disabled={!ga4Settings.enabled}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="debugMode" className="font-medium">Debug Mode</Label>
+              <p className="text-sm text-muted-foreground">
+                Enable debug mode for testing (view events in GA4 DebugView)
+              </p>
+            </div>
+            <Switch
+              id="debugMode"
+              checked={ga4Settings.debugMode}
+              onCheckedChange={(checked) => setGa4Settings({ ...ga4Settings, debugMode: checked })}
+              disabled={!ga4Settings.enabled}
+            />
+          </div>
+
+          {ga4Settings.enabled && (
+            <div className="rounded-lg bg-muted p-4">
+              <h3 className="font-medium text-sm mb-2">Tracked E-commerce Events</h3>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>view_item - Product page views</li>
+                <li>add_to_cart - Add to cart actions</li>
+                <li>remove_from_cart - Remove from cart actions</li>
+                <li>view_cart - Cart page views</li>
+                <li>begin_checkout - Checkout initiated</li>
+                <li>purchase - Completed purchases</li>
+                <li>search - Product searches</li>
+              </ul>
+            </div>
+          )}
+
+          <Button
+            onClick={handleSaveGA4}
+            disabled={updateMutation.isPending}
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            {updateMutation.isPending ? "Saving..." : "Save Analytics Settings"}
           </Button>
         </div>
       </Card>

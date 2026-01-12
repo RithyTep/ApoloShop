@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Header } from "./header"
 import { ProductGrid } from "./product-grid"
 import { CartDrawer } from "./cart-drawer"
@@ -28,6 +28,13 @@ import { AnnouncementBanner } from "./shop/announcement-banner"
 import { PWAInstallPrompt, PWAUpdateBanner, OfflineIndicator } from "./pwa-install-prompt"
 import { ChatWidget } from "./chat-widget"
 import { usePWA } from "@/lib/use-pwa"
+import {
+  trackAddToCart,
+  trackRemoveFromCart,
+  trackViewCart,
+  trackBeginCheckout,
+  cartItemToGA4Item,
+} from "@/lib/ga4"
 
 export interface CartItem {
   id: string
@@ -80,7 +87,28 @@ export function ShopApp() {
     }
   }, [isServiceWorkerReady, sections, cacheProducts])
 
-  const addToCart = (id: string, name: string, price: number, image: string) => {
+  // Track GA4 view_cart event when cart drawer opens
+  useEffect(() => {
+    if (isCartOpen && cart.length > 0) {
+      trackViewCart(
+        cart.map((item) => cartItemToGA4Item({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+        currency
+      )
+    }
+  }, [isCartOpen]) // Only track when cart opens, not on cart content changes
+
+  const addToCart = useCallback((id: string, name: string, price: number, image: string) => {
+    // Track GA4 add_to_cart event
+    trackAddToCart(
+      cartItemToGA4Item({ id, name, price, quantity: 1 }),
+      currency
+    )
+
     setCart((prev) => {
       const existing = prev.find((item) => item.id === id)
       if (existing) {
@@ -88,11 +116,22 @@ export function ShopApp() {
       }
       return [...prev, { id, name, price, quantity: 1, image, inStock: true }]
     })
-  }
+  }, [currency])
 
-  const removeFromCart = (id: string) => {
-    setCart((prev) => prev.filter((item) => item.id !== id))
-  }
+  const removeFromCart = useCallback((id: string) => {
+    setCart((prev) => {
+      // Find the item to track its removal
+      const item = prev.find((i) => i.id === id)
+      if (item) {
+        // Track GA4 remove_from_cart event
+        trackRemoveFromCart(
+          cartItemToGA4Item({ id: item.id, name: item.name, price: item.price, quantity: item.quantity }),
+          currency
+        )
+      }
+      return prev.filter((item) => item.id !== id)
+    })
+  }, [currency])
 
   const updateQuantity = (id: string, quantity: number) => {
     if (quantity <= 0) {
@@ -255,6 +294,16 @@ export function ShopApp() {
         onRemoveItem={removeFromCart}
         onUpdateQuantity={updateQuantity}
         onCheckout={() => {
+          // Track GA4 begin_checkout event
+          trackBeginCheckout(
+            cart.map((item) => cartItemToGA4Item({
+              id: item.id,
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+            })),
+            currency
+          )
           setIsCartOpen(false)
           setCurrentPage("checkout")
         }}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Product } from "@/lib/api-hooks"
 import { translations } from "@/lib/i18n"
+import { trackSearch } from "@/lib/ga4"
 
 interface SearchResult {
   products: Product[]
@@ -54,6 +55,9 @@ export function SearchDropdown({
     setIsLoading(true)
     const timer = setTimeout(async () => {
       try {
+        // Track GA4 search event
+        trackSearch(query.trim())
+
         const res = await fetch(`/api/products/search?q=${encodeURIComponent(query)}&limit=5`)
         const data = await res.json()
         setResults(data)

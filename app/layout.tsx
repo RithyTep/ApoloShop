@@ -5,6 +5,7 @@ import "./globals.css"
 import { QueryProvider } from "@/providers/query-provider"
 import { CartProvider } from "@/providers/cart-provider"
 import { I18nProvider } from "@/providers/i18n-provider"
+import { GA4Provider } from "@/providers/ga4-provider"
 import { Toaster } from "@/components/ui/toaster"
 
 const fontSans = Figtree({ subsets: ["latin"], variable: "--font-sans" })
@@ -24,12 +25,14 @@ export default function RootLayout({
     <html lang="en" className={fontSans.variable}>
       <body className="antialiased">
         <QueryProvider>
-          <I18nProvider>
-            <CartProvider>
-              {children}
-              <Toaster />
-            </CartProvider>
-          </I18nProvider>
+          <GA4Provider>
+            <I18nProvider>
+              <CartProvider>
+                {children}
+                <Toaster />
+              </CartProvider>
+            </I18nProvider>
+          </GA4Provider>
         </QueryProvider>
       </body>
     </html>
