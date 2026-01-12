@@ -9,8 +9,8 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Download, TrendingUp, TrendingDown, DollarSign, ShoppingCart, Users, Package, FileSpreadsheet, FileText, Calendar, Award, UserPlus, UserCheck, Heart, AlertTriangle, Crown } from "lucide-react"
-import { useSalesReport, useCustomerReport } from "@/lib/api-hooks"
+import { Download, TrendingUp, TrendingDown, DollarSign, ShoppingCart, Users, Package, FileSpreadsheet, FileText, Calendar, Award, UserPlus, UserCheck, Heart, AlertTriangle, Crown, Boxes, AlertCircle, PackageX, Zap, Clock } from "lucide-react"
+import { useSalesReport, useCustomerReport, useInventoryReport } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316"]
@@ -54,6 +54,7 @@ export function ReportsPage() {
 
   const { data: salesData, isLoading: salesLoading, error: salesError } = useSalesReport({ startDate, endDate })
   const { data: customerData, isLoading: customerLoading, error: customerError } = useCustomerReport({ startDate, endDate })
+  const { data: inventoryData, isLoading: inventoryLoading, error: inventoryError } = useInventoryReport()
 
   const handleExport = async (type: string, format: "csv" | "json") => {
     setIsExporting(true)
@@ -729,6 +730,383 @@ export function ReportsPage() {
     )
   }
 
+  const renderInventoryReport = () => {
+    if (inventoryLoading) return renderLoadingState()
+
+    if (inventoryError) {
+      return (
+        <Card className="p-6 text-center">
+          <p className="text-destructive">Failed to load inventory report data</p>
+          <p className="text-muted-foreground text-sm mt-2">{inventoryError.message}</p>
+        </Card>
+      )
+    }
+
+    const summary = inventoryData?.summary
+    const lowStockProducts = inventoryData?.lowStockProducts || []
+    const outOfStockProducts = inventoryData?.outOfStockProducts || []
+    const stockByCategory = inventoryData?.stockByCategory || []
+    const fastMovingProducts = inventoryData?.fastMovingProducts || []
+    const slowMovingProducts = inventoryData?.slowMovingProducts || []
+
+    const summaryCards = [
+      {
+        label: "Total Inventory Value",
+        value: summary?.totalInventoryValue || 0,
+        icon: DollarSign,
+        format: "currency",
+        khrValue: summary?.totalInventoryValueKhr || 0,
+      },
+      {
+        label: "Low Stock Items",
+        value: summary?.lowStockCount || 0,
+        icon: AlertTriangle,
+        format: "number",
+        isWarning: (summary?.lowStockCount || 0) > 0,
+        subLabel: `${summary?.criticalStockCount || 0} critical`,
+      },
+      {
+        label: "Out of Stock",
+        value: summary?.outOfStockCount || 0,
+        icon: PackageX,
+        format: "number",
+        isDanger: (summary?.outOfStockCount || 0) > 0,
+      },
+      {
+        label: "Healthy Stock",
+        value: summary?.healthyStockCount || 0,
+        icon: Boxes,
+        format: "number",
+        isSuccess: true,
+      },
+    ]
+
+    const stockStatusData = summary ? [
+      { name: "Healthy", value: summary.healthyStockCount, color: "#10b981" },
+      { name: "Low Stock", value: summary.lowStockCount, color: "#f59e0b" },
+      { name: "Out of Stock", value: summary.outOfStockCount, color: "#ef4444" },
+    ] : []
+
+    return (
+      <div className="space-y-6">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {summaryCards.map((card, index) => {
+            const Icon = card.icon
+            return (
+              <Card key={index} className="p-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium text-muted-foreground">{card.label}</h3>
+                  <Icon className={`h-4 w-4 ${card.isDanger ? "text-destructive" : card.isWarning ? "text-warning" : card.isSuccess ? "text-success" : "text-muted-foreground"}`} />
+                </div>
+                <p className="text-2xl font-bold text-foreground mt-2">
+                  {card.format === "currency"
+                    ? formatCurrency(card.value)
+                    : card.value.toLocaleString()}
+                </p>
+                {card.khrValue !== undefined && (
+                  <p className="text-sm text-muted-foreground">{formatKhr(card.khrValue)}</p>
+                )}
+                {card.subLabel && (
+                  <p className="text-xs text-destructive mt-1">{card.subLabel}</p>
+                )}
+                {card.isDanger && <p className="text-xs text-destructive mt-2">Needs immediate attention</p>}
+                {card.isWarning && !card.subLabel && <p className="text-xs text-warning mt-2">Review stock levels</p>}
+              </Card>
+            )
+          })}
+        </div>
+
+        {/* Stock Status Overview and Category Breakdown */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Stock Status Distribution */}
+          <Card className="p-6">
+            <h2 className="text-lg font-bold text-foreground mb-4">Stock Status Overview</h2>
+            {stockStatusData.length > 0 && stockStatusData.some(d => d.value > 0) ? (
+              <div className="flex items-center">
+                <ResponsiveContainer width="50%" height={220}>
+                  <PieChart>
+                    <Pie
+                      data={stockStatusData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={3}
+                      dataKey="value"
+                      nameKey="name"
+                    >
+                      {stockStatusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => [value, "Products"]} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="flex-1 space-y-3">
+                  {stockStatusData.map((status) => (
+                    <div key={status.name} className="flex items-center gap-3">
+                      <div
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: status.color }}
+                      />
+                      <span className="text-sm text-foreground">{status.name}</span>
+                      <span className="text-sm font-semibold text-foreground ml-auto">{status.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="h-[220px] flex items-center justify-center text-muted-foreground">
+                No inventory data available
+              </div>
+            )}
+          </Card>
+
+          {/* Stock by Category */}
+          <Card className="p-6">
+            <h2 className="text-lg font-bold text-foreground mb-4">Inventory Value by Category</h2>
+            {stockByCategory.length > 0 ? (
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={stockByCategory.slice(0, 6)} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                  <XAxis type="number" stroke="var(--color-muted-foreground)" fontSize={12} tickFormatter={(value) => `$${value}`} />
+                  <YAxis type="category" dataKey="nameEn" stroke="var(--color-muted-foreground)" fontSize={11} width={100} tick={{ fill: "var(--color-foreground)" }} />
+                  <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, "Value"]} />
+                  <Bar dataKey="totalValue" fill="var(--color-primary)" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[220px] flex items-center justify-center text-muted-foreground">
+                No category data available
+              </div>
+            )}
+          </Card>
+        </div>
+
+        {/* Low Stock and Out of Stock Tables */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Low Stock Products */}
+          <Card className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <AlertTriangle className="h-5 w-5 text-warning" />
+              <h2 className="text-lg font-bold text-foreground">Low Stock Products</h2>
+              <span className="text-sm text-muted-foreground">({lowStockProducts.length})</span>
+            </div>
+            {lowStockProducts.length > 0 ? (
+              <div className="overflow-x-auto max-h-[350px] overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-b border-border">
+                      <TableHead className="text-foreground font-semibold">Product</TableHead>
+                      <TableHead className="text-foreground font-semibold text-right">Stock</TableHead>
+                      <TableHead className="text-foreground font-semibold text-right">Min Level</TableHead>
+                      <TableHead className="text-foreground font-semibold text-right">Value</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {lowStockProducts.map((product) => (
+                      <TableRow key={product.id} className="border-b border-border hover:bg-muted/50">
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {product.imageUrl ? (
+                              <img
+                                src={product.imageUrl}
+                                alt={product.nameEn}
+                                className="w-8 h-8 rounded object-cover"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
+                                <Package className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">{product.nameEn}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs text-muted-foreground">{product.sku}</p>
+                                {product.status === "critical" && (
+                                  <span className="text-xs px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">Critical</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className={`text-right font-medium ${product.status === "critical" ? "text-destructive" : "text-warning"}`}>
+                          {product.currentStock}
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground">{product.minLevel}</TableCell>
+                        <TableCell className="text-right text-foreground">{formatCurrency(product.stockValue)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="py-8 text-center text-muted-foreground flex flex-col items-center gap-2">
+                <Boxes className="h-8 w-8 text-success" />
+                <p>All products are well stocked!</p>
+              </div>
+            )}
+          </Card>
+
+          {/* Out of Stock Products */}
+          <Card className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <PackageX className="h-5 w-5 text-destructive" />
+              <h2 className="text-lg font-bold text-foreground">Out of Stock Products</h2>
+              <span className="text-sm text-muted-foreground">({outOfStockProducts.length})</span>
+            </div>
+            {outOfStockProducts.length > 0 ? (
+              <div className="overflow-x-auto max-h-[350px] overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-b border-border">
+                      <TableHead className="text-foreground font-semibold">Product</TableHead>
+                      <TableHead className="text-foreground font-semibold">Category</TableHead>
+                      <TableHead className="text-foreground font-semibold text-right">Price</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {outOfStockProducts.map((product) => (
+                      <TableRow key={product.id} className="border-b border-border hover:bg-muted/50">
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {product.imageUrl ? (
+                              <img
+                                src={product.imageUrl}
+                                alt={product.nameEn}
+                                className="w-8 h-8 rounded object-cover"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
+                                <Package className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">{product.nameEn}</p>
+                              <p className="text-xs text-muted-foreground">{product.sku}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {product.category?.nameEn || "Uncategorized"}
+                        </TableCell>
+                        <TableCell className="text-right text-foreground">{formatCurrency(product.priceUsd)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="py-8 text-center text-muted-foreground flex flex-col items-center gap-2">
+                <Boxes className="h-8 w-8 text-success" />
+                <p>No products are out of stock!</p>
+              </div>
+            )}
+          </Card>
+        </div>
+
+        {/* Fast & Slow Moving Products */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Fast Moving Products */}
+          <Card className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Zap className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-bold text-foreground">Fast Moving Products</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">Products with high sales velocity - watch for stockouts</p>
+            {fastMovingProducts.length > 0 ? (
+              <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-b border-border">
+                      <TableHead className="text-foreground font-semibold">Product</TableHead>
+                      <TableHead className="text-foreground font-semibold text-right">Stock</TableHead>
+                      <TableHead className="text-foreground font-semibold text-right">Sold (30d)</TableHead>
+                      <TableHead className="text-foreground font-semibold text-right">Days Left</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {fastMovingProducts.map((product) => (
+                      <TableRow key={product.id} className="border-b border-border hover:bg-muted/50">
+                        <TableCell>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">{product.nameEn}</p>
+                            <p className="text-xs text-muted-foreground">{product.sku}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right text-foreground">{product.currentStock}</TableCell>
+                        <TableCell className="text-right text-foreground">{product.soldLast30Days}</TableCell>
+                        <TableCell className={`text-right font-medium ${
+                          product.daysUntilStockout !== null && product.daysUntilStockout <= 7
+                            ? "text-destructive"
+                            : product.daysUntilStockout !== null && product.daysUntilStockout <= 14
+                            ? "text-warning"
+                            : "text-foreground"
+                        }`}>
+                          {product.daysUntilStockout !== null ? (
+                            <span className="flex items-center justify-end gap-1">
+                              {product.daysUntilStockout <= 7 && <Clock className="h-3 w-3" />}
+                              {product.daysUntilStockout}
+                            </span>
+                          ) : "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="py-8 text-center text-muted-foreground">
+                No fast-moving products identified
+              </div>
+            )}
+          </Card>
+
+          {/* Slow Moving Products */}
+          <Card className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <AlertCircle className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-lg font-bold text-foreground">Slow Moving Products</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">Products with no sales in the last 30 days</p>
+            {slowMovingProducts.length > 0 ? (
+              <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-b border-border">
+                      <TableHead className="text-foreground font-semibold">Product</TableHead>
+                      <TableHead className="text-foreground font-semibold text-right">Stock</TableHead>
+                      <TableHead className="text-foreground font-semibold text-right">Tied Up Value</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {slowMovingProducts.map((product) => (
+                      <TableRow key={product.id} className="border-b border-border hover:bg-muted/50">
+                        <TableCell>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">{product.nameEn}</p>
+                            <p className="text-xs text-muted-foreground">{product.sku}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right text-foreground">{product.currentStock}</TableCell>
+                        <TableCell className="text-right text-muted-foreground">{formatCurrency(product.stockValue)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="py-8 text-center text-muted-foreground">
+                All products are selling well!
+              </div>
+            )}
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
@@ -778,6 +1156,10 @@ export function ReportsPage() {
                 <FileSpreadsheet className="mr-2 h-4 w-4" />
                 Products (CSV)
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("inventory", "csv")}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                Inventory (CSV)
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleExport("sales", "json")}>
                 <FileText className="mr-2 h-4 w-4" />
                 Sales Report (JSON)
@@ -789,7 +1171,7 @@ export function ReportsPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-lg grid-cols-3">
           <TabsTrigger value="sales" className="flex items-center gap-2">
             <DollarSign className="h-4 w-4" />
             Sales
@@ -797,6 +1179,10 @@ export function ReportsPage() {
           <TabsTrigger value="customers" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Customers
+          </TabsTrigger>
+          <TabsTrigger value="inventory" className="flex items-center gap-2">
+            <Boxes className="h-4 w-4" />
+            Inventory
           </TabsTrigger>
         </TabsList>
 
@@ -806,6 +1192,10 @@ export function ReportsPage() {
 
         <TabsContent value="customers" className="mt-6">
           {renderCustomerReport()}
+        </TabsContent>
+
+        <TabsContent value="inventory" className="mt-6">
+          {renderInventoryReport()}
         </TabsContent>
       </Tabs>
     </div>

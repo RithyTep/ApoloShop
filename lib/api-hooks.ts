@@ -1438,3 +1438,96 @@ export function useCustomerReport(options?: { startDate?: string; endDate?: stri
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
+
+// ============================================
+// INVENTORY REPORTS
+// ============================================
+
+export interface InventoryReportSummary {
+  totalProducts: number;
+  productsWithInventory: number;
+  productsWithoutInventory: number;
+  lowStockCount: number;
+  criticalStockCount: number;
+  outOfStockCount: number;
+  healthyStockCount: number;
+  totalInventoryValue: number;
+  totalInventoryValueKhr: number;
+}
+
+export interface LowStockProduct {
+  id: string;
+  nameEn: string;
+  nameKh: string;
+  sku: string;
+  imageUrl: string | null;
+  category: { id: string; nameEn: string; nameKh: string } | null;
+  currentStock: number;
+  minLevel: number;
+  priceUsd: number;
+  stockValue: number;
+  status: "low" | "critical";
+}
+
+export interface OutOfStockProduct {
+  id: string;
+  nameEn: string;
+  nameKh: string;
+  sku: string;
+  imageUrl: string | null;
+  category: { id: string; nameEn: string; nameKh: string } | null;
+  priceUsd: number;
+  lastUpdated: string | null;
+}
+
+export interface CategoryStock {
+  id: string;
+  nameEn: string;
+  nameKh: string;
+  totalProducts: number;
+  lowStockCount: number;
+  outOfStockCount: number;
+  totalValue: number;
+}
+
+export interface FastMovingProduct {
+  id: string;
+  nameEn: string;
+  nameKh: string;
+  sku: string;
+  currentStock: number;
+  soldLast30Days: number;
+  daysUntilStockout: number | null;
+}
+
+export interface SlowMovingProduct {
+  id: string;
+  nameEn: string;
+  nameKh: string;
+  sku: string;
+  currentStock: number;
+  soldLast30Days: number;
+  stockValue: number;
+}
+
+export interface InventoryReportData {
+  summary: InventoryReportSummary;
+  lowStockProducts: LowStockProduct[];
+  outOfStockProducts: OutOfStockProduct[];
+  stockByCategory: CategoryStock[];
+  fastMovingProducts: FastMovingProduct[];
+  slowMovingProducts: SlowMovingProduct[];
+}
+
+export function useInventoryReport(options?: { threshold?: number; categoryId?: string }) {
+  const params = new URLSearchParams();
+  if (options?.threshold) params.set("threshold", options.threshold.toString());
+  if (options?.categoryId) params.set("categoryId", options.categoryId);
+
+  return useQuery({
+    queryKey: ["inventory-report", options],
+    queryFn: () =>
+      fetchAPI<InventoryReportData>(`/api/reports/inventory?${params.toString()}`),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
