@@ -6,6 +6,9 @@ const inventoryUpdateSchema = z.object({
   productId: z.string().min(1),
   quantity: z.number().int().min(0),
   minLevel: z.number().int().min(0).optional(),
+  reorderPoint: z.number().int().min(0).optional(),
+  reorderQty: z.number().int().min(1).optional(),
+  supplierId: z.string().optional().nullable(),
 })
 
 // GET /api/inventory - Get inventory with low stock alerts
@@ -21,6 +24,9 @@ export async function GET(request: NextRequest) {
           include: {
             category: true,
           },
+        },
+        supplier: {
+          select: { id: true, name: true, email: true, phone: true, leadTimeDays: true },
         },
       },
       orderBy: { lastUpdated: "desc" },
@@ -88,7 +94,7 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const { productId, quantity, minLevel } = result.data
+    const { productId, quantity, minLevel, reorderPoint, reorderQty, supplierId } = result.data
 
     const updateData: Record<string, unknown> = {
       quantity,
@@ -98,12 +104,22 @@ export async function PUT(request: NextRequest) {
     if (minLevel !== undefined) {
       updateData.minLevel = minLevel
     }
+    if (reorderPoint !== undefined) {
+      updateData.reorderPoint = reorderPoint
+    }
+    if (reorderQty !== undefined) {
+      updateData.reorderQty = reorderQty
+    }
+    if (supplierId !== undefined) {
+      updateData.supplierId = supplierId
+    }
 
     const inventory = await prisma.inventory.update({
       where: { productId },
       data: updateData,
       include: {
         product: true,
+        supplier: { select: { id: true, name: true } },
       },
     })
 

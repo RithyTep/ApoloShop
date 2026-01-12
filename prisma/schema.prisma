@@ -322,13 +322,21 @@ model Product {
 }
 
 model Inventory {
-  id          String   @id @default(cuid())
-  productId   String   @unique @map("product_id")
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  quantity    Int      @default(0)
-  minLevel    Int      @default(10) @map("min_level")
-  lastUpdated DateTime @default(now()) @map("last_updated")
+  id           String    @id @default(cuid())
+  productId    String    @unique @map("product_id")
+  product      Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity     Int       @default(0)
+  minLevel     Int       @default(10) @map("min_level")
+  reorderPoint Int       @default(5) @map("reorder_point") // Point at which to trigger reorder alerts
+  reorderQty   Int       @default(10) @map("reorder_qty") // Suggested reorder quantity (can be overridden by velocity calc)
+  supplierId   String?   @map("supplier_id")
+  supplier     Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  lastUpdated  DateTime  @default(now()) @map("last_updated")
 
+  stockAlerts    StockAlert[]
+  purchaseOrders PurchaseOrder[]
+
+  @@index([supplierId])
   @@map("inventory")
   @@schema("apolo")
 }
@@ -1962,5 +1970,106 @@ model HelpArticle {
   @@index([viewCount])
   @@index([sortOrder])
   @@map("help_articles")
+  @@schema("apolo")
+}
+
+// ============================================
+// SUPPLIERS & STOCK ALERTS
+// ============================================
+
+model Supplier {
+  id          String   @id @default(cuid())
+  name        String
+  contactName String?  @map("contact_name")
+  email       String?
+  phone       String?
+  address     String?  @db.Text
+  website     String?
+  notes       String?  @db.Text
+  leadTimeDays Int     @default(7) @map("lead_time_days") // Average days to receive order
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  inventory      Inventory[]
+  purchaseOrders PurchaseOrder[]
+
+  @@index([name])
+  @@index([isActive])
+  @@map("suppliers")
+  @@schema("apolo")
+}
+
+enum StockAlertType {
+  LOW_STOCK       // Stock at or below reorder point
+  OUT_OF_STOCK    // Stock is zero
+  REORDER_CREATED // Purchase order created
+
+  @@schema("apolo")
+}
+
+enum StockAlertStatus {
+  PENDING    // Alert not yet addressed
+  ACKNOWLEDGED  // Admin has seen it
+  RESOLVED   // Stock has been replenished
+
+  @@schema("apolo")
+}
+
+model StockAlert {
+  id          String           @id @default(cuid())
+  inventoryId String           @map("inventory_id")
+  inventory   Inventory        @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  type        StockAlertType
+  status      StockAlertStatus @default(PENDING)
+  quantity    Int              // Stock level when alert was triggered
+  reorderPoint Int             @map("reorder_point") // Reorder point when alert was triggered
+  suggestedQty Int             @map("suggested_qty") // Suggested reorder quantity based on sales velocity
+  notifiedAt  DateTime?        @map("notified_at") // When notification was sent
+  resolvedAt  DateTime?        @map("resolved_at")
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  @@index([inventoryId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@map("stock_alerts")
+  @@schema("apolo")
+}
+
+enum PurchaseOrderStatus {
+  DRAFT      // Not yet sent to supplier
+  PENDING    // Sent to supplier, awaiting delivery
+  PARTIAL    // Partially received
+  COMPLETED  // Fully received
+  CANCELLED  // Order cancelled
+
+  @@schema("apolo")
+}
+
+model PurchaseOrder {
+  id           String              @id @default(cuid())
+  orderNumber  String              @unique @map("order_number") // e.g., PO-2025-0001
+  inventoryId  String              @map("inventory_id")
+  inventory    Inventory           @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  supplierId   String?             @map("supplier_id")
+  supplier     Supplier?           @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  quantity     Int                 // Quantity ordered
+  unitCostUsd  Decimal?            @map("unit_cost_usd") @db.Decimal(10, 2)
+  totalCostUsd Decimal?            @map("total_cost_usd") @db.Decimal(10, 2)
+  status       PurchaseOrderStatus @default(DRAFT)
+  notes        String?             @db.Text
+  expectedDate DateTime?           @map("expected_date") // Expected delivery date
+  receivedQty  Int                 @default(0) @map("received_qty") // Quantity received so far
+  receivedAt   DateTime?           @map("received_at")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+
+  @@index([inventoryId])
+  @@index([supplierId])
+  @@index([status])
+  @@index([orderNumber])
+  @@index([createdAt])
+  @@map("purchase_orders")
   @@schema("apolo")
 }

@@ -1035,8 +1035,8 @@
         "Build passes: bun run build"
       ],
       "priority": 66,
-      "passes": false,
-      "notes": "Prevents stockouts and lost sales"
+      "passes": true,
+      "notes": "Implemented Supplier/StockAlert/PurchaseOrder models in Prisma. Inventory now has reorderPoint/reorderQty/supplierId. Stock alert service with sales velocity calculation (weighted 30-day average). APIs: /api/stock-alerts (check, notify, update status), /api/suppliers (CRUD), /api/purchase-orders (create from alert, receive stock). Telegram/Email notifications via existing notification service. API hooks and translations (EN/KH) added."
     },
     {
       "id": "US-067",

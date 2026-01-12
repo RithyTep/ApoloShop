@@ -2055,3 +2055,34 @@ Project: ApoloShop - Product Search Feature
   - SKU format: Keep short but descriptive - category code (3 chars) + product initials + sequence
   - Print: Use window.open() with print styles for label printing
 ---
+
+## 2026-01-13 - US-066
+- **Implemented**: Stock alerts and reorder points system
+- **Files changed**:
+  - `prisma/schema.prisma` (modified) - Added Supplier, StockAlert, PurchaseOrder models; updated Inventory with reorderPoint, reorderQty, supplierId
+  - `lib/stock-alert-service.ts` (new) - Sales velocity calculation, alert creation, notification sending, purchase order generation
+  - `app/api/stock-alerts/route.ts` (new) - GET alerts, POST check/notify, PATCH update status
+  - `app/api/suppliers/route.ts` (new) - Full CRUD for suppliers
+  - `app/api/purchase-orders/route.ts` (new) - Create from alert or direct, update/receive stock, delete/cancel
+  - `app/api/inventory/route.ts` (modified) - Added reorderPoint, reorderQty, supplierId to schema and includes
+  - `lib/api-hooks.ts` (modified) - Added StockAlert, Supplier, PurchaseOrder types and hooks
+  - `lib/i18n.ts` (modified) - Added stockAlerts translations (EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Reorder point per product**: Inventory model has reorderPoint field (default 5)
+  - **Sales velocity calculation**: Weighted 30-day average (70% recent week, 30% previous 3 weeks)
+  - **Suggested reorder quantity**: Based on 37-day target stock (30 days + 7 day safety buffer)
+  - **Stock alerts**: LOW_STOCK (at reorder point), OUT_OF_STOCK (zero), REORDER_CREATED types
+  - **Alert status tracking**: PENDING -> ACKNOWLEDGED -> RESOLVED workflow
+  - **Supplier management**: Name, contact info, lead time days, link to products
+  - **Purchase orders**: Auto-generated PO numbers (PO-YYYY-XXXX), expected delivery based on lead time
+  - **Receive stock**: Partial or full receipt updates inventory and resolves alerts
+  - **Notifications**: Telegram/Email alerts when stock hits reorder point (via existing notification service)
+- **Learnings for future iterations**:
+  - Sales velocity: Weight recent sales higher (70/30 split) for better demand prediction
+  - Reorder quantity: Target days of stock + safety buffer accounts for lead time variability
+  - Alert deduplication: Check for existing PENDING alert before creating new one
+  - Purchase order workflow: DRAFT -> PENDING -> PARTIAL -> COMPLETED progression
+  - Stock receipt: Automatically resolve alerts when stock exceeds reorder point
+  - In-memory notification settings: Stored in settings table with key "stockAlertNotifications"
+---

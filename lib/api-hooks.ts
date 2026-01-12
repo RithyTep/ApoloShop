@@ -365,18 +365,306 @@ export function useUpdateInventory() {
       productId,
       quantity,
       adjustment,
+      reorderPoint,
+      reorderQty,
+      supplierId,
     }: {
       productId: string;
       quantity?: number;
       adjustment?: number;
+      reorderPoint?: number;
+      reorderQty?: number;
+      supplierId?: string | null;
     }) =>
       fetchAPI<Inventory>("/api/inventory", {
         method: "PUT",
-        body: JSON.stringify({ productId, quantity, adjustment }),
+        body: JSON.stringify({ productId, quantity, adjustment, reorderPoint, reorderQty, supplierId }),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["stock-alerts"] });
+    },
+  });
+}
+
+// ============================================
+// STOCK ALERTS & SUPPLIERS
+// ============================================
+
+export interface StockAlert {
+  id: string;
+  inventoryId: string;
+  type: "LOW_STOCK" | "OUT_OF_STOCK" | "REORDER_CREATED";
+  status: "PENDING" | "ACKNOWLEDGED" | "RESOLVED";
+  quantity: number;
+  reorderPoint: number;
+  suggestedQty: number;
+  notifiedAt: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  inventory: {
+    product: {
+      id: string;
+      nameEn: string;
+      nameKh: string;
+      sku: string;
+      imageUrl: string | null;
+      priceUsd: number;
+    } | null;
+    supplier: {
+      id: string;
+      name: string;
+      phone: string | null;
+      email: string | null;
+    } | null;
+  };
+  salesVelocity?: {
+    avgDailySales: number;
+    totalSold30Days: number;
+    daysUntilStockout: number | null;
+    suggestedReorderQty: number;
+  };
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  contactName: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  website: string | null;
+  notes: string | null;
+  leadTimeDays: number;
+  isActive: boolean;
+  createdAt: string;
+  _count?: { inventory: number; purchaseOrders: number };
+}
+
+export interface PurchaseOrder {
+  id: string;
+  orderNumber: string;
+  inventoryId: string;
+  supplierId: string | null;
+  quantity: number;
+  unitCostUsd: number | null;
+  totalCostUsd: number | null;
+  status: "DRAFT" | "PENDING" | "PARTIAL" | "COMPLETED" | "CANCELLED";
+  notes: string | null;
+  expectedDate: string | null;
+  receivedQty: number;
+  receivedAt: string | null;
+  createdAt: string;
+  inventory: {
+    product: {
+      nameEn: string;
+      nameKh?: string;
+      sku: string;
+      imageUrl?: string | null;
+    } | null;
+  };
+  supplier: {
+    name: string;
+    phone?: string | null;
+    email?: string | null;
+  } | null;
+}
+
+export function useStockAlerts(options?: {
+  status?: "PENDING" | "ACKNOWLEDGED" | "RESOLVED";
+  type?: "LOW_STOCK" | "OUT_OF_STOCK" | "REORDER_CREATED";
+  includeVelocity?: boolean;
+}) {
+  const params = new URLSearchParams();
+  if (options?.status) params.set("status", options.status);
+  if (options?.type) params.set("type", options.type);
+  if (options?.includeVelocity) params.set("velocity", "true");
+  params.set("summary", "true");
+
+  return useQuery({
+    queryKey: ["stock-alerts", options],
+    queryFn: () =>
+      fetchAPI<{
+        alerts: StockAlert[];
+        summary: {
+          totalPendingAlerts: number;
+          lowStockAlerts: number;
+          outOfStockAlerts: number;
+          pendingPurchaseOrders: number;
+        } | null;
+      }>(`/api/stock-alerts?${params.toString()}`),
+  });
+}
+
+export function useCheckStockAlerts() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      fetchAPI<{ message: string; alerts: unknown[] }>("/api/stock-alerts", {
+        method: "POST",
+        body: JSON.stringify({ action: "check" }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["stock-alerts"] });
+    },
+  });
+}
+
+export function useSendStockNotifications() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      fetchAPI<{ message: string; sent: number; failed: number }>("/api/stock-alerts", {
+        method: "POST",
+        body: JSON.stringify({ action: "notify" }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["stock-alerts"] });
+    },
+  });
+}
+
+export function useUpdateStockAlert() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ alertId, status }: { alertId: string; status: "PENDING" | "ACKNOWLEDGED" | "RESOLVED" }) =>
+      fetchAPI<StockAlert>("/api/stock-alerts", {
+        method: "PATCH",
+        body: JSON.stringify({ alertId, status }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["stock-alerts"] });
+    },
+  });
+}
+
+export function useSuppliers(options?: { activeOnly?: boolean }) {
+  const params = new URLSearchParams();
+  if (options?.activeOnly) params.set("activeOnly", "true");
+
+  return useQuery({
+    queryKey: ["suppliers", options],
+    queryFn: () => fetchAPI<{ suppliers: Supplier[] }>(`/api/suppliers?${params.toString()}`),
+  });
+}
+
+export function useCreateSupplier() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Omit<Supplier, "id" | "createdAt" | "_count">) =>
+      fetchAPI<Supplier>("/api/suppliers", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+    },
+  });
+}
+
+export function useUpdateSupplier() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<Supplier> & { id: string }) =>
+      fetchAPI<Supplier>("/api/suppliers", {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+    },
+  });
+}
+
+export function useDeleteSupplier() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchAPI<{ message: string }>(`/api/suppliers?id=${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+    },
+  });
+}
+
+export function usePurchaseOrders(options?: {
+  status?: "DRAFT" | "PENDING" | "PARTIAL" | "COMPLETED" | "CANCELLED";
+  supplierId?: string;
+}) {
+  const params = new URLSearchParams();
+  if (options?.status) params.set("status", options.status);
+  if (options?.supplierId) params.set("supplierId", options.supplierId);
+
+  return useQuery({
+    queryKey: ["purchase-orders", options],
+    queryFn: () =>
+      fetchAPI<{
+        purchaseOrders: PurchaseOrder[];
+        summary: {
+          draft: number;
+          pending: number;
+          partial: number;
+          completed: number;
+          cancelled: number;
+          total: number;
+        };
+      }>(`/api/purchase-orders?${params.toString()}`),
+  });
+}
+
+export function useCreatePurchaseOrder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      alertId?: string;
+      inventoryId?: string;
+      supplierId?: string;
+      quantity?: number;
+      unitCostUsd?: number;
+      notes?: string;
+    }) =>
+      fetchAPI<{ message: string; orderId: string; orderNumber: string }>("/api/purchase-orders", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["purchase-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["stock-alerts"] });
+    },
+  });
+}
+
+export function useUpdatePurchaseOrder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      id: string;
+      status?: "DRAFT" | "PENDING" | "PARTIAL" | "COMPLETED" | "CANCELLED";
+      quantity?: number;
+      unitCostUsd?: number;
+      notes?: string;
+      receiveQty?: number;
+    }) =>
+      fetchAPI<PurchaseOrder | { message: string; purchaseOrder: PurchaseOrder }>("/api/purchase-orders", {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["purchase-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["stock-alerts"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+    },
+  });
+}
+
+export function useDeletePurchaseOrder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchAPI<{ message: string }>(`/api/purchase-orders?id=${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["purchase-orders"] });
     },
   });
 }
