@@ -1353,3 +1353,69 @@ Project: ApoloShop - Product Search Feature
   - Empty allowedIPs array = all IPs allowed (whitelist disabled)
   - Combined middleware patterns: `withAuthAndIPWhitelist`, `withAuthIPWhitelistAndCSRF`
 ---
+
+## 2026-01-12 - US-045
+- **Implemented**: Security event logging
+- **Files changed**:
+  - `prisma/schema.prisma` (added SecurityLog model, SecurityEventType and SecurityEventSeverity enums)
+  - `lib/security-log.ts` (new file - security event logging service)
+  - `app/api/security-logs/route.ts` (new file - super admin only endpoint)
+  - `app/api/auth/login/route.ts` (modified - added security logging)
+  - `app/api/auth/logout/route.ts` (modified - added security logging)
+  - `app/api/auth/2fa/verify/route.ts` (modified - added security logging)
+  - `app/api/auth/2fa/setup/route.ts` (modified - added security logging)
+  - `app/api/auth/2fa/disable/route.ts` (modified - added security logging)
+  - `app/api/auth/forgot-password/route.ts` (modified - added security logging)
+  - `app/api/auth/reset-password/route.ts` (modified - added security logging)
+  - `app/api/sessions/route.ts` (modified - added security logging)
+  - `app/api/sessions/[id]/route.ts` (modified - added security logging)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **SecurityLog model**: id, event (SecurityEventType), severity (SecurityEventSeverity), userId, userName, userEmail, targetUserId, targetUserName, ipAddress, userAgent, country, city, details (JSON), sessionId, expiresAt (90 days), createdAt
+  - **SecurityEventType enum (40+ events)**:
+    - Authentication: LOGIN_SUCCESS, LOGIN_FAILED, LOGIN_2FA_SUCCESS, LOGIN_2FA_FAILED, LOGOUT
+    - Session: SESSION_CREATED, SESSION_REVOKED, SESSION_EXPIRED, ALL_SESSIONS_REVOKED
+    - Password: PASSWORD_CHANGED, PASSWORD_RESET_REQUESTED, PASSWORD_RESET_COMPLETED, PASSWORD_RESET_FAILED
+    - 2FA: TWO_FACTOR_ENABLED, TWO_FACTOR_DISABLED, TWO_FACTOR_RECOVERY_USED, TWO_FACTOR_RECOVERY_REGENERATED
+    - Account: ACCOUNT_CREATED, ACCOUNT_UPDATED, ACCOUNT_LOCKED, ACCOUNT_UNLOCKED, ACCOUNT_DELETED, EMAIL_VERIFIED, EMAIL_VERIFICATION_REQUESTED
+    - Permissions: ROLE_ASSIGNED, ROLE_REMOVED, PERMISSION_GRANTED, PERMISSION_REVOKED, ROLE_CREATED, ROLE_UPDATED, ROLE_DELETED
+    - API Keys: API_KEY_CREATED, API_KEY_ROTATED, API_KEY_REVOKED, API_KEY_DELETED
+    - OAuth: OAUTH_ACCOUNT_LINKED, OAUTH_ACCOUNT_UNLINKED, OAUTH_LOGIN_SUCCESS, OAUTH_LOGIN_FAILED
+    - Security: SUSPICIOUS_LOGIN_DETECTED, SUSPICIOUS_LOGIN_REVIEWED, IP_BLOCKED, IP_UNBLOCKED
+    - Admin: ADMIN_IMPERSONATION_START, ADMIN_IMPERSONATION_END
+  - **SecurityEventSeverity enum**: INFO, WARNING, CRITICAL
+  - **SECURITY_EVENT_CONFIG**: Maps event types to default severity and description
+  - **lib/security-log.ts functions**:
+    - logSecurityEvent() - main fire-and-forget logging function
+    - logSecurityEventWithRequest() - convenience wrapper with request context
+    - Helper functions: logLoginSuccess, logLoginFailed, log2FASuccess, log2FAFailed, logLogout, logPasswordChanged, logPasswordResetRequested, logPasswordResetCompleted, log2FAEnabled, log2FADisabled, logRecoveryCodeUsed, logAccountLocked, logAccountUnlocked, logRoleAssigned, logPermissionChange, logSuspiciousLogin, logApiKeyEvent, logSessionEvent
+    - cleanupExpiredSecurityLogs() - 90-day retention cleanup
+    - getSecurityLogStats() - summary stats for dashboard
+    - detectSuspiciousPatterns() - alerts for suspicious activity patterns
+  - **GET /api/security-logs**:
+    - Super admin only (via SUPER_ADMIN_KEY header)
+    - Filtering: event type, severity, category, userId, ipAddress, date range, search
+    - Pagination with limit (max 100)
+    - Event categories for grouping: authentication, session, password, twoFactor, account, permissions, apiKeys, oauth, security, admin
+    - Summary stats: byEvent, bySeverity, hourlyActivity, criticalLast24h
+    - Actions: cleanup (delete expired), stats (get stats), alerts (detect suspicious patterns)
+    - Event descriptions for UI display
+    - Retention config returned (90 days)
+  - **Auth flow integrations**:
+    - Login: LOGIN_SUCCESS on success, LOGIN_FAILED on failure, ACCOUNT_LOCKED when locked
+    - 2FA: LOGIN_2FA_SUCCESS/LOGIN_2FA_FAILED, TWO_FACTOR_RECOVERY_USED when recovery code used
+    - Logout: LOGOUT event
+    - 2FA setup: TWO_FACTOR_ENABLED when verified
+    - 2FA disable: TWO_FACTOR_DISABLED
+    - Password reset: PASSWORD_RESET_REQUESTED, PASSWORD_RESET_COMPLETED, PASSWORD_RESET_FAILED
+    - Sessions: SESSION_REVOKED, ALL_SESSIONS_REVOKED
+- **Learnings for future iterations**:
+  - Fire-and-forget pattern for security logging (don't await, let failures fail silently)
+  - Separate event and severity enums for flexible querying
+  - Target user context (targetUserId/targetUserName) for admin actions affecting other users
+  - 90-day retention via expiresAt field allows efficient cleanup with index
+  - Event categories group related events for UI filtering
+  - Suspicious pattern detection checks last 24h/1h for failed logins, 2FA failures, password reset spam, lockouts
+  - SECURITY_EVENT_CONFIG provides human-readable descriptions and default severity per event type
+  - Super admin check uses SUPER_ADMIN_KEY env var with development fallback
+---
