@@ -1897,3 +1897,109 @@ export function useUpdateDashboardLayout() {
     },
   });
 }
+
+// ============================================
+// PRODUCT IMPORT/EXPORT
+// ============================================
+
+export interface ImportRowError {
+  row: number;
+  field?: string;
+  message: string;
+  data?: Record<string, unknown>;
+}
+
+export interface ImportResult {
+  success: boolean;
+  totalRows: number;
+  imported: number;
+  updated: number;
+  skipped: number;
+  failed: number;
+  errors: ImportRowError[];
+  importedProducts: { sku: string; id: string; action: "created" | "updated" }[];
+  dryRun?: boolean;
+  pendingCreates?: number;
+  pendingUpdates?: number;
+  message?: string;
+}
+
+/**
+ * Hook to import products from CSV file
+ */
+export function useImportProducts() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      file,
+      updateExisting = false,
+      dryRun = false,
+    }: {
+      file: File;
+      updateExisting?: boolean;
+      dryRun?: boolean;
+    }) => {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const params = new URLSearchParams();
+      if (updateExisting) params.set("updateExisting", "true");
+      if (dryRun) params.set("dryRun", "true");
+
+      const res = await fetch(`/api/products/import?${params.toString()}`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ error: "Import failed" }));
+        throw new Error(error.error || "Import failed");
+      }
+
+      return res.json() as Promise<ImportResult>;
+    },
+    onSuccess: (result) => {
+      if (!result.dryRun && (result.imported > 0 || result.updated > 0)) {
+        queryClient.invalidateQueries({ queryKey: ["products"] });
+      }
+    },
+  });
+}
+
+/**
+ * Function to download product export CSV
+ */
+export async function exportProducts(options?: {
+  categoryId?: string;
+  isActive?: boolean;
+}): Promise<void> {
+  const params = new URLSearchParams();
+  if (options?.categoryId) params.set("categoryId", options.categoryId);
+  if (options?.isActive !== undefined) params.set("isActive", String(options.isActive));
+
+  const url = `/api/products/export${params.toString() ? `?${params.toString()}` : ""}`;
+  const res = await fetch(url);
+
+  if (!res.ok) {
+    throw new Error("Export failed");
+  }
+
+  // Get filename from content-disposition header or use default
+  const contentDisposition = res.headers.get("content-disposition");
+  let filename = `products-export-${new Date().toISOString().split("T")[0]}.csv`;
+  if (contentDisposition) {
+    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+    if (filenameMatch) filename = filenameMatch[1];
+  }
+
+  // Download the file
+  const blob = await res.blob();
+  const downloadUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(downloadUrl);
+}

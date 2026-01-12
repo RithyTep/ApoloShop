@@ -13,9 +13,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { ImageUpload } from "@/components/ui/image-upload"
-import { Plus, Pencil, Trash } from "lucide-react"
-import { useProducts, useCategories, useCreateProduct, useUpdateProduct, useDeleteProduct, Product, Category } from "@/lib/api-hooks"
+import { Plus, Pencil, Trash, Upload, Download } from "lucide-react"
+import { useProducts, useCategories, useCreateProduct, useUpdateProduct, useDeleteProduct, Product } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
+import { ProductImportDialog, ProductExportButton } from "@/components/product-import-export"
 
 export function ProductsPage() {
   const { toast } = useToast()
@@ -23,6 +24,7 @@ export function ProductsPage() {
   const [categoryFilter, setCategoryFilter] = useState("")
   const [statusFilter, setStatusFilter] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null)
   const [forceDeleteProduct, setForceDeleteProduct] = useState<Product | null>(null)
@@ -177,9 +179,22 @@ export function ProductsPage() {
           <h1 className="text-3xl font-bold text-foreground">Products</h1>
           <p className="text-muted-foreground mt-2">Manage your shop products and inventory</p>
         </div>
-        <Button onClick={openCreateDialog} className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-          <Plus size={16} /> Add Product
-        </Button>
+        <div className="flex items-center gap-2">
+          <ProductExportButton
+            categoryId={categoryFilter}
+            isActive={statusFilter === "active" ? true : statusFilter === "inactive" ? false : undefined}
+          />
+          <Button
+            variant="outline"
+            onClick={() => setIsImportDialogOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <Upload size={16} /> Import
+          </Button>
+          <Button onClick={openCreateDialog} className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+            <Plus size={16} /> Add Product
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -433,6 +448,12 @@ export function ProductsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Import Dialog */}
+      <ProductImportDialog
+        open={isImportDialogOpen}
+        onOpenChange={setIsImportDialogOpen}
+      />
     </div>
   )
 }
