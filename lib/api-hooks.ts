@@ -7,6 +7,7 @@ export interface Product {
   id: string;
   nameEn: string;
   nameKh: string;
+  slug?: string;
   descriptionEn?: string;
   descriptionKh?: string;
   priceUsd: number;

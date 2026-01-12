@@ -122,6 +122,7 @@ export const getProducts = cache(async (): Promise<Product[]> => {
       id: p.id,
       nameEn: p.nameEn,
       nameKh: p.nameKh,
+      slug: p.slug || undefined,
       descriptionEn: p.descriptionEn || undefined,
       descriptionKh: p.descriptionKh || undefined,
       priceUsd: typeof p.priceUsd === 'object' && 'toNumber' in p.priceUsd
@@ -179,6 +180,83 @@ export const getCategories = cache(async () => {
   } catch (error) {
     console.error("Error fetching categories:", error)
     return []
+  }
+})
+
+// Cached fetch for a single product by ID or slug
+export const getProductByIdOrSlug = cache(async (idOrSlug: string): Promise<Product | null> => {
+  try {
+    const product = await prisma.product.findFirst({
+      where: {
+        OR: [
+          { id: idOrSlug },
+          { slug: idOrSlug },
+        ],
+        isActive: true,
+      },
+      include: {
+        category: true,
+        inventory: true,
+        reviews: {
+          where: { status: 'APPROVED' },
+          select: { rating: true },
+        },
+      },
+    })
+
+    if (!product) return null
+
+    // Calculate average rating
+    const reviews = product.reviews || []
+    const avgRating = reviews.length > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+      : 0
+
+    return {
+      id: product.id,
+      nameEn: product.nameEn,
+      nameKh: product.nameKh,
+      slug: product.slug || undefined,
+      descriptionEn: product.descriptionEn || undefined,
+      descriptionKh: product.descriptionKh || undefined,
+      priceUsd: typeof product.priceUsd === 'object' && 'toNumber' in product.priceUsd
+        ? (product.priceUsd as { toNumber: () => number }).toNumber()
+        : Number(product.priceUsd),
+      priceKhr: typeof product.priceKhr === 'object' && 'toNumber' in product.priceKhr
+        ? (product.priceKhr as { toNumber: () => number }).toNumber()
+        : Number(product.priceKhr),
+      categoryId: product.categoryId,
+      sku: product.sku,
+      imageUrl: product.imageUrl || undefined,
+      images: product.images as string[] | undefined,
+      isActive: product.isActive,
+      category: product.category
+        ? {
+            id: product.category.id,
+            nameEn: product.category.nameEn,
+            nameKh: product.category.nameKh,
+            slug: product.category.slug,
+            sortOrder: product.category.sortOrder,
+            isActive: product.category.isActive,
+          }
+        : undefined,
+      inventory: product.inventory
+        ? {
+            id: product.inventory.id,
+            productId: product.inventory.productId,
+            quantity: product.inventory.quantity,
+            minLevel: product.inventory.minLevel,
+          }
+        : undefined,
+      // Attach review stats for SEO
+      _reviewStats: {
+        averageRating: avgRating,
+        totalReviews: reviews.length,
+      },
+    } as Product & { _reviewStats?: { averageRating: number; totalReviews: number } }
+  } catch (error) {
+    console.error("Error fetching product:", error)
+    return null
   }
 })
 

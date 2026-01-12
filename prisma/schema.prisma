@@ -289,6 +289,7 @@ model Product {
   client        Client?   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   nameEn        String    @map("name_en")
   nameKh        String    @map("name_kh")
+  slug          String?   @unique // SEO-friendly URL slug, auto-generated from nameEn
   descriptionEn String?   @map("description_en") @db.Text
   descriptionKh String?   @map("description_kh") @db.Text
   priceUsd      Decimal   @map("price_usd") @db.Decimal(10, 2)
@@ -311,6 +312,7 @@ model Product {
   @@index([categoryId])
   @@index([sku])
   @@index([isActive])
+  @@index([slug])
   @@map("products")
   @@schema("apolo")
 }
