@@ -26,6 +26,7 @@ import { FlashSalesPage } from "./pages/flash-sales-page"
 import { PerformancePage } from "./pages/performance-page"
 import { ChatPage } from "./pages/chat-page"
 import { HelpCenterPage } from "./pages/help-center-page"
+import { ShippingZonesPage } from "./pages/shipping-zones-page"
 import { useOrders, useLowStockItems, useAdminReviews } from "@/lib/api-hooks"
 
 type NavItem =
@@ -53,6 +54,7 @@ type NavItem =
   | "performance"
   | "chat"
   | "help-center"
+  | "shipping-zones"
 
 export function AdminDashboard() {
   const [activeNav, setActiveNav] = useState<NavItem>("dashboard")
@@ -116,6 +118,8 @@ export function AdminDashboard() {
         return <ChatPage />
       case "help-center":
         return <HelpCenterPage />
+      case "shipping-zones":
+        return <ShippingZonesPage />
       default:
         return <DashboardPage />
     }

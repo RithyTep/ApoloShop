@@ -4112,3 +4112,134 @@ export function useArticleFeedback() {
     },
   });
 }
+
+// ============================================
+// SHIPPING ZONES
+// ============================================
+
+export type ShippingRateType = "FLAT_RATE" | "WEIGHT_BASED" | "FREE";
+
+export interface ShippingZone {
+  id: string;
+  nameEn: string;
+  nameKh: string;
+  regions: string[];
+  rateType: ShippingRateType;
+  flatRateUsd?: number | null;
+  flatRateKhr?: number | null;
+  pricePerKgUsd?: number | null;
+  pricePerKgKhr?: number | null;
+  baseWeightKg?: number | null;
+  freeThresholdUsd?: number | null;
+  freeThresholdKhr?: number | null;
+  minDeliveryDays?: number | null;
+  maxDeliveryDays?: number | null;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ShippingCalculation {
+  zoneId: string;
+  zoneName: { en: string; kh: string };
+  rateType: ShippingRateType;
+  shippingCostUsd: number;
+  shippingCostKhr: number;
+  isFree: boolean;
+  freeShippingThreshold: { usd: number; khr: number } | null;
+  estimatedDelivery: { minDays: number | null; maxDays: number | null };
+}
+
+export interface ShippingCalculationResponse {
+  available: boolean;
+  region: string;
+  options?: ShippingCalculation[];
+  recommended?: ShippingCalculation;
+  message?: string;
+}
+
+/**
+ * Hook to fetch shipping zones
+ */
+export function useShippingZones(options?: { isActive?: boolean }) {
+  return useQuery({
+    queryKey: ["shipping-zones", options],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (options?.isActive !== undefined) params.set("isActive", String(options.isActive));
+      const queryString = params.toString();
+      return fetchAPI<{ zones: ShippingZone[]; total: number }>(
+        `/api/shipping-zones${queryString ? `?${queryString}` : ""}`
+      );
+    },
+  });
+}
+
+/**
+ * Hook to create a shipping zone
+ */
+export function useCreateShippingZone() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Omit<ShippingZone, "id" | "createdAt" | "updatedAt">) =>
+      fetchAPI<ShippingZone>("/api/shipping-zones", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shipping-zones"] });
+    },
+  });
+}
+
+/**
+ * Hook to update a shipping zone
+ */
+export function useUpdateShippingZone() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: Partial<ShippingZone> & { id: string }) =>
+      fetchAPI<ShippingZone>("/api/shipping-zones", {
+        method: "PUT",
+        body: JSON.stringify({ id, ...data }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shipping-zones"] });
+    },
+  });
+}
+
+/**
+ * Hook to delete a shipping zone
+ */
+export function useDeleteShippingZone() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchAPI<{ success: boolean }>(`/api/shipping-zones?id=${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shipping-zones"] });
+    },
+  });
+}
+
+/**
+ * Hook to calculate shipping cost
+ */
+export function useCalculateShipping() {
+  return useMutation({
+    mutationFn: (data: {
+      region: string;
+      cartTotalUsd?: number;
+      cartTotalKhr?: number;
+      weightKg?: number;
+    }) =>
+      fetchAPI<ShippingCalculationResponse>("/api/shipping-zones/calculate", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+  });
+}
