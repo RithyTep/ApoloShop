@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
@@ -15,9 +15,17 @@ import { RecentlyViewed } from "@/components/recently-viewed"
 import { ProductRecommendations } from "@/components/product-recommendations"
 import { ProductReviews } from "@/components/product-reviews"
 import { StarRating } from "@/components/star-rating"
+import { VariantSelector, ProductVariant } from "@/components/variant-selector"
+
+interface ProductWithVariants extends Product {
+  _reviewStats?: { averageRating: number; totalReviews: number }
+  hasVariants?: boolean
+  variantTypes?: string[]
+  variants?: ProductVariant[]
+}
 
 interface ProductDetailClientProps {
-  product: Product & { _reviewStats?: { averageRating: number; totalReviews: number } }
+  product: ProductWithVariants
   language?: "EN" | "KH"
   currency?: "USD" | "KHR"
 }
@@ -30,10 +38,22 @@ export function ProductDetailClient({ product: initialProduct, language: initial
   const [quantity, setQuantity] = useState(1)
   const [language, setLanguage] = useState<"EN" | "KH">(initialLanguage)
   const [currency, setCurrency] = useState<"USD" | "KHR">(initialCurrency)
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null)
+  const [variantSelections, setVariantSelections] = useState<Record<string, string>>({})
   const { addViewedProduct } = useRecentlyViewed()
 
   // Fetch reviews for rating display (client-side for real-time updates)
   const { data: reviewsData } = useProductReviews(productId, { limit: 0 })
+
+  // Handle variant selection
+  const handleVariantSelect = useCallback((variant: ProductVariant | null, selections: Record<string, string>) => {
+    setSelectedVariant(variant)
+    setVariantSelections(selections)
+    // Reset quantity if variant changes and new stock is lower
+    if (variant && variant.stock < quantity) {
+      setQuantity(Math.max(1, variant.stock))
+    }
+  }, [quantity])
 
   // Track this product as recently viewed
   useEffect(() => {
@@ -46,18 +66,39 @@ export function ProductDetailClient({ product: initialProduct, language: initial
     if (product) {
       // Get existing cart from localStorage
       const existingCart = JSON.parse(localStorage.getItem("cart") || "[]")
-      const existingItem = existingCart.find((item: { id: string }) => item.id === product.id)
+
+      // Determine the cart item key (product ID + variant ID if applicable)
+      const cartItemKey = selectedVariant
+        ? `${product.id}-${selectedVariant.id}`
+        : product.id
+
+      // Determine price (variant price or base price)
+      const itemPriceUsd = selectedVariant?.priceUsd ?? product.priceUsd
+      const itemPriceKhr = selectedVariant?.priceKhr ?? product.priceKhr
+
+      // Determine image (variant image or product image)
+      const itemImageUrl = selectedVariant?.imageUrl ?? product.imageUrl
+
+      const existingItem = existingCart.find((item: { id: string; variantId?: string }) => {
+        if (selectedVariant) {
+          return item.id === product.id && item.variantId === selectedVariant.id
+        }
+        return item.id === product.id && !item.variantId
+      })
 
       if (existingItem) {
         existingItem.quantity += quantity
       } else {
         existingCart.push({
           id: product.id,
+          variantId: selectedVariant?.id,
+          variantSku: selectedVariant?.sku,
+          variantOptions: selectedVariant ? variantSelections : undefined,
           nameEn: product.nameEn,
           nameKh: product.nameKh,
-          priceUsd: product.priceUsd,
-          priceKhr: product.priceKhr,
-          imageUrl: product.imageUrl,
+          priceUsd: itemPriceUsd,
+          priceKhr: itemPriceKhr,
+          imageUrl: itemImageUrl,
           quantity,
         })
       }
@@ -85,10 +126,27 @@ export function ProductDetailClient({ product: initialProduct, language: initial
     return language === "EN" ? descEn : descKh
   }
 
-  const inStock = product.inventory ? product.inventory.quantity > 0 : true
+  // Determine stock status based on variant or base product
+  const hasVariants = product.hasVariants && product.variants && product.variants.length > 0
+  const currentStock = hasVariants
+    ? (selectedVariant?.stock ?? 0)
+    : (product.inventory?.quantity ?? 999)
+  const inStock = hasVariants
+    ? (selectedVariant ? selectedVariant.stock > 0 : false)
+    : (product.inventory ? product.inventory.quantity > 0 : true)
+
+  // Determine current price (variant price or base price)
+  const currentPriceUsd = Number(selectedVariant?.priceUsd ?? product.priceUsd)
+  const currentPriceKhr = selectedVariant?.priceKhr ?? product.priceKhr
+
+  // Check if variant selection is required
+  const variantSelectionRequired = hasVariants && !selectedVariant
 
   // Use client-fetched reviews if available, fallback to SSR stats
   const reviewStats = reviewsData?.stats || product._reviewStats
+
+  // Get current display image (variant image if selected, otherwise product image)
+  const displayImageUrl = selectedVariant?.imageUrl ?? product.imageUrl
 
   return (
     <div className="min-h-screen bg-background">
@@ -152,9 +210,9 @@ export function ProductDetailClient({ product: initialProduct, language: initial
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
           {/* Product Image */}
           <div className="relative aspect-square bg-muted rounded-lg overflow-hidden">
-            {product.imageUrl ? (
+            {displayImageUrl ? (
               <Image
-                src={product.imageUrl}
+                src={displayImageUrl}
                 alt={getName(product.nameEn, product.nameKh)}
                 fill
                 className="object-cover"
@@ -165,7 +223,7 @@ export function ProductDetailClient({ product: initialProduct, language: initial
                 <Package className="h-24 w-24 text-muted-foreground" />
               </div>
             )}
-            {!inStock && (
+            {!inStock && !variantSelectionRequired && (
               <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
                 <Badge variant="secondary" className="text-lg px-4 py-2">
                   Out of Stock
@@ -203,7 +261,7 @@ export function ProductDetailClient({ product: initialProduct, language: initial
 
             {/* Price */}
             <div className="text-3xl font-bold text-primary">
-              {formatPrice(product.priceUsd, product.priceKhr)}
+              {formatPrice(currentPriceUsd, currentPriceKhr)}
             </div>
 
             {/* Description */}
@@ -215,20 +273,36 @@ export function ProductDetailClient({ product: initialProduct, language: initial
               </div>
             )}
 
+            {/* Variant Selector */}
+            {hasVariants && product.variantTypes && product.variants && (
+              <VariantSelector
+                variants={product.variants}
+                variantTypes={product.variantTypes}
+                basePrice={{ usd: Number(product.priceUsd), khr: product.priceKhr }}
+                language={language}
+                currency={currency}
+                onVariantSelect={handleVariantSelect}
+              />
+            )}
+
             {/* SKU */}
             <div className="text-sm text-muted-foreground">
-              SKU: <span className="font-mono">{product.sku}</span>
+              SKU: <span className="font-mono">{selectedVariant?.sku ?? product.sku}</span>
             </div>
 
             {/* Stock Status */}
-            <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${inStock ? "bg-success" : "bg-destructive"}`} />
-              <span className={inStock ? "text-success" : "text-destructive"}>
-                {inStock
-                  ? `In Stock${product.inventory ? ` (${product.inventory.quantity} available)` : ""}`
-                  : "Out of Stock"}
-              </span>
-            </div>
+            {!variantSelectionRequired && (
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${inStock ? "bg-success" : "bg-destructive"}`} />
+                <span className={inStock ? "text-success" : "text-destructive"}>
+                  {inStock
+                    ? hasVariants
+                      ? `In Stock (${currentStock} available)`
+                      : `In Stock${product.inventory ? ` (${product.inventory.quantity} available)` : ""}`
+                    : "Out of Stock"}
+                </span>
+              </div>
+            )}
 
             {/* Quantity Selector */}
             <div className="flex items-center gap-4">
@@ -237,7 +311,7 @@ export function ProductDetailClient({ product: initialProduct, language: initial
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   className="p-2 hover:bg-muted transition-colors"
-                  disabled={quantity <= 1}
+                  disabled={quantity <= 1 || variantSelectionRequired}
                 >
                   <Minus size={16} />
                 </button>
@@ -247,7 +321,7 @@ export function ProductDetailClient({ product: initialProduct, language: initial
                 <button
                   onClick={() => setQuantity(quantity + 1)}
                   className="p-2 hover:bg-muted transition-colors"
-                  disabled={product.inventory && quantity >= product.inventory.quantity}
+                  disabled={variantSelectionRequired || quantity >= currentStock}
                 >
                   <Plus size={16} />
                 </button>
@@ -257,18 +331,22 @@ export function ProductDetailClient({ product: initialProduct, language: initial
             {/* Add to Cart Button */}
             <Button
               onClick={handleAddToCart}
-              disabled={!inStock}
+              disabled={!inStock || variantSelectionRequired}
               className="w-full h-14 text-lg bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <ShoppingCart className="mr-2 h-5 w-5" />
-              {inStock ? "Add to Cart" : "Out of Stock"}
+              {variantSelectionRequired
+                ? (language === "EN" ? "Select Options" : "ជ្រើសរើសជម្រើស")
+                : inStock
+                  ? (language === "EN" ? "Add to Cart" : "បន្ថែមទៅកន្រ្តក")
+                  : (language === "EN" ? "Out of Stock" : "អស់ស្តុក")}
             </Button>
 
             {/* Total */}
-            {inStock && quantity > 1 && (
+            {inStock && quantity > 1 && !variantSelectionRequired && (
               <div className="text-center text-muted-foreground">
                 Total: <span className="font-bold text-foreground">
-                  {formatPrice(product.priceUsd * quantity, product.priceKhr * quantity)}
+                  {formatPrice(currentPriceUsd * quantity, currentPriceKhr * quantity)}
                 </span>
               </div>
             )}

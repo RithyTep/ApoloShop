@@ -201,6 +201,10 @@ export const getProductByIdOrSlug = cache(async (idOrSlug: string): Promise<Prod
           where: { status: 'APPROVED' },
           select: { rating: true },
         },
+        variants: {
+          where: { isActive: true },
+          orderBy: { sortOrder: 'asc' },
+        },
       },
     })
 
@@ -211,6 +215,21 @@ export const getProductByIdOrSlug = cache(async (idOrSlug: string): Promise<Prod
     const avgRating = reviews.length > 0
       ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
       : 0
+
+    // Map variants
+    const variants = (product.variants || []).map(v => ({
+      id: v.id,
+      sku: v.sku,
+      options: v.options as Record<string, string>,
+      priceUsd: v.priceUsd ? (typeof v.priceUsd === 'object' && 'toNumber' in v.priceUsd
+        ? (v.priceUsd as { toNumber: () => number }).toNumber()
+        : Number(v.priceUsd)) : null,
+      priceKhr: v.priceKhr,
+      stock: v.stock,
+      imageUrl: v.imageUrl,
+      sortOrder: v.sortOrder,
+      isActive: v.isActive,
+    }))
 
     return {
       id: product.id,
@@ -230,6 +249,9 @@ export const getProductByIdOrSlug = cache(async (idOrSlug: string): Promise<Prod
       imageUrl: product.imageUrl || undefined,
       images: product.images as string[] | undefined,
       isActive: product.isActive,
+      hasVariants: product.hasVariants,
+      variantTypes: product.variantTypes as string[] | undefined,
+      variants: variants.length > 0 ? variants : undefined,
       category: product.category
         ? {
             id: product.category.id,

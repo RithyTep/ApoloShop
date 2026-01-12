@@ -300,6 +300,9 @@ model Product {
   imageUrl      String?   @map("image_url")
   images        Json?     // Array of additional image URLs
   isActive      Boolean   @default(true) @map("is_active")
+  // Variant configuration (defines which variant types this product supports)
+  hasVariants   Boolean   @default(false) @map("has_variants")
+  variantTypes  Json?     @map("variant_types") // Array of variant type names: ["size", "color", "material"]
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
@@ -307,6 +310,7 @@ model Product {
   orderItems    OrderItem[]
   wishlists     Wishlist[]
   reviews       Review[]
+  variants      ProductVariant[]
 
   @@index([clientId])
   @@index([categoryId])
@@ -326,6 +330,35 @@ model Inventory {
   lastUpdated DateTime @default(now()) @map("last_updated")
 
   @@map("inventory")
+  @@schema("apolo")
+}
+
+// Product variants for size, color, material, etc.
+model ProductVariant {
+  id          String   @id @default(cuid())
+  productId   String   @map("product_id")
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku         String   @unique // Variant-specific SKU
+  // Options for this variant (JSON object mapping type to value)
+  // e.g., { "size": "M", "color": "Red" } or { "size": "L", "color": "Blue", "material": "Cotton" }
+  options     Json     // { [optionType: string]: string }
+  // Variant-specific pricing (if different from base product)
+  priceUsd    Decimal? @map("price_usd") @db.Decimal(10, 2) // Null = use base product price
+  priceKhr    Int?     @map("price_khr")
+  // Variant-specific stock
+  stock       Int      @default(0)
+  // Variant-specific image (linked to options like color)
+  imageUrl    String?  @map("image_url")
+  // Display order
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([productId])
+  @@index([sku])
+  @@index([isActive])
+  @@map("product_variants")
   @@schema("apolo")
 }
 
