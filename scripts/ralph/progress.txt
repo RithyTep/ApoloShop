@@ -1618,3 +1618,33 @@ Project: ApoloShop - Product Search Feature
   - RadioGroup from @radix-ui/react-radio-group already in package.json
   - Keep messaging order options (Telegram/Messenger) as fallback
 ---
+
+## 2026-01-12 - US-052
+- **Implemented**: Checkout optimization
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added ShippingAddress model)
+  - `app/api/shipping-addresses/route.ts` (new file - CRUD endpoint)
+  - `components/checkout-page.tsx` (modified - complete rewrite with one-page checkout)
+  - `components/shop-app.tsx` (modified - passed onUpdateQuantity/onRemoveItem to checkout)
+  - `lib/i18n.ts` (modified - added checkout translations EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Guest checkout**: Works without account creation (name + phone required)
+  - **One-page checkout**: All 3 steps visible: Contact Info, Delivery Address, Payment Method
+  - **Shipping address saving**: ShippingAddress model with customerId OR guestId support
+  - **Phone-based address lookup**: Enter phone, click "Check" to find saved addresses
+  - **Address selection UI**: Saved addresses shown as cards with Home/Work icons, default badge
+  - **New address form**: Label, province, district, commune, street, landmark fields
+  - **Save for future**: Checkbox to save new addresses for returning customers
+  - **Order summary sidebar**: Sticky sidebar with product images, names, prices
+  - **Quantity editing**: +/- buttons and remove icon directly in order summary
+  - **Express checkout**: Auto-select default address, pre-fill name from saved address
+  - **Bilingual**: All UI text in English and Khmer
+- **Learnings for future iterations**:
+  - Guest checkout works by using guestId (localStorage) instead of customerId for non-logged-in users
+  - Phone lookup enables returning customers to find their addresses without full account system
+  - One-page checkout uses numbered section headers (1, 2, 3) for visual progress indication
+  - Sticky sidebar with overflow scroll works well for order summary
+  - Form validation: require fullName + phone + (selected address OR new address line)
+  - ShippingAddress stores full Cambodia address hierarchy: province, district, commune, street
+---
