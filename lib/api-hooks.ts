@@ -1839,3 +1839,61 @@ export function useProductRatings(productIds: string[]) {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
+
+// ============================================
+// DASHBOARD WIDGETS
+// ============================================
+
+export type DashboardWidgetType = "sales_overview" | "recent_orders" | "low_stock" | "top_products";
+
+export interface DashboardWidgetConfig {
+  id: string;
+  type: DashboardWidgetType;
+  order: number;
+  enabled: boolean;
+  size: "small" | "medium" | "large";
+}
+
+export interface DashboardLayoutConfig {
+  widgets: DashboardWidgetConfig[];
+  version: number;
+  lastUpdated: string;
+}
+
+// Default widget configurations
+export const defaultDashboardWidgets: DashboardWidgetConfig[] = [
+  { id: "sales_overview_1", type: "sales_overview", order: 0, enabled: true, size: "large" },
+  { id: "recent_orders_1", type: "recent_orders", order: 1, enabled: true, size: "large" },
+  { id: "low_stock_1", type: "low_stock", order: 2, enabled: true, size: "medium" },
+  { id: "top_products_1", type: "top_products", order: 3, enabled: true, size: "medium" },
+];
+
+/**
+ * Hook to fetch dashboard widget layout for current admin user
+ */
+export function useDashboardLayout() {
+  return useQuery({
+    queryKey: ["dashboard-layout"],
+    queryFn: () =>
+      fetchAPI<{ config: DashboardLayoutConfig | null }>("/api/settings?key=dashboardLayout"),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+/**
+ * Hook to save dashboard widget layout
+ */
+export function useUpdateDashboardLayout() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (config: DashboardLayoutConfig) =>
+      fetchAPI<{ success: boolean }>("/api/settings", {
+        method: "PUT",
+        body: JSON.stringify({ settings: { dashboardLayout: config } }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dashboard-layout"] });
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+    },
+  });
+}
