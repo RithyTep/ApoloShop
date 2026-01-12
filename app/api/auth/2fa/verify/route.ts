@@ -9,6 +9,11 @@ import {
 import { decryptSecret, verifyTOTP, verifyRecoveryCode } from "@/lib/totp"
 import { createSession, extractIpAddress } from "@/lib/session-service"
 import { processLoginActivity } from "@/lib/login-activity"
+import {
+  log2FASuccess,
+  log2FAFailed,
+  logRecoveryCodeUsed,
+} from "@/lib/security-log"
 
 const verifySchema = z.object({
   // Pending auth token from initial login (before 2FA)
@@ -92,6 +97,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (!isValidCode) {
+      // Log 2FA failure
+      log2FAFailed(user.id, user.name, request, {
+        isRecoveryCode,
+      })
       return NextResponse.json(
         { error: isRecoveryCode ? "Invalid recovery code" : "Invalid verification code" },
         { status: 401 }
@@ -106,6 +115,11 @@ export async function POST(request: NextRequest) {
       await prisma.user.update({
         where: { id: user.id },
         data: { recoveryCodes: hashedCodes },
+      })
+
+      // Log recovery code usage (security-sensitive event)
+      logRecoveryCodeUsed(user.id, user.name, request, {
+        codesRemaining: hashedCodes.length,
       })
     }
 
@@ -136,6 +150,12 @@ export async function POST(request: NextRequest) {
       token: legacyToken,
       ipAddress,
       userAgent,
+    })
+
+    // Log 2FA success
+    log2FASuccess(user.id, user.name, request, {
+      sessionId: session.id,
+      usedRecoveryCode: isRecoveryCode,
     })
 
     // Track login activity and send notification if new device/location

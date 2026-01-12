@@ -14,6 +14,7 @@ import {
   getSessionStats,
   formatSessionForDisplay,
 } from "@/lib/session-service";
+import { logSessionEvent } from "@/lib/security-log";
 
 /**
  * GET /api/sessions
@@ -74,6 +75,18 @@ export const DELETE = withAuth(async (request: AuthenticatedRequest) => {
       request.user.id,
       currentSessionId
     );
+
+    // Log security event
+    if (revokedCount > 0) {
+      logSessionEvent(
+        "ALL_SESSIONS_REVOKED",
+        request.user.id,
+        request.user.email,
+        currentSessionId,
+        request,
+        { revokedCount }
+      );
+    }
 
     return NextResponse.json({
       success: true,

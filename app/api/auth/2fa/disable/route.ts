@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { withAuth } from "@/lib/auth-middleware"
 import { decryptSecret, verifyTOTP, verifyRecoveryCode } from "@/lib/totp"
+import { log2FADisabled } from "@/lib/security-log"
 
 const disableSchema = z.object({
   // Password confirmation required for security
@@ -94,6 +95,9 @@ export async function POST(request: NextRequest) {
           recoveryCodes: null,
         },
       })
+
+      // Log 2FA disabled event
+      log2FADisabled(user.userId, user.email, request)
 
       return NextResponse.json({
         message: "Two-factor authentication has been disabled",

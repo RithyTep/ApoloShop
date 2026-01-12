@@ -24,6 +24,12 @@ import {
   extractIpAddress as extractSessionIpAddress,
 } from "@/lib/session-service"
 import { processLoginActivity } from "@/lib/login-activity"
+import {
+  logLoginSuccess,
+  logLoginFailed,
+  logAccountLocked,
+  logSecurityEvent,
+} from "@/lib/security-log"
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -69,6 +75,8 @@ export async function POST(request: NextRequest) {
     if (!user || !user.isActive) {
       // Record failed attempt even for non-existent users (to prevent enumeration)
       await handleFailedLogin(email, null, ipAddress, userAgent)
+      // Log security event (fire and forget)
+      logLoginFailed(email, request, { reason: user ? "account_inactive" : "user_not_found" })
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
@@ -87,6 +95,11 @@ export async function POST(request: NextRequest) {
           ipAddress,
           LOCKOUT_CONFIG.lockoutDurationMinutes
         )
+        // Log account locked event
+        logAccountLocked(user.id, user.name, request, {
+          failedAttempts: LOCKOUT_CONFIG.maxFailedAttempts,
+          lockoutDurationMinutes: LOCKOUT_CONFIG.lockoutDurationMinutes,
+        })
 
         return NextResponse.json(
           {
@@ -97,6 +110,12 @@ export async function POST(request: NextRequest) {
           { status: 423 }
         )
       }
+
+      // Log failed login attempt
+      logLoginFailed(email, request, {
+        reason: "invalid_password",
+        attemptsRemaining: failedResult.attemptsRemaining,
+      })
 
       return NextResponse.json(
         {
@@ -149,6 +168,11 @@ export async function POST(request: NextRequest) {
 
     // Record successful login and clear any lockout
     await handleSuccessfulLogin(email, user.id, ipAddress, userAgent)
+
+    // Log successful login event (fire and forget)
+    logLoginSuccess(user.id, user.name, request, {
+      sessionId: session.id,
+    })
 
     // Track login activity and send notification if new device/location
     // Fire and forget - don't block the login response

@@ -10,6 +10,7 @@ import {
   encryptSecret,
   verifyTOTP,
 } from "@/lib/totp"
+import { log2FAEnabled, extractSecurityRequestInfo } from "@/lib/security-log"
 
 /**
  * POST /api/auth/2fa/setup
@@ -174,6 +175,9 @@ export async function PUT(request: NextRequest) {
         where: { id: user.userId },
         data: { twoFactorEnabled: true },
       })
+
+      // Log 2FA enabled event
+      log2FAEnabled(user.userId, user.email, request)
 
       return NextResponse.json({
         message: "Two-factor authentication has been enabled successfully",

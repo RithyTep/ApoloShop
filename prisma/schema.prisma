@@ -953,6 +953,116 @@ model LoginActivity {
 }
 
 // ============================================
+// SECURITY EVENT LOG
+// ============================================
+
+// Security event types for comprehensive audit trail
+enum SecurityEventType {
+  // Authentication events
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  LOGIN_2FA_SUCCESS
+  LOGIN_2FA_FAILED
+  LOGOUT
+  // Session events
+  SESSION_CREATED
+  SESSION_REVOKED
+  SESSION_EXPIRED
+  ALL_SESSIONS_REVOKED
+  // Password events
+  PASSWORD_CHANGED
+  PASSWORD_RESET_REQUESTED
+  PASSWORD_RESET_COMPLETED
+  PASSWORD_RESET_FAILED
+  // 2FA events
+  TWO_FACTOR_ENABLED
+  TWO_FACTOR_DISABLED
+  TWO_FACTOR_RECOVERY_USED
+  TWO_FACTOR_RECOVERY_REGENERATED
+  // Account events
+  ACCOUNT_CREATED
+  ACCOUNT_UPDATED
+  ACCOUNT_LOCKED
+  ACCOUNT_UNLOCKED
+  ACCOUNT_DELETED
+  EMAIL_VERIFIED
+  EMAIL_VERIFICATION_REQUESTED
+  // Permission events
+  ROLE_ASSIGNED
+  ROLE_REMOVED
+  PERMISSION_GRANTED
+  PERMISSION_REVOKED
+  ROLE_CREATED
+  ROLE_UPDATED
+  ROLE_DELETED
+  // API key events
+  API_KEY_CREATED
+  API_KEY_ROTATED
+  API_KEY_REVOKED
+  API_KEY_DELETED
+  // OAuth events
+  OAUTH_ACCOUNT_LINKED
+  OAUTH_ACCOUNT_UNLINKED
+  OAUTH_LOGIN_SUCCESS
+  OAUTH_LOGIN_FAILED
+  // Security events
+  SUSPICIOUS_LOGIN_DETECTED
+  SUSPICIOUS_LOGIN_REVIEWED
+  IP_BLOCKED
+  IP_UNBLOCKED
+  // Admin actions
+  ADMIN_IMPERSONATION_START
+  ADMIN_IMPERSONATION_END
+
+  @@schema("apolo")
+}
+
+// Severity levels for security events
+enum SecurityEventSeverity {
+  INFO      // Routine events (login success, logout)
+  WARNING   // Notable events (failed login, 2FA recovery used)
+  CRITICAL  // Security-sensitive events (account locked, suspicious activity)
+
+  @@schema("apolo")
+}
+
+model SecurityLog {
+  id          String               @id @default(cuid())
+  event       SecurityEventType
+  severity    SecurityEventSeverity @default(INFO)
+  // User context
+  userId      String?              @map("user_id")
+  userName    String?              @map("user_name")  // Preserved in case user is deleted
+  userEmail   String?              @map("user_email") // For failed login attempts where userId may not exist
+  // Target context (for permission/role changes affecting another user)
+  targetUserId String?             @map("target_user_id")
+  targetUserName String?           @map("target_user_name")
+  // Request context
+  ipAddress   String?              @map("ip_address")
+  userAgent   String?              @map("user_agent") @db.Text
+  // Location (optional, from IP geolocation)
+  country     String?
+  city        String?
+  // Event details
+  details     Json?                // Additional context (old/new values, error messages, etc.)
+  sessionId   String?              @map("session_id")
+  // Retention management
+  expiresAt   DateTime             @map("expires_at") // For 90-day retention policy
+  // Timestamps
+  createdAt   DateTime             @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([event])
+  @@index([severity])
+  @@index([ipAddress])
+  @@index([createdAt])
+  @@index([expiresAt])
+  @@index([targetUserId])
+  @@map("security_logs")
+  @@schema("apolo")
+}
+
+// ============================================
 // DEVELOPER BACKLOG (Dev Only)
 // ============================================
 

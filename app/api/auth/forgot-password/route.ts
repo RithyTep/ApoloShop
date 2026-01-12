@@ -11,6 +11,7 @@ import {
   RESET_CONFIG,
 } from "@/lib/password-reset"
 import { extractIpAddress } from "@/lib/account-lockout"
+import { logPasswordResetRequested } from "@/lib/security-log"
 
 // Request validation schema
 const forgotPasswordSchema = z.object({
@@ -42,6 +43,9 @@ export async function POST(request: NextRequest) {
 
     // Request password reset
     const result = await requestPasswordReset(email, ipAddress, userAgent)
+
+    // Log security event (userId/userName not available to prevent enumeration)
+    logPasswordResetRequested(email, undefined, undefined, request)
 
     // Build response headers
     const headers: Record<string, string> = {

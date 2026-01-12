@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuthAndParams, AuthenticatedRequest } from "@/lib/auth-middleware";
 import { revokeSession } from "@/lib/session-service";
+import { logSessionEvent } from "@/lib/security-log";
 
 /**
  * DELETE /api/sessions/[id]
@@ -38,6 +39,15 @@ export const DELETE = withAuthAndParams(
           { status: 404 }
         );
       }
+
+      // Log security event
+      logSessionEvent(
+        "SESSION_REVOKED",
+        request.user.id,
+        request.user.email,
+        sessionId,
+        request
+      );
 
       return NextResponse.json({
         success: true,

@@ -14,6 +14,7 @@ import {
 } from "@/lib/password-reset"
 import { extractIpAddress } from "@/lib/account-lockout"
 import { PASSWORD_CONFIG, formatPasswordRequirementsError } from "@/lib/password-security"
+import { logPasswordResetCompleted, logSecurityEvent } from "@/lib/security-log"
 
 // Request validation schema
 const resetPasswordSchema = z.object({
@@ -93,10 +94,22 @@ export async function POST(request: NextRequest) {
     const { token, password } = validation.data
     const ipAddress = extractIpAddress(request.headers)
 
+    // Pre-validate token to get user info for security logging
+    const tokenValidation = await validateResetToken(token)
+
     // Reset password
     const result = await resetPassword(token, password, ipAddress)
 
     if (!result.success) {
+      // Log failed password reset attempt
+      logSecurityEvent({
+        event: "PASSWORD_RESET_FAILED",
+        userEmail: tokenValidation.email,
+        userId: tokenValidation.userId,
+        details: { errorCode: result.error },
+        ipAddress,
+      })
+
       // Map error codes to appropriate HTTP status
       let status = 400
       if (result.error === "TOKEN_EXPIRED" || result.error === "TOKEN_NOT_FOUND") {
@@ -117,6 +130,11 @@ export async function POST(request: NextRequest) {
         },
         { status }
       )
+    }
+
+    // Log successful password reset
+    if (tokenValidation.userId) {
+      logPasswordResetCompleted(tokenValidation.userId, tokenValidation.email || "Unknown", request)
     }
 
     return NextResponse.json({
