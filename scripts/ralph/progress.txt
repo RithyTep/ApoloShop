@@ -1293,3 +1293,40 @@ Project: ApoloShop - Product Search Feature
   - isEmailVerificationRequired() centralizes list of restricted actions
   - cleanupExpiredTokens() can be run periodically to clean database
 ---
+
+## 2026-01-12 - US-043
+- **Implemented**: Login activity notifications
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added LoginActivity model, loginNotificationsEnabled to User)
+  - `lib/login-activity.ts` (new file - login activity service)
+  - `app/api/auth/login-activity/route.ts` (new file - user activity management)
+  - `app/api/admin/security/suspicious-logins/route.ts` (new file - admin review)
+  - `app/api/auth/login/route.ts` (modified - integrated processLoginActivity)
+  - `app/api/auth/2fa/verify/route.ts` (modified - integrated processLoginActivity)
+  - `lib/i18n.ts` (modified - added loginActivity translations EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **LoginActivity model**: userId, sessionId, deviceName, deviceType, browser, os, ipAddress, country, city, region, isNewDevice, isNewLocation, notificationSent, markedSuspicious, suspiciousAt, reviewedAt, reviewNotes
+  - **User model**: Added loginNotificationsEnabled boolean field (default true)
+  - **recordLoginActivity()**: Records login with device/location info, detects new device/location
+  - **processLoginActivity()**: Main function to call after login, handles notification logic
+  - **sendLoginNotification()**: Sends email notification with device/location details
+  - **getUserLoginActivities()**: Get user's login history
+  - **markLoginAsSuspicious()**: Mark login as "not me"
+  - **reviewSuspiciousLogin()**: Admin action to review suspicious logins
+  - **getSuspiciousLoginActivities()**: Admin endpoint for suspicious login list
+  - **updateLoginNotificationPreference()**: Toggle notification preference
+  - **GET /api/auth/login-activity**: User's login activity history + notification preference
+  - **POST /api/auth/login-activity**: Mark as suspicious OR update notification preference
+  - **GET /api/admin/security/suspicious-logins**: Admin list with stats (total, unreviewed)
+  - **POST /api/admin/security/suspicious-logins**: Admin review suspicious login
+  - **Bilingual support**: Full EN/KH translations including email notification text
+- **Learnings for future iterations**:
+  - Fire-and-forget pattern for processLoginActivity() to not block login response
+  - Device detection via parseUserAgent() from existing session-service.ts
+  - New device/location detection looks back 30 days (LOGIN_ACTIVITY_CONFIG.historyDays)
+  - Notification cooldown of 24 hours prevents spam for same device/location
+  - Admin review endpoint requires admin role via requireRole("admin")
+  - Security recommendations returned with "not me" reports to guide users
+  - Country/city detection would require external IP geolocation service (not implemented - fields prepared)
+---

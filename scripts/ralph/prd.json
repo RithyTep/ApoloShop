@@ -667,8 +667,8 @@
         "Build passes: bun run build"
       ],
       "priority": 43,
-      "passes": false,
-      "notes": "Early detection of account compromise"
+      "passes": true,
+      "notes": "Implemented LoginActivity model, lib/login-activity.ts service with device/location detection, GET/POST /api/auth/login-activity for user activity management and 'not me' reports, /api/admin/security/suspicious-logins for admin review, loginNotificationsEnabled user preference, integrated into login and 2FA verify flows, bilingual translations (EN/KH)"
     },
     {
       "id": "US-044",
