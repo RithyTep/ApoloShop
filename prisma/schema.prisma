@@ -83,6 +83,8 @@ model Category {
 
 model Product {
   id            String    @id @default(cuid())
+  clientId      String?   @map("client_id")
+  client        Client?   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   nameEn        String    @map("name_en")
   nameKh        String    @map("name_kh")
   descriptionEn String?   @map("description_en") @db.Text
@@ -101,6 +103,7 @@ model Product {
   inventory     Inventory?
   orderItems    OrderItem[]
 
+  @@index([clientId])
   @@index([categoryId])
   @@index([sku])
   @@index([isActive])
@@ -126,6 +129,8 @@ model Inventory {
 
 model Customer {
   id        String   @id @default(cuid())
+  clientId  String?  @map("client_id")
+  client    Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
   name      String
   phone     String   @unique
   email     String?
@@ -136,6 +141,7 @@ model Customer {
 
   orders    Order[]
 
+  @@index([clientId])
   @@index([phone])
   @@map("customers")
   @@schema("apolo")
@@ -175,6 +181,8 @@ enum Currency {
 
 model Order {
   id          String       @id @default(cuid())
+  clientId    String?      @map("client_id")
+  client      Client?      @relation(fields: [clientId], references: [id], onDelete: Cascade)
   orderNumber String       @unique @map("order_number")
   customerId  String       @map("customer_id")
   customer    Customer     @relation(fields: [customerId], references: [id])
@@ -194,6 +202,7 @@ model Order {
   items       OrderItem[]
   payments    Payment[]
 
+  @@index([clientId])
   @@index([customerId])
   @@index([status])
   @@index([createdAt])
@@ -374,17 +383,47 @@ model Holiday {
 }
 
 // ============================================
+// MULTI-TENANT CLIENT
+// ============================================
+
+model Client {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique // Used for subdomains: {slug}.apoloshop.com
+  domain       String?  @unique // Custom domain: shop.example.com
+  settings     Json?    // Client-specific settings (currency, language, etc.)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  products     Product[]
+  orders       Order[]
+  customers    Customer[]
+  customizations ShopCustomization[]
+
+  @@index([slug])
+  @@index([domain])
+  @@index([isActive])
+  @@map("clients")
+  @@schema("apolo")
+}
+
+// ============================================
 // SHOP CUSTOMIZATION (White Label)
 // ============================================
 
 model ShopCustomization {
   id        String   @id @default(cuid())
+  clientId  String?  @map("client_id")
+  client    Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
   version   Int      @default(1)
   isActive  Boolean  @default(true) @map("is_active")
   config    Json     // Full customization config (theme, sections, etc.)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@index([clientId])
   @@index([isActive])
   @@map("shop_customization")
   @@schema("apolo")
