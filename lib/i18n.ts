@@ -65,6 +65,12 @@ export const translations = {
       searching: "Searching...",
       viewAll: "View all results",
     },
+    // Recently Viewed
+    recentlyViewed: {
+      title: "Recently Viewed",
+      clear: "Clear",
+      noProducts: "No recently viewed products",
+    },
   },
   kh: {
     // Order Status
@@ -130,6 +136,12 @@ export const translations = {
       noResults: "រកមិនឃើញលទ្ធផល",
       searching: "កំពុងស្វែងរក...",
       viewAll: "មើលលទ្ធផលទាំងអស់",
+    },
+    // Recently Viewed
+    recentlyViewed: {
+      title: "បានមើលថ្មីៗ",
+      clear: "សម្អាត",
+      noProducts: "មិនមានផលិតផលដែលបានមើលថ្មីៗ",
     },
   },
 }

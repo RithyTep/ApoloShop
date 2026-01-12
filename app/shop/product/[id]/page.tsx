@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
@@ -11,6 +11,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Minus, Plus, ShoppingCart, Package } from "lucide-react"
 import { Product } from "@/lib/api-hooks"
+import { useRecentlyViewed } from "@/lib/use-recently-viewed"
+import { RecentlyViewed } from "@/components/recently-viewed"
 
 interface ProductDetailProps {
   language?: "EN" | "KH"
@@ -33,12 +35,20 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1)
   const [language, setLanguage] = useState<"EN" | "KH">("EN")
   const [currency, setCurrency] = useState<"USD" | "KHR">("USD")
+  const { addViewedProduct } = useRecentlyViewed()
 
   const { data: product, isLoading, error } = useQuery({
     queryKey: ["product", productId],
     queryFn: () => fetchProduct(productId),
     enabled: !!productId,
   })
+
+  // Track this product as recently viewed
+  useEffect(() => {
+    if (product?.id) {
+      addViewedProduct(product.id)
+    }
+  }, [product?.id, addViewedProduct])
 
   const handleAddToCart = () => {
     if (product) {
@@ -299,6 +309,14 @@ export default function ProductDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Recently Viewed Products */}
+        <RecentlyViewed
+          language={language}
+          currency={currency}
+          excludeProductId={productId}
+          maxDisplay={4}
+        />
       </main>
     </div>
   )
