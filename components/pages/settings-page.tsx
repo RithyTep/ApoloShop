@@ -13,6 +13,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { getAllComponents, getDefaultConfig, mergeWithDefaults, type ComponentRegistration } from "@/lib/component-registry"
 import { ClientThemeEditor } from "@/components/client-theme-editor"
 import { type GA4Settings } from "@/providers/ga4-provider"
+import { type FBPixelSettings } from "@/providers/fb-pixel-provider"
 
 export function SettingsPage() {
   const { toast } = useToast()
@@ -45,6 +46,16 @@ export function SettingsPage() {
     enabled: false,
     measurementId: "",
     enhancedConversions: true,
+    debugMode: false,
+  })
+
+  // Facebook Pixel settings
+  const [fbPixelSettings, setFbPixelSettings] = useState<FBPixelSettings>({
+    enabled: false,
+    pixelId: "",
+    enableConversionsApi: false,
+    accessToken: "",
+    testEventCode: "",
     debugMode: false,
   })
 
@@ -84,6 +95,18 @@ export function SettingsPage() {
           measurementId: ga4.measurementId || "",
           enhancedConversions: ga4.enhancedConversions ?? true,
           debugMode: ga4.debugMode ?? false,
+        })
+      }
+      // Load FB Pixel settings
+      if (s.fbPixel) {
+        const fbPixel = s.fbPixel as FBPixelSettings
+        setFbPixelSettings({
+          enabled: fbPixel.enabled ?? false,
+          pixelId: fbPixel.pixelId || "",
+          enableConversionsApi: fbPixel.enableConversionsApi ?? false,
+          accessToken: fbPixel.accessToken || "",
+          testEventCode: fbPixel.testEventCode || "",
+          debugMode: fbPixel.debugMode ?? false,
         })
       }
     }
@@ -145,6 +168,47 @@ export function SettingsPage() {
         },
       })
       toast({ title: "Google Analytics settings saved successfully" })
+    } catch (error) {
+      toast({ title: "Error", description: (error as Error).message, variant: "destructive" })
+    }
+  }
+
+  const handleSaveFBPixel = async () => {
+    // Validate pixel ID format if enabled
+    if (fbPixelSettings.enabled && fbPixelSettings.pixelId) {
+      const isValidId = /^\d{15,16}$/.test(fbPixelSettings.pixelId)
+      if (!isValidId) {
+        toast({
+          title: "Invalid Pixel ID",
+          description: "Facebook Pixel ID should be a 15-16 digit number",
+          variant: "destructive",
+        })
+        return
+      }
+    }
+
+    // Validate access token if Conversions API is enabled
+    if (fbPixelSettings.enableConversionsApi && !fbPixelSettings.accessToken) {
+      toast({
+        title: "Access Token Required",
+        description: "Conversions API requires a valid access token",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      await updateMutation.mutateAsync({
+        fbPixel: {
+          enabled: fbPixelSettings.enabled,
+          pixelId: fbPixelSettings.pixelId,
+          enableConversionsApi: fbPixelSettings.enableConversionsApi,
+          accessToken: fbPixelSettings.accessToken,
+          testEventCode: fbPixelSettings.testEventCode,
+          debugMode: fbPixelSettings.debugMode,
+        },
+      })
+      toast({ title: "Facebook Pixel settings saved successfully" })
     } catch (error) {
       toast({ title: "Error", description: (error as Error).message, variant: "destructive" })
     }
@@ -414,6 +478,136 @@ export function SettingsPage() {
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             {updateMutation.isPending ? "Saving..." : "Save Analytics Settings"}
+          </Button>
+        </div>
+      </Card>
+
+      {/* Facebook Pixel Settings */}
+      <Card className="p-6">
+        <h2 className="text-lg font-bold text-foreground mb-4">Facebook Pixel</h2>
+        <p className="text-muted-foreground text-sm mb-4">
+          Track conversions for Facebook and Instagram ads with Meta Pixel.
+        </p>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="fbPixelEnabled" className="font-medium">Enable Facebook Pixel</Label>
+              <p className="text-sm text-muted-foreground">
+                Inject Meta Pixel code into your shop
+              </p>
+            </div>
+            <Switch
+              id="fbPixelEnabled"
+              checked={fbPixelSettings.enabled}
+              onCheckedChange={(checked) => setFbPixelSettings({ ...fbPixelSettings, enabled: checked })}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="pixelId">Pixel ID</Label>
+            <Input
+              id="pixelId"
+              placeholder="123456789012345"
+              value={fbPixelSettings.pixelId}
+              onChange={(e) => setFbPixelSettings({ ...fbPixelSettings, pixelId: e.target.value })}
+              className="border-border mt-1 font-mono"
+              disabled={!fbPixelSettings.enabled}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Find this in Meta Events Manager &gt; Data Sources &gt; Your Pixel
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="enableConversionsApi" className="font-medium">Conversions API</Label>
+              <p className="text-sm text-muted-foreground">
+                Enable server-side event tracking for improved attribution
+              </p>
+            </div>
+            <Switch
+              id="enableConversionsApi"
+              checked={fbPixelSettings.enableConversionsApi}
+              onCheckedChange={(checked) => setFbPixelSettings({ ...fbPixelSettings, enableConversionsApi: checked })}
+              disabled={!fbPixelSettings.enabled}
+            />
+          </div>
+
+          {fbPixelSettings.enableConversionsApi && (
+            <div>
+              <Label htmlFor="accessToken">Access Token</Label>
+              <Input
+                id="accessToken"
+                type="password"
+                placeholder="EAABsbCS..."
+                value={fbPixelSettings.accessToken}
+                onChange={(e) => setFbPixelSettings({ ...fbPixelSettings, accessToken: e.target.value })}
+                className="border-border mt-1 font-mono"
+                disabled={!fbPixelSettings.enabled}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Generate in Events Manager &gt; Settings &gt; Conversions API
+              </p>
+            </div>
+          )}
+
+          {fbPixelSettings.enableConversionsApi && (
+            <div>
+              <Label htmlFor="testEventCode">Test Event Code (Optional)</Label>
+              <Input
+                id="testEventCode"
+                placeholder="TEST12345"
+                value={fbPixelSettings.testEventCode}
+                onChange={(e) => setFbPixelSettings({ ...fbPixelSettings, testEventCode: e.target.value })}
+                className="border-border mt-1 font-mono"
+                disabled={!fbPixelSettings.enabled}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Use for testing events without affecting live data
+              </p>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="fbDebugMode" className="font-medium">Debug Mode</Label>
+              <p className="text-sm text-muted-foreground">
+                Log events to browser console for testing
+              </p>
+            </div>
+            <Switch
+              id="fbDebugMode"
+              checked={fbPixelSettings.debugMode}
+              onCheckedChange={(checked) => setFbPixelSettings({ ...fbPixelSettings, debugMode: checked })}
+              disabled={!fbPixelSettings.enabled}
+            />
+          </div>
+
+          {fbPixelSettings.enabled && (
+            <div className="rounded-lg bg-muted p-4">
+              <h3 className="font-medium text-sm mb-2">Tracked Events</h3>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>ViewContent - Product page views</li>
+                <li>AddToCart - Add to cart actions</li>
+                <li>InitiateCheckout - Checkout started</li>
+                <li>AddPaymentInfo - Payment info added</li>
+                <li>Purchase - Completed purchases</li>
+                <li>Search - Product searches</li>
+              </ul>
+              {fbPixelSettings.enableConversionsApi && (
+                <p className="text-xs text-muted-foreground mt-2 pt-2 border-t border-border">
+                  Server-side events are sent via Conversions API for improved attribution.
+                </p>
+              )}
+            </div>
+          )}
+
+          <Button
+            onClick={handleSaveFBPixel}
+            disabled={updateMutation.isPending}
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            {updateMutation.isPending ? "Saving..." : "Save Pixel Settings"}
           </Button>
         </div>
       </Card>

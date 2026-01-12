@@ -6,6 +6,7 @@ import { QueryProvider } from "@/providers/query-provider"
 import { CartProvider } from "@/providers/cart-provider"
 import { I18nProvider } from "@/providers/i18n-provider"
 import { GA4Provider } from "@/providers/ga4-provider"
+import { FBPixelProvider } from "@/providers/fb-pixel-provider"
 import { Toaster } from "@/components/ui/toaster"
 
 const fontSans = Figtree({ subsets: ["latin"], variable: "--font-sans" })
@@ -26,12 +27,14 @@ export default function RootLayout({
       <body className="antialiased">
         <QueryProvider>
           <GA4Provider>
-            <I18nProvider>
-              <CartProvider>
-                {children}
-                <Toaster />
-              </CartProvider>
-            </I18nProvider>
+            <FBPixelProvider>
+              <I18nProvider>
+                <CartProvider>
+                  {children}
+                  <Toaster />
+                </CartProvider>
+              </I18nProvider>
+            </FBPixelProvider>
           </GA4Provider>
         </QueryProvider>
       </body>
