@@ -1964,3 +1964,36 @@ Project: ApoloShop - Product Search Feature
   - sortOrder important for determining which zone shows first to customer
   - Admin page pattern: Dialog with ScrollArea for long province list
 ---
+
+## 2026-01-13 - US-063
+- **Implemented**: Order tracking system with courier integration
+- **Files changed**:
+  - `prisma/schema.prisma` (added OrderTracking, TrackingStatusHistory models, CourierProvider, TrackingStatus enums)
+  - `app/api/tracking/route.ts` (new - CRUD API for tracking)
+  - `app/api/tracking/lookup/route.ts` (new - public tracking lookup)
+  - `app/shop/track/page.tsx` (new - customer tracking page)
+  - `components/pages/order-tracking-page.tsx` (new - admin tracking management)
+  - `lib/api-hooks.ts` (added tracking hooks and types)
+  - `lib/i18n.ts` (added tracking translations EN/KH)
+  - `components/admin-dashboard.tsx` (added order-tracking page)
+  - `components/sidebar.tsx` (added order-tracking nav item with MapPin icon)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **OrderTracking model**: orderId, trackingNumber, courier, status, estimatedDeliveryDate, actualDeliveryDate, shippingAddress (JSON), notification preferences
+  - **TrackingStatusHistory model**: status changes with location, notes, timestamps
+  - **CourierProvider enum**: JT_EXPRESS, NINJA_VAN, WING_DELIVERY, OTHER
+  - **TrackingStatus enum**: PENDING, PICKED_UP, IN_TRANSIT, OUT_FOR_DELIVERY, DELIVERED, FAILED_DELIVERY, RETURNED
+  - **Customer tracking page** at /shop/track: Search by order number or tracking number, status timeline visualization, bilingual support
+  - **Admin tracking page**: Create tracking for orders, update status with location/notes, view status history
+  - **Public lookup endpoint**: /api/tracking/lookup returns sanitized public view
+  - **Notification settings**: notifyOnStatusChange, notifyViaTelegram, notifyViaSms flags
+- **Learnings for future iterations**:
+  - OrderTracking has 1:1 relation with Order (unique orderId)
+  - Status history allows full tracking lifecycle audit
+  - Customer page needs useLanguage from shop-context (not useShopLanguage)
+  - Language is "EN" | "KH" uppercase in shop context
+  - Couriers in Cambodia: J&T Express and Ninja Van are most popular
+  - Public lookup should NOT expose internal IDs or customer details
+  - Admin page pattern: separate dialogs for create vs update operations
+  - Status icons and colors improve tracking UX
+---

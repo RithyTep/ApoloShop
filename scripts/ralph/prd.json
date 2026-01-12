@@ -987,8 +987,8 @@
         "Build passes: bun run build"
       ],
       "priority": 63,
-      "passes": false,
-      "notes": "Transparency reduces 'where is my order' inquiries"
+      "passes": true,
+      "notes": "Implemented OrderTracking and TrackingStatusHistory models. Couriers: J&T Express, Ninja Van, Wing Delivery. Customer tracking page at /shop/track with bilingual support. Admin tracking management page. Tracking statuses: PENDING, PICKED_UP, IN_TRANSIT, OUT_FOR_DELIVERY, DELIVERED, FAILED_DELIVERY, RETURNED. Status history timeline with location and notes."
     },
     {
       "id": "US-064",
