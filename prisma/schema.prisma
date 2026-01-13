@@ -397,6 +397,10 @@ model Customer {
   emailVerifyTokens       EmailVerifyToken[]
   shippingAddresses       ShippingAddress[]
   segmentMemberships      CustomerSegmentMembership[]
+  // Referral relations
+  referralCode            ReferralCode?
+  referralsMade           Referral[]  @relation("ReferrerCustomer")
+  referralsReceived       Referral[]  @relation("RefereeCustomer")
 
   @@index([clientId])
   @@index([phone])
@@ -484,6 +488,7 @@ model Order {
   items       OrderItem[]
   payments    Payment[]
   tracking    OrderTracking?
+  referrals   Referral[]
 
   @@index([clientId])
   @@index([customerId])
@@ -2699,5 +2704,73 @@ model StoreLocation {
   @@index([sortOrder])
   @@index([lat, lng])
   @@map("store_locations")
+  @@schema("apolo")
+}
+
+// ============================================
+// REFERRAL PROGRAM
+// ============================================
+
+enum ReferralStatus {
+  PENDING    // Referral code used but no qualifying purchase yet
+  COMPLETED  // Referee made first purchase, rewards credited
+  EXPIRED    // Referral expired before completion
+  CANCELLED  // Referral cancelled
+
+  @@schema("apolo")
+}
+
+model Referral {
+  id              String         @id @default(cuid())
+  // Referrer (the person who referred)
+  referrerId      String         @map("referrer_id")
+  referrer        Customer       @relation("ReferrerCustomer", fields: [referrerId], references: [id], onDelete: Cascade)
+  // Referee (the person who was referred)
+  refereeId       String?        @map("referee_id")
+  referee         Customer?      @relation("RefereeCustomer", fields: [refereeId], references: [id], onDelete: SetNull)
+  // Referral code used
+  code            String         // The referral code that was used
+  // Status tracking
+  status          ReferralStatus @default(PENDING)
+  // Rewards
+  referrerReward  Decimal        @default(0) @map("referrer_reward") @db.Decimal(12, 2) // Amount credited to referrer
+  refereeReward   Decimal        @default(0) @map("referee_reward") @db.Decimal(12, 2)  // Amount credited to referee
+  rewardType      String         @default("FIXED") @map("reward_type") // FIXED or PERCENTAGE
+  // First order that triggered completion
+  orderId         String?        @map("order_id")
+  order           Order?         @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  // Timestamps
+  completedAt     DateTime?      @map("completed_at")
+  expiresAt       DateTime?      @map("expires_at")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  @@index([referrerId])
+  @@index([refereeId])
+  @@index([code])
+  @@index([status])
+  @@index([createdAt])
+  @@map("referrals")
+  @@schema("apolo")
+}
+
+// Referral code management for each customer
+model ReferralCode {
+  id           String   @id @default(cuid())
+  customerId   String   @unique @map("customer_id")
+  customer     Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  code         String   @unique // Unique referral code (e.g., "FRIEND-ABC123")
+  // Statistics
+  timesUsed    Int      @default(0) @map("times_used")
+  totalEarned  Decimal  @default(0) @map("total_earned") @db.Decimal(12, 2)
+  // Configuration
+  isActive     Boolean  @default(true) @map("is_active")
+  // Timestamps
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([code])
+  @@index([isActive])
+  @@map("referral_codes")
   @@schema("apolo")
 }

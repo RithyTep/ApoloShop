@@ -5518,3 +5518,150 @@ export function useExperimentConversion() {
     },
   });
 }
+
+// ============================================
+// REFERRAL PROGRAM
+// ============================================
+
+export interface ReferralStats {
+  totalReferrals: number;
+  completedReferrals: number;
+  pendingReferrals: number;
+  totalEarned: number;
+  thisMonthReferrals: number;
+  canReferMore: boolean;
+}
+
+export interface ReferralConfig {
+  referrerReward: number;
+  refereeReward: number;
+  rewardType: "FIXED" | "PERCENTAGE";
+  expirationDays: number;
+  maxReferralsPerMonth: number;
+}
+
+export interface ReferralShareLinks {
+  referralLink: string;
+  telegram: string;
+  facebook: string;
+  copyText: string;
+}
+
+export interface ReferralInfo {
+  id: string;
+  referrerId: string;
+  refereeId: string | null;
+  code: string;
+  status: "PENDING" | "COMPLETED" | "EXPIRED" | "CANCELLED";
+  referrerReward: number;
+  refereeReward: number;
+  createdAt: string;
+  completedAt: string | null;
+  referee?: {
+    id: string;
+    name: string;
+    phone: string;
+  };
+}
+
+export interface ReferralData {
+  code: string;
+  isActive: boolean;
+  stats: ReferralStats;
+  config: ReferralConfig;
+  shareLinks: ReferralShareLinks;
+  history?: ReferralInfo[];
+  pagination?: {
+    page: number;
+    limit: number;
+    totalCount: number;
+    totalPages: number;
+  };
+}
+
+/**
+ * Hook to fetch referral info for a customer
+ */
+export function useReferralInfo(
+  customerId?: string,
+  options?: {
+    phone?: string;
+    includeHistory?: boolean;
+    page?: number;
+    limit?: number;
+    lang?: "en" | "kh";
+  }
+) {
+  const { phone, includeHistory = false, page = 1, limit = 20, lang = "en" } = options || {};
+
+  const params = new URLSearchParams();
+  if (customerId) params.append("customerId", customerId);
+  if (phone) params.append("phone", phone);
+  if (includeHistory) params.append("includeHistory", "true");
+  params.append("page", String(page));
+  params.append("limit", String(limit));
+  params.append("lang", lang);
+
+  return useQuery<ReferralData>({
+    queryKey: ["referral", customerId || phone, includeHistory, page, limit, lang],
+    queryFn: () => fetchAPI<ReferralData>(`/api/referrals?${params.toString()}`),
+    enabled: !!(customerId || phone),
+  });
+}
+
+/**
+ * Hook to validate a referral code
+ */
+export function useValidateReferralCode() {
+  return useMutation({
+    mutationFn: (data: { code: string; refereePhone: string }) =>
+      fetchAPI<{
+        valid: boolean;
+        error?: string;
+        referrerId?: string;
+        refereeDiscount?: number;
+      }>(
+        `/api/referrals?action=validate&code=${encodeURIComponent(data.code)}&refereePhone=${encodeURIComponent(data.refereePhone)}`
+      ),
+  });
+}
+
+/**
+ * Hook to apply a referral code
+ */
+export function useApplyReferral() {
+  return useMutation({
+    mutationFn: (data: { code: string; refereePhone: string; refereeId?: string }) =>
+      fetchAPI<{
+        success: boolean;
+        referralId: string;
+        discount: number;
+        message: string;
+      }>("/api/referrals", {
+        method: "POST",
+        body: JSON.stringify({ action: "apply", ...data }),
+      }),
+  });
+}
+
+/**
+ * Hook to complete a referral after first purchase
+ */
+export function useCompleteReferral() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { referralId?: string; orderId: string; customerId?: string }) =>
+      fetchAPI<{
+        success: boolean;
+        referrerReward?: number;
+        message: string;
+      }>("/api/referrals", {
+        method: "POST",
+        body: JSON.stringify({ action: "complete", ...data }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["referral"] });
+    },
+  });
+}
