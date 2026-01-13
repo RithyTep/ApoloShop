@@ -36,6 +36,7 @@ import {
   UserCheck,
   FlaskConical,
   RotateCcw,
+  Receipt,
   type LucideIcon,
 } from "lucide-react"
 import { useState } from "react"
@@ -76,6 +77,7 @@ type NavItem =
   | "abandoned-carts"
   | "customer-segments"
   | "ab-testing"
+  | "tax-rates"
 
 interface SidebarProps {
   activeNav: NavItem
@@ -147,6 +149,7 @@ export function Sidebar({ activeNav, setActiveNav, orderCount = 0, lowStockCount
         { id: "users", label: "Users", icon: UserCog },
         { id: "role-permissions", label: "Role Permissions", icon: ShieldCheck },
         { id: "payments", label: "Payments", icon: CreditCard },
+        { id: "tax-rates", label: "Tax Rates", icon: Receipt },
         { id: "accounting", label: "Accounting", icon: Calculator },
         { id: "pos-integration", label: "POS Integration", icon: Store },
         { id: "webhooks", label: "Webhooks", icon: Webhook },

@@ -5665,3 +5665,187 @@ export function useCompleteReferral() {
     },
   });
 }
+
+// ============================================
+// TAX RATES
+// ============================================
+
+export type TaxType = "VAT" | "SALES_TAX" | "GST" | "CUSTOM";
+export type TaxPricingMode = "EXCLUSIVE" | "INCLUSIVE";
+
+export interface TaxRate {
+  id: string;
+  country: string;
+  countryName: string;
+  region: string | null;
+  regionName: string | null;
+  name: string;
+  rate: number;
+  ratePercent: number;
+  taxType: TaxType;
+  categoryId: string | null;
+  pricingMode: TaxPricingMode;
+  isDefault: boolean;
+  isActive: boolean;
+  description: string | null;
+  effectiveFrom: string | null;
+  effectiveTo: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TaxReportSummary {
+  totalOrders: number;
+  totalSubtotalUsd: number;
+  totalSubtotalKhr: number;
+  totalTaxUsd: number;
+  totalTaxKhr: number;
+  effectiveTaxRate: number;
+}
+
+export interface TaxReportByCountry {
+  country: string;
+  totalSubtotalUsd: number;
+  totalTaxUsd: number;
+  orderCount: number;
+}
+
+export interface TaxReportByType {
+  taxType: TaxType;
+  taxName: string;
+  totalSubtotalUsd: number;
+  totalTaxUsd: number;
+  orderCount: number;
+}
+
+export interface TaxLogEntry {
+  id: string;
+  orderId: string;
+  taxRateId: string | null;
+  taxName: string;
+  taxRateValue: number;
+  taxRatePercent: number;
+  taxType: TaxType;
+  pricingMode: TaxPricingMode;
+  country: string;
+  region: string | null;
+  subtotalUsd: number;
+  subtotalKhr: number;
+  taxAmountUsd: number;
+  taxAmountKhr: number;
+  createdAt: string;
+}
+
+export interface TaxReport {
+  startDate: string;
+  endDate: string;
+  totalOrders: number;
+  totalSubtotalUsd: number;
+  totalSubtotalKhr: number;
+  totalTaxUsd: number;
+  totalTaxKhr: number;
+  byCountry: TaxReportByCountry[];
+  byTaxType: TaxReportByType[];
+  logs: TaxLogEntry[];
+  summary: TaxReportSummary;
+  exchangeRate: number;
+}
+
+export interface TaxRateInput {
+  id?: string;
+  country: string;
+  countryName: string;
+  region?: string | null;
+  regionName?: string | null;
+  name: string;
+  rate: number;
+  taxType?: TaxType;
+  categoryId?: string | null;
+  pricingMode?: TaxPricingMode;
+  isDefault?: boolean;
+  isActive?: boolean;
+  description?: string | null;
+  effectiveFrom?: string | null;
+  effectiveTo?: string | null;
+}
+
+/**
+ * Hook to fetch all tax rates
+ */
+export function useTaxRates(country?: string, activeOnly?: boolean) {
+  const params = new URLSearchParams();
+  if (country) params.append("country", country);
+  if (activeOnly) params.append("activeOnly", "true");
+
+  return useQuery<TaxRate[]>({
+    queryKey: ["taxRates", country, activeOnly],
+    queryFn: () => fetchAPI<TaxRate[]>(`/api/tax-rates?${params.toString()}`),
+  });
+}
+
+/**
+ * Hook to create a new tax rate
+ */
+export function useCreateTaxRate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: TaxRateInput) =>
+      fetchAPI<TaxRate>("/api/tax-rates", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["taxRates"] });
+    },
+  });
+}
+
+/**
+ * Hook to update a tax rate
+ */
+export function useUpdateTaxRate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: TaxRateInput & { id: string }) =>
+      fetchAPI<TaxRate>("/api/tax-rates", {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["taxRates"] });
+    },
+  });
+}
+
+/**
+ * Hook to delete a tax rate
+ */
+export function useDeleteTaxRate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchAPI<{ success: boolean }>(`/api/tax-rates?id=${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["taxRates"] });
+    },
+  });
+}
+
+/**
+ * Hook to fetch tax report
+ */
+export function useTaxReport(startDate?: string, endDate?: string) {
+  const params = new URLSearchParams();
+  if (startDate) params.append("startDate", startDate);
+  if (endDate) params.append("endDate", endDate);
+
+  return useQuery<TaxReport>({
+    queryKey: ["taxReport", startDate, endDate],
+    queryFn: () => fetchAPI<TaxReport>(`/api/reports/tax?${params.toString()}`),
+  });
+}

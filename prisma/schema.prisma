@@ -2882,3 +2882,90 @@ model Return {
   @@map("returns")
   @@schema("apolo")
 }
+
+// ============================================
+// TAX CALCULATION
+// ============================================
+
+enum TaxType {
+  VAT             // Value Added Tax
+  SALES_TAX       // Sales Tax
+  GST             // Goods and Services Tax
+  CUSTOM          // Custom tax type
+
+  @@schema("apolo")
+}
+
+enum TaxPricingMode {
+  EXCLUSIVE       // Tax added on top of price (default)
+  INCLUSIVE       // Tax included in displayed price
+
+  @@schema("apolo")
+}
+
+model TaxRate {
+  id            String    @id @default(cuid())
+  // Location-based tax
+  country       String    // ISO 3166-1 alpha-2 code (e.g., "KH", "US")
+  countryName   String    @map("country_name") // Human-readable name (e.g., "Cambodia")
+  region        String?   // Region/State/Province (null = applies to entire country)
+  regionName    String?   @map("region_name") // Human-readable region name
+  // Tax details
+  name          String    // Tax name (e.g., "Cambodia VAT", "Sales Tax")
+  rate          Decimal   @db.Decimal(5, 4) // Rate as decimal (0.10 = 10%)
+  taxType       TaxType   @default(VAT) @map("tax_type")
+  // Product type specific rates (null = applies to all products)
+  categoryId    String?   @map("category_id") // If set, applies only to this category
+  // Tax settings
+  pricingMode   TaxPricingMode @default(EXCLUSIVE) @map("pricing_mode")
+  isDefault     Boolean   @default(false) @map("is_default") // Default rate for the country
+  isActive      Boolean   @default(true) @map("is_active")
+  // Metadata
+  description   String?   @db.Text // Additional info about this tax rate
+  effectiveFrom DateTime? @map("effective_from") // When this rate becomes effective
+  effectiveTo   DateTime? @map("effective_to") // When this rate expires (null = no expiry)
+  // Timestamps
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  taxLogs       TaxLog[]
+
+  @@unique([country, region, categoryId]) // One rate per country+region+category combination
+  @@index([country])
+  @@index([region])
+  @@index([categoryId])
+  @@index([isActive])
+  @@index([isDefault])
+  @@map("tax_rates")
+  @@schema("apolo")
+}
+
+// Tax applied to orders for reporting and audit
+model TaxLog {
+  id            String    @id @default(cuid())
+  orderId       String    @map("order_id")
+  taxRateId     String?   @map("tax_rate_id") // Nullable if tax rate is deleted
+  taxRate       TaxRate?  @relation(fields: [taxRateId], references: [id], onDelete: SetNull)
+  // Snapshot of tax details at time of order (for audit)
+  taxName       String    @map("tax_name")
+  taxRateValue  Decimal   @map("tax_rate_value") @db.Decimal(5, 4) // Rate at time of order
+  taxType       TaxType   @map("tax_type")
+  pricingMode   TaxPricingMode @map("pricing_mode")
+  country       String
+  region        String?
+  // Amounts
+  subtotalUsd   Decimal   @map("subtotal_usd") @db.Decimal(10, 2) // Pre-tax subtotal
+  subtotalKhr   Int       @map("subtotal_khr")
+  taxAmountUsd  Decimal   @map("tax_amount_usd") @db.Decimal(10, 2) // Tax amount
+  taxAmountKhr  Int       @map("tax_amount_khr")
+  // Timestamps
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@index([taxRateId])
+  @@index([createdAt])
+  @@index([country])
+  @@map("tax_logs")
+  @@schema("apolo")
+}
