@@ -18,6 +18,7 @@ import { CustomizerPage } from "./customizer/customizer-page"
 import { BusinessHoursPage } from "./pages/business-hours-page"
 import { BacklogPage } from "./pages/backlog-page"
 import { ReviewsPage } from "./pages/reviews-page"
+import { ReturnsPage } from "./pages/returns-page"
 import { SuperAdminPage } from "./pages/super-admin-page"
 import { AuditLogsPage } from "./pages/audit-logs-page"
 import { RolePermissionsPage } from "./pages/role-permissions-page"
@@ -54,6 +55,7 @@ type NavItem =
   | "business-hours"
   | "backlog"
   | "reviews"
+  | "returns"
   | "super-admin"
   | "audit-logs"
   | "role-permissions"
@@ -118,6 +120,8 @@ export function AdminDashboard() {
         return <BacklogPage />
       case "reviews":
         return <ReviewsPage />
+      case "returns":
+        return <ReturnsPage />
       case "super-admin":
         return <SuperAdminPage />
       case "audit-logs":

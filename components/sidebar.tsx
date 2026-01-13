@@ -35,6 +35,7 @@ import {
   ShoppingCartIcon,
   UserCheck,
   FlaskConical,
+  RotateCcw,
   type LucideIcon,
 } from "lucide-react"
 import { useState } from "react"
@@ -57,6 +58,7 @@ type NavItem =
   | "business-hours"
   | "backlog"
   | "reviews"
+  | "returns"
   | "super-admin"
   | "audit-logs"
   | "role-permissions"
@@ -113,6 +115,7 @@ export function Sidebar({ activeNav, setActiveNav, orderCount = 0, lowStockCount
         { id: "customers", label: "Customers", icon: Users },
         { id: "shipping-zones", label: "Shipping Zones", icon: Truck },
         { id: "reviews", label: "Reviews", icon: MessageSquare, badge: reviewCount > 0 ? reviewCount : undefined },
+        { id: "returns", label: "Returns", icon: RotateCcw },
         { id: "chat", label: "Live Chat", icon: MessageSquare },
         { id: "help-center", label: "Help Center", icon: HelpCircle },
       ],

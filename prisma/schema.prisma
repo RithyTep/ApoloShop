@@ -2807,3 +2807,78 @@ model SocialProofConfig {
   @@map("social_proof_config")
   @@schema("apolo")
 }
+
+// ============================================
+// RETURNS & REFUNDS
+// ============================================
+
+enum ReturnStatus {
+  PENDING       // Customer submitted, awaiting admin review
+  APPROVED      // Admin approved, awaiting product return
+  RECEIVED      // Product received back
+  REFUNDED      // Refund processed
+  REJECTED      // Return request rejected
+  CANCELLED     // Cancelled by customer
+
+  @@schema("apolo")
+}
+
+enum ReturnReason {
+  DEFECTIVE         // Product is defective or damaged
+  WRONG_ITEM        // Wrong item delivered
+  NOT_AS_DESCRIBED  // Product not as described
+  CHANGED_MIND      // Customer changed mind
+  SIZE_FIT          // Size/fit issues
+  QUALITY           // Quality not as expected
+  LATE_DELIVERY     // Delivered too late
+  OTHER             // Other reason
+
+  @@schema("apolo")
+}
+
+enum RefundMethod {
+  ORIGINAL_PAYMENT  // Refund to original payment method
+  STORE_CREDIT      // Issue store credit
+  BANK_TRANSFER     // Manual bank transfer
+
+  @@schema("apolo")
+}
+
+model Return {
+  id              String        @id @default(cuid())
+  returnNumber    String        @unique @map("return_number") // e.g., RET-2025-0001
+  orderId         String        @map("order_id")
+  customerId      String        @map("customer_id")
+  // Return details
+  status          ReturnStatus  @default(PENDING)
+  reason          ReturnReason
+  reasonDetails   String?       @map("reason_details") @db.Text // Additional details from customer
+  // Items being returned (can be partial return)
+  items           Json          // Array of { orderItemId, productId, productName, quantity, priceUsd }
+  // Refund information
+  refundAmountUsd Decimal?      @map("refund_amount_usd") @db.Decimal(10, 2)
+  refundAmountKhr Int?          @map("refund_amount_khr")
+  refundMethod    RefundMethod? @map("refund_method")
+  // Shipping label (optional)
+  shippingLabel   String?       @map("shipping_label") @db.Text // URL or reference to shipping label
+  trackingNumber  String?       @map("tracking_number") // Return shipment tracking
+  // Admin processing
+  adminNotes      String?       @map("admin_notes") @db.Text
+  processedBy     String?       @map("processed_by") // Admin user ID who processed
+  approvedAt      DateTime?     @map("approved_at")
+  receivedAt      DateTime?     @map("received_at")
+  refundedAt      DateTime?     @map("refunded_at")
+  rejectedAt      DateTime?     @map("rejected_at")
+  rejectionReason String?       @map("rejection_reason") @db.Text
+  // Timestamps
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  @@index([orderId])
+  @@index([customerId])
+  @@index([status])
+  @@index([returnNumber])
+  @@index([createdAt])
+  @@map("returns")
+  @@schema("apolo")
+}

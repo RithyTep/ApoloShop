@@ -1306,8 +1306,8 @@
         "Build passes: bun run build"
       ],
       "priority": 83,
-      "passes": false,
-      "notes": "Reduces support workload for returns"
+      "passes": true,
+      "notes": "Implemented Return model with ReturnStatus/ReturnReason/RefundMethod enums, GET/POST/PATCH /api/returns endpoints, /api/returns/[id]/refund for refund processing, ReturnRequestForm customer component, ReturnsPage admin workflow with approve/reject/refund dialogs, bilingual translations (EN/KH)"
     },
     {
       "id": "US-084",

@@ -2581,3 +2581,37 @@ Project: ApoloShop - Product Search Feature
   - API should return both config and data in single call for efficiency
   - Non-blocking pattern: notifications can be dismissed without affecting other functionality
 ---
+
+## 2026-01-13 - US-083
+- **Implemented**: Returns and refunds system with customer self-service and admin workflow
+- **Files changed**:
+  - `prisma/schema.prisma` (added Return model, ReturnStatus/ReturnReason/RefundMethod enums)
+  - `app/api/returns/route.ts` (new file - GET list, POST create, PATCH update)
+  - `app/api/returns/[id]/route.ts` (new file - GET single, PATCH update, DELETE cancel)
+  - `app/api/returns/[id]/refund/route.ts` (new file - POST refund processing)
+  - `components/return-request-form.tsx` (new file - customer return request form)
+  - `components/pages/returns-page.tsx` (new file - admin returns management dashboard)
+  - `components/sidebar.tsx` (added returns nav item with RotateCcw icon)
+  - `components/admin-dashboard.tsx` (added ReturnsPage import and case)
+  - `lib/i18n.ts` (added returns translations for EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Return model**: returnNumber (RET-YYYY-NNNN), orderId, customerId, status, reason, reasonDetails, items (JSON), refundAmount (USD/KHR), refundMethod, trackingNumber, adminNotes, timestamps
+  - **ReturnStatus enum**: PENDING, APPROVED, RECEIVED, REFUNDED, REJECTED, CANCELLED
+  - **ReturnReason enum**: DEFECTIVE, WRONG_ITEM, NOT_AS_DESCRIBED, CHANGED_MIND, SIZE_FIT, QUALITY, LATE_DELIVERY, OTHER
+  - **RefundMethod enum**: ORIGINAL_PAYMENT, STORE_CREDIT, BANK_TRANSFER
+  - **Customer return form**: Select items with quantity, choose reason, add details, see calculated refund amount
+  - **Admin workflow**: List view with status filter, approve/reject dialogs, mark received, process refund
+  - **Refund processing**: Original payment (creates negative payment record), store credit (adds loyalty points), bank transfer (manual)
+  - **Validation**: Only COMPLETED orders eligible, prevents duplicate active returns, verifies items belong to order
+  - **API endpoints**: GET/POST /api/returns, GET/PATCH/DELETE /api/returns/[id], POST /api/returns/[id]/refund
+  - **Bilingual support**: Full EN/KH translations for all UI text, reasons, and statuses
+- **Learnings for future iterations**:
+  - Return items stored as JSON array to support partial returns (subset of order items)
+  - Refund amount calculated from selected items * quantities, can be overridden by admin
+  - Store credit refund uses existing LoyaltyAccount/LoyaltyTransaction models ($1 = 100 points)
+  - Original payment refund creates Payment record with negative amount for audit trail
+  - Status timestamps (approvedAt, receivedAt, refundedAt, rejectedAt) track workflow progression
+  - Admin notes and rejection reason are separate fields for clear communication
+  - Return eligibility check: order.status === "COMPLETED" - can be extended with date limits
+---
