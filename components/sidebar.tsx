@@ -29,6 +29,7 @@ import {
   Truck,
   MapPin,
   TrendingUp,
+  Store,
   type LucideIcon,
 } from "lucide-react"
 import { useState } from "react"
@@ -62,6 +63,7 @@ type NavItem =
   | "shipping-zones"
   | "order-tracking"
   | "analytics"
+  | "pos-integration"
 
 interface SidebarProps {
   activeNav: NavItem
@@ -129,6 +131,7 @@ export function Sidebar({ activeNav, setActiveNav, orderCount = 0, lowStockCount
         { id: "users", label: "Users", icon: UserCog },
         { id: "role-permissions", label: "Role Permissions", icon: ShieldCheck },
         { id: "payments", label: "Payments", icon: CreditCard },
+        { id: "pos-integration", label: "POS Integration", icon: Store },
         { id: "reports", label: "Reports", icon: BarChart3 },
         { id: "analytics", label: "Analytics", icon: TrendingUp },
         { id: "performance", label: "Performance", icon: Activity },

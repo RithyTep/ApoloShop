@@ -2233,3 +2233,38 @@ Project: ApoloShop - Product Search Feature
   - RTL support is infrastructure-only for now (empty RTL_LANGUAGES array), ready for Arabic/Hebrew when needed
   - Admin settings use nested "language" key: { defaultLanguage, enabledLanguages, autoDetect }
 ---
+
+## 2026-01-13 - US-072
+- **Implemented**: POS system integration with Square and Loyverse
+- **Files changed**:
+  - `prisma/schema.prisma` (added POSProvider, POSSync, POSSale, POSProductMapping, POSCustomerMapping models, POSProviderType, POSSyncStatus, POSSyncDirection enums, updated Client model with posProviders relation)
+  - `lib/pos-integration.ts` (new file - POS service with Square and Loyverse API support)
+  - `lib/i18n.ts` (added pos translations for EN/KH)
+  - `app/api/pos/route.ts` (new file - CRUD for POS providers)
+  - `app/api/pos/sync/route.ts` (new file - trigger sync operations)
+  - `app/api/pos/mappings/route.ts` (new file - product/customer mappings)
+  - `app/api/pos/sales/route.ts` (new file - POS sales analytics)
+  - `app/api/pos/webhook/square/route.ts` (new file - Square webhook handler)
+  - `app/api/pos/webhook/loyverse/route.ts` (new file - Loyverse webhook handler)
+  - `app/api/inventory/route.ts` (modified - added real-time POS inventory sync)
+  - `components/pages/pos-integration-page.tsx` (new file - admin POS integration UI)
+  - `components/admin-dashboard.tsx` (added POSIntegrationPage import and route)
+  - `components/sidebar.tsx` (added pos-integration nav item with Store icon)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Prisma models**: POSProvider (Square/Loyverse credentials, sync settings, webhook), POSSync (sync history with progress), POSSale (imported sales data), POSProductMapping (product ID mapping), POSCustomerMapping (customer ID mapping)
+  - **Square integration**: Fetch inventory via catalog/inventory APIs, update inventory counts, fetch orders/sales, fetch customers, HMAC webhook verification
+  - **Loyverse integration**: Fetch items with variants, update inventory, fetch receipts, fetch customers, webhook verification
+  - **Inventory sync**: Real-time bidirectional sync - updates to ApoloShop inventory push to POS, webhook updates from POS update ApoloShop inventory
+  - **Sales import**: Import transactions with items, customer mapping, payment method tracking
+  - **Customer unification**: Sync customers by phone match or create new, maintain mapping table
+  - **Admin UI**: Provider cards with connection status, sync triggers (inventory/sales/customers/full), webhook URL copy, sync history table, settings view
+  - **Bilingual support**: EN/KH translations for all POS UI text
+- **Learnings for future iterations**:
+  - Square API uses OAuth tokens and requires location_id for inventory operations
+  - Loyverse API uses access tokens and store_id for location-specific data
+  - Webhook verification uses HMAC signatures - Square uses sha256 with base64, Loyverse uses sha256 with hex
+  - Real-time sync uses fire-and-forget pattern to avoid blocking API responses
+  - Product mappings allow selective sync per product (syncInventory, syncPrice flags)
+  - Sales data is denormalized with items JSON for quick analytics queries
+---

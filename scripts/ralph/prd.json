@@ -1130,8 +1130,8 @@
         "Build passes: bun run build"
       ],
       "priority": 72,
-      "passes": false,
-      "notes": "Omnichannel retail support"
+      "passes": true,
+      "notes": "Implemented POSProvider, POSSync, POSSale, POSProductMapping, POSCustomerMapping Prisma models. Created lib/pos-integration.ts service with Square and Loyverse API support for inventory fetch/update, sales import, and customer sync. API endpoints: /api/pos (CRUD providers), /api/pos/sync (trigger syncs), /api/pos/mappings (product/customer mappings), /api/pos/sales (sales analytics), /api/pos/webhook/square and /api/pos/webhook/loyverse (real-time webhooks). Real-time inventory sync on inventory update. Admin POSIntegrationPage with provider management, sync triggers, webhook URL display, and sync history."
     },
     {
       "id": "US-073",

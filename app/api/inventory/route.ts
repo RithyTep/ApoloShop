@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
+import { pushInventoryToPOS } from "@/lib/pos-integration"
 
 const inventoryUpdateSchema = z.object({
   productId: z.string().min(1),
@@ -122,6 +123,26 @@ export async function PUT(request: NextRequest) {
         supplier: { select: { id: true, name: true } },
       },
     })
+
+    // Push inventory update to connected POS systems (real-time sync)
+    // This runs in the background and doesn't block the response
+    const posProviders = await prisma.pOSProvider.findMany({
+      where: {
+        isActive: true,
+        syncInventory: true,
+        productMappings: {
+          some: { productId, syncInventory: true },
+        },
+      },
+      select: { id: true },
+    })
+
+    // Fire and forget - sync to all connected POS systems
+    for (const provider of posProviders) {
+      pushInventoryToPOS(provider.id, productId, quantity).catch((err) => {
+        console.error(`[POS Sync] Failed to push inventory to ${provider.id}:`, err)
+      })
+    }
 
     return NextResponse.json(inventory)
   } catch (error) {

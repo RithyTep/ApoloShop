@@ -757,6 +757,7 @@ model Client {
   customers    Customer[]
   customizations ShopCustomization[]
   subscription Subscription?
+  posProviders POSProvider[]
 
   @@index([slug])
   @@index([domain])
@@ -2071,5 +2072,182 @@ model PurchaseOrder {
   @@index([orderNumber])
   @@index([createdAt])
   @@map("purchase_orders")
+  @@schema("apolo")
+}
+
+// ============================================
+// POS INTEGRATION
+// ============================================
+
+enum POSProviderType {
+  SQUARE
+  LOYVERSE
+
+  @@schema("apolo")
+}
+
+enum POSSyncStatus {
+  PENDING     // Sync scheduled but not started
+  IN_PROGRESS // Currently syncing
+  COMPLETED   // Sync finished successfully
+  FAILED      // Sync failed with error
+
+  @@schema("apolo")
+}
+
+enum POSSyncDirection {
+  INBOUND   // From POS to ApoloShop (sales import, inventory update)
+  OUTBOUND  // From ApoloShop to POS (product update)
+  BIDIRECTIONAL // Both directions
+
+  @@schema("apolo")
+}
+
+model POSProvider {
+  id                String          @id @default(cuid())
+  clientId          String?         @map("client_id")
+  client            Client?         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name              String          // Display name, e.g., "Main Store Square"
+  type              POSProviderType
+  // API Credentials (encrypted)
+  accessToken       String?         @map("access_token") // Encrypted OAuth token
+  refreshToken      String?         @map("refresh_token") // Encrypted refresh token
+  tokenExpiresAt    DateTime?       @map("token_expires_at")
+  // Provider-specific IDs
+  locationId        String?         @map("location_id") // Square location ID or Loyverse store ID
+  merchantId        String?         @map("merchant_id") // Provider merchant/account ID
+  // Sync settings
+  syncInventory     Boolean         @default(true) @map("sync_inventory") // Auto-sync inventory changes
+  syncSales         Boolean         @default(true) @map("sync_sales") // Import sales from POS
+  syncCustomers     Boolean         @default(true) @map("sync_customers") // Sync customer data
+  syncInterval      Int             @default(15) @map("sync_interval") // Minutes between auto-syncs
+  lastSyncAt        DateTime?       @map("last_sync_at")
+  // Status
+  isActive          Boolean         @default(true) @map("is_active")
+  connectionStatus  String          @default("disconnected") @map("connection_status") // connected, disconnected, error
+  lastError         String?         @map("last_error") @db.Text
+  // Webhook
+  webhookSecret     String?         @map("webhook_secret") // For verifying webhook payloads
+  webhookUrl        String?         @map("webhook_url") // Auto-generated webhook URL for this provider
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+
+  syncs            POSSync[]
+  sales            POSSale[]
+  productMappings  POSProductMapping[]
+  customerMappings POSCustomerMapping[]
+
+  @@index([clientId])
+  @@index([type])
+  @@index([isActive])
+  @@map("pos_providers")
+  @@schema("apolo")
+}
+
+model POSSync {
+  id           String           @id @default(cuid())
+  providerId   String           @map("provider_id")
+  provider     POSProvider      @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  direction    POSSyncDirection
+  status       POSSyncStatus    @default(PENDING)
+  // Sync scope
+  syncType     String           @map("sync_type") // "inventory", "sales", "customers", "products", "full"
+  // Progress tracking
+  totalItems   Int              @default(0) @map("total_items")
+  processedItems Int            @default(0) @map("processed_items")
+  failedItems  Int              @default(0) @map("failed_items")
+  // Timing
+  startedAt    DateTime?        @map("started_at")
+  completedAt  DateTime?        @map("completed_at")
+  // Results
+  summary      Json?            // { created: 5, updated: 10, failed: 1, errors: [...] }
+  errorDetails String?          @map("error_details") @db.Text
+  // Metadata
+  triggeredBy  String?          @map("triggered_by") // "manual", "scheduled", "webhook"
+  createdAt    DateTime         @default(now()) @map("created_at")
+
+  @@index([providerId])
+  @@index([status])
+  @@index([syncType])
+  @@index([createdAt])
+  @@map("pos_syncs")
+  @@schema("apolo")
+}
+
+model POSSale {
+  id             String      @id @default(cuid())
+  providerId     String      @map("provider_id")
+  provider       POSProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  // POS reference
+  posTransactionId String    @unique @map("pos_transaction_id") // Original transaction ID from POS
+  posReceiptNumber String?   @map("pos_receipt_number")
+  // Sale details
+  totalAmount    Decimal     @map("total_amount") @db.Decimal(10, 2)
+  currency       Currency    @default(USD)
+  taxAmount      Decimal?    @map("tax_amount") @db.Decimal(10, 2)
+  discountAmount Decimal?    @map("discount_amount") @db.Decimal(10, 2)
+  // Payment info
+  paymentMethod  String?     @map("payment_method") // "cash", "card", "mobile", etc.
+  paymentStatus  String      @default("completed") @map("payment_status")
+  // Customer (if identified)
+  customerId     String?     @map("customer_id") // Mapped ApoloShop customer
+  posCustomerId  String?     @map("pos_customer_id") // Original POS customer ID
+  // Items (denormalized for quick access)
+  items          Json        // Array of { productId, posItemId, name, quantity, price, discount }
+  itemCount      Int         @default(0) @map("item_count")
+  // Timestamps
+  saleDate       DateTime    @map("sale_date") // When sale occurred in POS
+  importedAt     DateTime    @default(now()) @map("imported_at")
+  // Link to ApoloShop order (if created)
+  orderId        String?     @map("order_id")
+  createdAt      DateTime    @default(now()) @map("created_at")
+
+  @@index([providerId])
+  @@index([posTransactionId])
+  @@index([customerId])
+  @@index([saleDate])
+  @@index([orderId])
+  @@map("pos_sales")
+  @@schema("apolo")
+}
+
+model POSProductMapping {
+  id           String      @id @default(cuid())
+  providerId   String      @map("provider_id")
+  provider     POSProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  productId    String      @map("product_id")
+  posItemId    String      @map("pos_item_id") // Product ID in POS system
+  posVariationId String?   @map("pos_variation_id") // Variant ID in POS (for Square)
+  posSku       String?     @map("pos_sku") // SKU in POS system
+  // Sync settings per product
+  syncInventory Boolean    @default(true) @map("sync_inventory")
+  syncPrice    Boolean     @default(false) @map("sync_price") // Whether to sync price changes
+  lastSyncAt   DateTime?   @map("last_sync_at")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  @@unique([providerId, productId])
+  @@unique([providerId, posItemId])
+  @@index([productId])
+  @@index([posItemId])
+  @@map("pos_product_mappings")
+  @@schema("apolo")
+}
+
+model POSCustomerMapping {
+  id            String      @id @default(cuid())
+  providerId    String      @map("provider_id")
+  provider      POSProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  customerId    String      @map("customer_id")
+  posCustomerId String      @map("pos_customer_id") // Customer ID in POS system
+  lastSyncAt    DateTime?   @map("last_sync_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  @@unique([providerId, customerId])
+  @@unique([providerId, posCustomerId])
+  @@index([customerId])
+  @@index([posCustomerId])
+  @@map("pos_customer_mappings")
   @@schema("apolo")
 }
