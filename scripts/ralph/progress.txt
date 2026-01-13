@@ -2458,3 +2458,41 @@ Project: ApoloShop - Product Search Feature
   - Customer relation added: segmentMemberships CustomerSegmentMembership[]
   - Icons stored as string names (crown, activity, user-plus, etc.) and mapped to Lucide components
 ---
+
+## 2026-01-13 - US-079
+- **Implemented**: A/B testing framework for conversion optimization
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added Experiment, ExperimentVariant, ExperimentAssignment models, ExperimentStatus and ExperimentType enums)
+  - `app/api/experiments/route.ts` (new file - CRUD endpoints for experiments)
+  - `app/api/experiments/assign/route.ts` (new file - visitor variant assignment)
+  - `app/api/experiments/convert/route.ts` (new file - conversion tracking)
+  - `app/api/experiments/stats/route.ts` (new file - detailed statistics)
+  - `lib/ab-testing.ts` (new file - statistical significance calculations)
+  - `lib/api-hooks.ts` (modified - added experiment hooks)
+  - `components/pages/ab-testing-page.tsx` (new file - admin dashboard)
+  - `components/sidebar.tsx` (modified - added ab-testing nav item)
+  - `components/admin-dashboard.tsx` (modified - added ABTestingPage case)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Experiment model**: name, description, type, status (DRAFT/RUNNING/PAUSED/COMPLETED), trafficPercent, goalType, confidenceLevel, minSampleSize, autoEndEnabled, timing fields
+  - **ExperimentVariant model**: name, isControl, trafficWeight, config (JSON), visitors, conversions, revenue, conversionRate, avgOrderValue
+  - **ExperimentAssignment model**: Links visitors to variants, tracks conversions with value and orderId
+  - **Traffic splitting**: Weighted random assignment using deterministic hash for consistent visitor experience
+  - **Statistical significance**: Z-test for proportions with p-value, confidence, relative improvement calculations
+  - **Auto-end**: Automatically completes experiment when statistical significance is reached at target confidence level
+  - **API endpoints**: GET/POST/PUT/DELETE experiments, POST /assign for variant assignment, POST /convert for conversion tracking, GET /stats for detailed statistics
+  - **Dashboard features**: Create experiment wizard with variant configuration, experiment list table, statistics dialog with summary cards, progress bars, and variant comparison table
+  - **Experiment types**: PRODUCT_PAGE, CHECKOUT, PRICING, HOMEPAGE, PROMOTION, CUSTOM
+  - **Goal types**: conversion, revenue, clicks, add_to_cart
+  - **Confidence levels**: 90%, 95%, 99%
+- **Learnings for future iterations**:
+  - Deterministic hash (simpleHash) ensures visitors always see same variant across sessions
+  - Traffic weights must sum to 100 - validation at creation
+  - Exactly one variant must be marked as control
+  - Z-test uses pooled proportion for standard error calculation
+  - Critical z-values: 90%=1.645, 95%=1.96, 99%=2.576
+  - Use Prisma.Decimal for monetary values in conversion tracking
+  - Running experiments restrict changes to goalType, confidenceLevel, minSampleSize
+  - Soft delete for experiments with data (mark as COMPLETED instead)
+  - FlaskConical icon from lucide-react for A/B testing sidebar item
+---
