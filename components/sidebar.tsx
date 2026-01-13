@@ -39,6 +39,7 @@ import {
   Receipt,
   Bell,
   BookOpen,
+  Instagram,
   type LucideIcon,
 } from "lucide-react"
 import { useState } from "react"
@@ -82,6 +83,7 @@ type NavItem =
   | "customer-segments"
   | "ab-testing"
   | "tax-rates"
+  | "instagram-shop"
 
 interface SidebarProps {
   activeNav: NavItem
@@ -140,6 +142,7 @@ export function Sidebar({ activeNav, setActiveNav, orderCount = 0, lowStockCount
       items: [
         { id: "flash-sales", label: "Flash Sales", icon: Zap },
         { id: "promotions", label: "Promotions", icon: Gift },
+        { id: "instagram-shop", label: "Instagram Shop", icon: Instagram },
         { id: "customer-segments", label: "Segments", icon: UserCheck },
         { id: "abandoned-carts", label: "Abandoned Carts", icon: ShoppingCartIcon },
         { id: "ab-testing", label: "A/B Testing", icon: FlaskConical },

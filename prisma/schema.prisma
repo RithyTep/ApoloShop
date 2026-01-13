@@ -321,6 +321,7 @@ model Product {
   stockNotifications   StockNotification[]
   questions     ProductQuestion[]
   blogPostProducts     BlogPostProduct[]
+  instagramProducts    InstagramProduct[]
 
   @@index([clientId])
   @@index([categoryId])
@@ -472,6 +473,9 @@ enum OrderChannel {
   MESSENGER
   PHONE
   WALK_IN
+  INSTAGRAM
+  FACEBOOK
+  TIKTOK
 
   @@schema("apolo")
 }
@@ -515,6 +519,7 @@ model Order {
   referrals   Referral[]
   edits       OrderEdit[]
   shipments   Shipment[]
+  instagramOrders InstagramOrder[]
 
   // Order editing fields
   isEditable      Boolean   @default(true) @map("is_editable") // Can be edited before shipping
@@ -800,6 +805,7 @@ model Client {
   posProviders POSProvider[]
   webhooks     Webhook[]
   bundles      Bundle[]
+  instagramAccounts InstagramAccount[]
 
   @@index([slug])
   @@index([domain])
@@ -3879,5 +3885,234 @@ model BlogPostProduct {
   @@index([productId])
   @@index([sortOrder])
   @@map("blog_post_products")
+  @@schema("apolo")
+}
+
+// ============================================
+// SOCIAL COMMERCE - INSTAGRAM
+// ============================================
+
+// Instagram Business Account connection
+model InstagramAccount {
+  id              String   @id @default(cuid())
+  // Instagram account info
+  instagramId     String   @unique @map("instagram_id") // Instagram Business Account ID
+  username        String   // @username
+  name            String?  // Display name
+  profilePicture  String?  @map("profile_picture") // Profile image URL
+  bio             String?  @db.Text
+  website         String?
+  followersCount  Int      @default(0) @map("followers_count")
+  followingCount  Int      @default(0) @map("following_count")
+  mediaCount      Int      @default(0) @map("media_count")
+  // OAuth tokens
+  accessToken     String   @map("access_token") @db.Text
+  tokenExpiresAt  DateTime? @map("token_expires_at")
+  refreshToken    String?  @map("refresh_token") @db.Text
+  // Connection status
+  status          InstagramAccountStatus @default(ACTIVE)
+  lastSyncAt      DateTime? @map("last_sync_at")
+  syncError       String?  @map("sync_error") @db.Text
+  // Settings
+  autoSync        Boolean  @default(true) @map("auto_sync")
+  syncProducts    Boolean  @default(true) @map("sync_products")
+  syncOrders      Boolean  @default(true) @map("sync_orders")
+  // Client (multi-tenant)
+  clientId        String?  @map("client_id")
+  client          Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  // Timestamps
+  connectedAt     DateTime @default(now()) @map("connected_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  products        InstagramProduct[]
+  posts           InstagramPost[]
+  orders          InstagramOrder[]
+
+  @@index([instagramId])
+  @@index([username])
+  @@index([status])
+  @@index([clientId])
+  @@map("instagram_accounts")
+  @@schema("apolo")
+}
+
+enum InstagramAccountStatus {
+  ACTIVE
+  PAUSED
+  ERROR
+  DISCONNECTED
+
+  @@schema("apolo")
+}
+
+// Products synced to Instagram Catalog
+model InstagramProduct {
+  id              String   @id @default(cuid())
+  // Relations
+  accountId       String   @map("account_id")
+  account         InstagramAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  productId       String   @map("product_id")
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  // Instagram catalog data
+  catalogProductId String?  @map("catalog_product_id") // FB/IG Catalog Product ID
+  retailerId      String?  @map("retailer_id") // Retailer product ID in catalog
+  // Sync status
+  syncStatus      InstagramSyncStatus @default(PENDING) @map("sync_status")
+  lastSyncAt      DateTime? @map("last_sync_at")
+  syncError       String?  @map("sync_error") @db.Text
+  // Product performance
+  impressions     Int      @default(0)
+  clicks          Int      @default(0)
+  saves           Int      @default(0)
+  // Timestamps
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  taggedPosts     InstagramProductTag[]
+
+  @@unique([accountId, productId])
+  @@index([accountId])
+  @@index([productId])
+  @@index([syncStatus])
+  @@index([catalogProductId])
+  @@map("instagram_products")
+  @@schema("apolo")
+}
+
+enum InstagramSyncStatus {
+  PENDING
+  SYNCED
+  ERROR
+  REMOVED
+
+  @@schema("apolo")
+}
+
+// Instagram posts for product tagging
+model InstagramPost {
+  id              String   @id @default(cuid())
+  // Relations
+  accountId       String   @map("account_id")
+  account         InstagramAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  // Instagram media data
+  mediaId         String   @unique @map("media_id") // Instagram Media ID
+  mediaType       InstagramMediaType @map("media_type")
+  mediaUrl        String   @map("media_url") @db.Text
+  thumbnailUrl    String?  @map("thumbnail_url") @db.Text
+  permalink       String   @db.Text
+  caption         String?  @db.Text
+  // Engagement metrics
+  likeCount       Int      @default(0) @map("like_count")
+  commentCount    Int      @default(0) @map("comment_count")
+  shareCount      Int      @default(0) @map("share_count")
+  saveCount       Int      @default(0) @map("save_count")
+  reach           Int      @default(0)
+  impressions     Int      @default(0)
+  // Performance tracking
+  productClicks   Int      @default(0) @map("product_clicks")
+  conversions     Int      @default(0)
+  revenue         Decimal  @default(0) @db.Decimal(10, 2)
+  // Post timestamp
+  postedAt        DateTime @map("posted_at")
+  // Sync info
+  lastSyncAt      DateTime? @map("last_sync_at")
+  // Timestamps
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  taggedProducts  InstagramProductTag[]
+
+  @@index([accountId])
+  @@index([mediaId])
+  @@index([postedAt])
+  @@index([mediaType])
+  @@map("instagram_posts")
+  @@schema("apolo")
+}
+
+enum InstagramMediaType {
+  IMAGE
+  VIDEO
+  CAROUSEL_ALBUM
+  REEL
+  STORY
+
+  @@schema("apolo")
+}
+
+// Junction: Products tagged in Instagram posts
+model InstagramProductTag {
+  id              String   @id @default(cuid())
+  postId          String   @map("post_id")
+  post            InstagramPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  productId       String   @map("product_id")
+  igProduct       InstagramProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  // Tag position (for images)
+  positionX       Float?   @map("position_x")
+  positionY       Float?   @map("position_y")
+  // Performance
+  clicks          Int      @default(0)
+  // Timestamps
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@unique([postId, productId])
+  @@index([postId])
+  @@index([productId])
+  @@map("instagram_product_tags")
+  @@schema("apolo")
+}
+
+// Orders from Instagram Checkout
+model InstagramOrder {
+  id              String   @id @default(cuid())
+  // Relations
+  accountId       String   @map("account_id")
+  account         InstagramAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  orderId         String?  @map("order_id")
+  order           Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  // Instagram order data
+  instagramOrderId String  @unique @map("instagram_order_id")
+  buyerName       String   @map("buyer_name")
+  buyerEmail      String?  @map("buyer_email")
+  buyerPhone      String?  @map("buyer_phone")
+  // Order details
+  items           Json     // Array of ordered items from Instagram
+  subtotalUsd     Decimal  @map("subtotal_usd") @db.Decimal(10, 2)
+  subtotalKhr     Decimal  @map("subtotal_khr") @db.Decimal(15, 0)
+  shippingUsd     Decimal  @default(0) @map("shipping_usd") @db.Decimal(10, 2)
+  shippingKhr     Decimal  @default(0) @map("shipping_khr") @db.Decimal(15, 0)
+  taxUsd          Decimal  @default(0) @map("tax_usd") @db.Decimal(10, 2)
+  taxKhr          Decimal  @default(0) @map("tax_khr") @db.Decimal(15, 0)
+  totalUsd        Decimal  @map("total_usd") @db.Decimal(10, 2)
+  totalKhr        Decimal  @map("total_khr") @db.Decimal(15, 0)
+  // Shipping address
+  shippingAddress Json?    @map("shipping_address")
+  // Status
+  instagramStatus String   @map("instagram_status") // Status from Instagram
+  importStatus    InstagramImportStatus @default(PENDING) @map("import_status")
+  importError     String?  @map("import_error") @db.Text
+  // Source tracking
+  sourcePostId    String?  @map("source_post_id") // Which post led to this order
+  // Timestamps
+  orderedAt       DateTime @map("ordered_at")
+  importedAt      DateTime? @map("imported_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([accountId])
+  @@index([orderId])
+  @@index([instagramOrderId])
+  @@index([importStatus])
+  @@index([orderedAt])
+  @@map("instagram_orders")
+  @@schema("apolo")
+}
+
+enum InstagramImportStatus {
+  PENDING
+  IMPORTED
+  FAILED
+  SKIPPED
+
   @@schema("apolo")
 }
