@@ -311,6 +311,7 @@ model Product {
   wishlists     Wishlist[]
   reviews       Review[]
   variants      ProductVariant[]
+  productSubscriptions ProductSubscription[]
 
   @@index([clientId])
   @@index([categoryId])
@@ -363,6 +364,8 @@ model ProductVariant {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  productSubscriptions ProductSubscription[]
+
   @@index([productId])
   @@index([sku])
   @@index([isActive])
@@ -401,6 +404,8 @@ model Customer {
   referralCode            ReferralCode?
   referralsMade           Referral[]  @relation("ReferrerCustomer")
   referralsReceived       Referral[]  @relation("RefereeCustomer")
+  // Product subscriptions
+  productSubscriptions    ProductSubscription[]
 
   @@index([clientId])
   @@index([phone])
@@ -3062,5 +3067,100 @@ model CurrencyConfig {
 
   @@index([baseCurrency])
   @@map("currency_configs")
+  @@schema("apolo")
+}
+
+// ============================================
+// PRODUCT SUBSCRIPTIONS (Subscribe & Save)
+// ============================================
+
+enum SubscriptionFrequency {
+  WEEKLY       // Every week
+  BIWEEKLY     // Every 2 weeks
+  MONTHLY      // Every month
+  BIMONTHLY    // Every 2 months
+  QUARTERLY    // Every 3 months
+
+  @@schema("apolo")
+}
+
+enum ProductSubscriptionStatus {
+  ACTIVE       // Subscription is active
+  PAUSED       // Temporarily paused by customer
+  CANCELLED    // Cancelled by customer
+  EXPIRED      // Subscription ended
+
+  @@schema("apolo")
+}
+
+model ProductSubscription {
+  id              String                   @id @default(cuid())
+  customerId      String                   @map("customer_id")
+  customer        Customer                 @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  productId       String                   @map("product_id")
+  product         Product                  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  // Variant support (optional)
+  variantId       String?                  @map("variant_id")
+  variant         ProductVariant?          @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  // Subscription details
+  quantity        Int                      @default(1)
+  frequency       SubscriptionFrequency    @default(MONTHLY)
+  // Custom frequency (if frequency is CUSTOM)
+  customDays      Int?                     @map("custom_days") // Days between deliveries for custom frequency
+  // Discount
+  discountPercent Int                      @default(10) @map("discount_percent") // Subscribe & Save discount (default 10%)
+  // Schedule
+  nextDeliveryAt  DateTime                 @map("next_delivery_at")
+  lastDeliveryAt  DateTime?                @map("last_delivery_at")
+  // Status
+  status          ProductSubscriptionStatus @default(ACTIVE)
+  pausedAt        DateTime?                @map("paused_at")
+  pausedUntil     DateTime?                @map("paused_until") // Optional: auto-resume date
+  cancelledAt     DateTime?                @map("cancelled_at")
+  cancelReason    String?                  @map("cancel_reason") @db.Text
+  // Delivery address
+  shippingAddressId String?                @map("shipping_address_id")
+  // Order tracking
+  totalOrders     Int                      @default(0) @map("total_orders")
+  totalSpentUsd   Decimal                  @default(0) @map("total_spent_usd") @db.Decimal(10, 2)
+  // Timestamps
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
+
+  deliveries      SubscriptionDelivery[]
+
+  @@index([customerId])
+  @@index([productId])
+  @@index([variantId])
+  @@index([status])
+  @@index([nextDeliveryAt])
+  @@map("product_subscriptions")
+  @@schema("apolo")
+}
+
+// Track each delivery/order created from subscription
+model SubscriptionDelivery {
+  id              String                @id @default(cuid())
+  subscriptionId  String                @map("subscription_id")
+  subscription    ProductSubscription   @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  orderId         String?               @map("order_id") // Link to created order
+  // Delivery details
+  scheduledAt     DateTime              @map("scheduled_at")
+  processedAt     DateTime?             @map("processed_at")
+  // Status
+  status          String                @default("pending") // pending, processed, failed, skipped
+  skipReason      String?               @map("skip_reason") @db.Text // Reason if skipped
+  // Pricing snapshot at time of delivery
+  priceUsd        Decimal               @map("price_usd") @db.Decimal(10, 2)
+  discountPercent Int                   @map("discount_percent")
+  finalPriceUsd   Decimal               @map("final_price_usd") @db.Decimal(10, 2)
+  // Timestamps
+  createdAt       DateTime              @default(now()) @map("created_at")
+
+  @@index([subscriptionId])
+  @@index([orderId])
+  @@index([scheduledAt])
+  @@index([status])
+  @@map("subscription_deliveries")
   @@schema("apolo")
 }
