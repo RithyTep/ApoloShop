@@ -1418,8 +1418,8 @@
         "Build passes: bun run build"
       ],
       "priority": 90,
-      "passes": false,
-      "notes": "Reduces pre-purchase questions to support"
+      "passes": true,
+      "notes": "Implemented ProductQuestion, ProductAnswer, AnswerVote models with QuestionStatus enum. API endpoints for Q&A CRUD with moderation. ProductQA component with expandable questions, customer answers, thumbs up/down voting. QAPage admin component for moderation. Bilingual support (EN/KH)."
     },
     {
       "id": "US-091",

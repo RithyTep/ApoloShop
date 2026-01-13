@@ -2803,3 +2803,36 @@ Project: ApoloShop - Product Search Feature
   - Shareable URL loads products via /api/products/[id] endpoint
   - Both shop-app.tsx and shop-client-wrapper.tsx need ComparisonProvider for different shop entry points
 ---
+
+## 2026-01-13 - US-090
+- **Implemented**: Product questions and answers (Q&A) feature
+- **Files changed**:
+  - `prisma/schema.prisma` (added ProductQuestion, ProductAnswer, AnswerVote models, QuestionStatus enum)
+  - `app/api/products/[id]/questions/route.ts` (new - GET/POST questions for product)
+  - `app/api/questions/route.ts` (new - admin list all questions)
+  - `app/api/questions/[id]/route.ts` (new - GET/PATCH/DELETE single question)
+  - `app/api/questions/[id]/answers/route.ts` (new - GET/POST answers)
+  - `app/api/answers/[id]/vote/route.ts` (new - POST vote on answer)
+  - `lib/api-hooks.ts` (added Q&A hooks and types)
+  - `components/product-qa.tsx` (new - Q&A display component)
+  - `components/pages/qa-page.tsx` (new - admin moderation page)
+  - `components/product-detail-client.tsx` (integrated ProductQA)
+  - `lib/i18n.ts` (added qa translations for EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **ProductQuestion model**: productId, question, customerId/guestName/guestEmail, status (PENDING/APPROVED/REJECTED)
+  - **ProductAnswer model**: questionId, answer, isOfficial, customerId/guestName, helpfulVotes/unhelpfulVotes
+  - **AnswerVote model**: answerId, customerId/ipAddress, isHelpful (prevents duplicate votes)
+  - **API endpoints**: Full CRUD with moderation, voting, admin listing
+  - **ProductQA component**: Submit questions, expandable Q&A list, answer submission, voting UI
+  - **QAPage admin**: Status filter tabs, stats cards, approve/reject/delete actions, official answer dialog
+  - **Bilingual**: Full EN/KH translations
+- **Learnings for future iterations**:
+  - Follow the reviews pattern for customer-generated content with moderation
+  - Use three models: Question -> Answer -> Vote for proper normalization
+  - QuestionStatus enum for moderation workflow (PENDING, APPROVED, REJECTED)
+  - isOfficial flag on answers distinguishes seller responses
+  - IP-based voting for guests, customerId-based for logged-in users
+  - Expandable UI with ChevronUp/ChevronDown for long Q&A lists
+  - Admin page needs both moderation (approve/reject) and response (answer) capabilities
+---
