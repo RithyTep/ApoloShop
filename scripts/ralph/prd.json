@@ -1258,8 +1258,8 @@
         "Build passes: bun run build"
       ],
       "priority": 80,
-      "passes": false,
-      "notes": "For businesses with physical retail presence"
+      "passes": true,
+      "notes": "Implemented StoreLocation Prisma model with bilingual name/address/description, lat/lng coordinates, hours JSON, phone/email contacts. Created /api/stores API with GET/POST/PUT/DELETE, Haversine distance calculation, nearest store detection. Built StoreLocator component with map embed, geolocation, open/closed status detection, click-to-call, email, and Google Maps directions links. Added EN/KH translations."
     },
     {
       "id": "US-081",

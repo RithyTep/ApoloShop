@@ -2660,3 +2660,44 @@ model ExperimentAssignment {
   @@map("experiment_assignments")
   @@schema("apolo")
 }
+
+// ============================================
+// STORE LOCATOR
+// ============================================
+
+model StoreLocation {
+  id          String   @id @default(cuid())
+  name        String   // Store name in English
+  nameKh      String?  @map("name_kh") // Store name in Khmer
+  address     String   @db.Text // Full address
+  addressKh   String?  @map("address_kh") @db.Text // Address in Khmer
+  // Geolocation
+  lat         Decimal  @db.Decimal(10, 8) // Latitude (-90 to 90)
+  lng         Decimal  @db.Decimal(11, 8) // Longitude (-180 to 180)
+  // Contact info
+  phone       String?  // Phone number for click-to-call
+  email       String?  // Store email
+  // Operating hours (JSON for flexibility)
+  // Format: { "monday": { "open": "09:00", "close": "18:00" }, "tuesday": { "open": "09:00", "close": "18:00" }, ... }
+  hours       Json?    // Operating hours per day
+  hoursNote   String?  @map("hours_note") // Additional note (e.g., "Closed on public holidays")
+  hoursNoteKh String?  @map("hours_note_kh") // Khmer translation
+  // Additional info
+  description String?  @db.Text // Store description
+  descriptionKh String? @map("description_kh") @db.Text
+  imageUrl    String?  @map("image_url") // Store photo
+  // Status
+  isActive    Boolean  @default(true) @map("is_active")
+  isPrimary   Boolean  @default(false) @map("is_primary") // Mark main/flagship store
+  sortOrder   Int      @default(0) @map("sort_order")
+  // Timestamps
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@index([isPrimary])
+  @@index([sortOrder])
+  @@index([lat, lng])
+  @@map("store_locations")
+  @@schema("apolo")
+}
