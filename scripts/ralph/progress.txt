@@ -2993,3 +2993,41 @@ Project: ApoloShop - Product Search Feature
   - Server-side QR: use qrcode.toBuffer() not qrcode.react since latter needs client-side React
   - pickupEnabled boolean on StoreLocation filters which stores appear in pickup selection
 ---
+
+## 2026-01-13 - US-096
+- **Implemented**: Blog and content management for content marketing
+- **Files changed**:
+  - `prisma/schema.prisma` (added BlogPost, BlogCategory, BlogTag, BlogPostTag, BlogPostProduct models, BlogPostStatus enum)
+  - `app/api/blog/route.ts` (new - blog posts CRUD API)
+  - `app/api/blog/categories/route.ts` (new - blog categories CRUD API)
+  - `app/api/blog/tags/route.ts` (new - blog tags CRUD API)
+  - `components/rich-text-editor.tsx` (new - RichTextEditor component with toolbar)
+  - `components/pages/blog-page.tsx` (new - BlogPage admin UI)
+  - `components/sidebar.tsx` (added blog navigation item)
+  - `components/admin-dashboard.tsx` (added BlogPage routing)
+  - `lib/api-hooks.ts` (added blog types and hooks)
+  - `lib/i18n.ts` (added blog translations EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **BlogPost model**: slug, titleEn/Kh, contentEn/Kh (rich text), excerptEn/Kh, authorId, featuredImage/Alt, status, publishedAt, scheduledFor, categoryId, SEO fields (metaTitle, metaDescription, metaKeywords, canonicalUrl, ogImage), readingTimeMin, viewCount
+  - **BlogPostStatus enum**: DRAFT, PUBLISHED, SCHEDULED, ARCHIVED
+  - **BlogCategory model**: slug, nameEn/Kh, descriptionEn/Kh, SEO fields, sortOrder, parentId (hierarchical), isActive
+  - **BlogTag model**: slug, nameEn/Kh, postCount (auto-updated)
+  - **BlogPostTag junction**: Many-to-many post-to-tag relationships
+  - **BlogPostProduct junction**: Related products in posts with sortOrder and mentionText
+  - **Blog API endpoints**: Full CRUD for posts, categories, tags with filters, pagination, related data
+  - **RichTextEditor component**: Toolbar with bold/italic/underline, headings, blockquote, code, lists, alignment, link/image insert, undo/redo, visual/HTML modes
+  - **BlogPage admin UI**: Tabbed interface for posts/categories/tags, search/filter/pagination, create/edit dialogs with content tabs (Content, Media, SEO, Related Products), delete confirmations
+  - **Tag management**: Click-to-toggle tags, auto-update postCount on post create/update/delete
+  - **Related products**: Select products to feature in blog posts with visual picker
+  - **SEO optimization**: Per-post metaTitle, metaDescription, metaKeywords, canonicalUrl, ogImage
+  - **Bilingual support**: Full EN/KH translations for all blog UI elements
+- **Learnings for future iterations**:
+  - Rich text editor uses document.execCommand for formatting (works well for basic editing)
+  - HTML sanitization in API removes script tags and event handlers for XSS prevention
+  - Reading time calculated from word count (average 200 words/minute)
+  - Tag postCount uses increment/decrement to track usage efficiently
+  - BlogPostProduct enables content marketing by linking blog posts to products
+  - Scheduled posts use scheduledFor field; status SCHEDULED indicates future publishing
+  - Category hierarchy via parentId enables subcategories
+---

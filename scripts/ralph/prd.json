@@ -1514,8 +1514,8 @@
         "Build passes: bun run build"
       ],
       "priority": 96,
-      "passes": false,
-      "notes": "Content marketing for SEO and engagement"
+      "passes": true,
+      "notes": "Implemented BlogPost/Category/Tag models, API endpoints, RichTextEditor, BlogPage admin UI"
     },
     {
       "id": "US-097",
