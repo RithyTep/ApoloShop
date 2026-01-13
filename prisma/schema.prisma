@@ -511,6 +511,12 @@ model Order {
   payments    Payment[]
   tracking    OrderTracking?
   referrals   Referral[]
+  edits       OrderEdit[]
+
+  // Order editing fields
+  isEditable      Boolean   @default(true) @map("is_editable") // Can be edited before shipping
+  editableUntil   DateTime? @map("editable_until") // Time window for editing
+  shippingAddress Json?     @map("shipping_address") // Address snapshot for editing
 
   @@index([clientId])
   @@index([customerId])
@@ -530,6 +536,9 @@ model OrderItem {
   quantity    Int
   priceUsd    Decimal  @map("price_usd") @db.Decimal(10, 2)
   priceKhr    Int      @map("price_khr")
+  // Order editing fields
+  isCancelled Boolean  @default(false) @map("is_cancelled") // Individual item cancellation
+  cancelledAt DateTime? @map("cancelled_at")
 
   @@index([orderId])
   @@index([productId])
@@ -3432,5 +3441,66 @@ enum FitFeedback {
   PERFECT       // Just right
   SLIGHTLY_LARGE // Slightly loose
   TOO_LARGE     // Size was too large
+  @@schema("apolo")
+}
+
+// ============================================
+// ORDER EDITING
+// ============================================
+
+enum OrderEditType {
+  QUANTITY_CHANGE   // Changed item quantity
+  ITEM_ADDED        // Added new item to order
+  ITEM_CANCELLED    // Cancelled individual item
+  ADDRESS_CHANGE    // Changed shipping address
+  TOTALS_RECALC     // Recalculated totals (auto after changes)
+  @@schema("apolo")
+}
+
+enum OrderEditStatus {
+  PENDING    // Edit requested, awaiting processing
+  APPROVED   // Edit approved and applied
+  REJECTED   // Edit rejected
+  @@schema("apolo")
+}
+
+model OrderEdit {
+  id            String          @id @default(cuid())
+  orderId       String          @map("order_id")
+  order         Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  // Edit details
+  editType      OrderEditType   @map("edit_type")
+  status        OrderEditStatus @default(PENDING)
+  // What changed
+  itemId        String?         @map("item_id") // OrderItem affected (if item edit)
+  productId     String?         @map("product_id") // Product affected (for adds)
+  productName   String?         @map("product_name") // Product name snapshot
+  // Quantity changes
+  previousQuantity Int?         @map("previous_quantity")
+  newQuantity      Int?         @map("new_quantity")
+  // Price at time of edit
+  unitPriceUsd  Decimal?        @map("unit_price_usd") @db.Decimal(10, 2)
+  unitPriceKhr  Int?            @map("unit_price_khr")
+  // Address changes
+  previousAddress Json?         @map("previous_address")
+  newAddress      Json?         @map("new_address")
+  // Totals impact
+  totalDifferenceUsd Decimal?   @map("total_difference_usd") @db.Decimal(10, 2)
+  totalDifferenceKhr Int?       @map("total_difference_khr")
+  refundRequired     Boolean    @default(false) @map("refund_required")
+  refundAmount       Decimal?   @map("refund_amount") @db.Decimal(10, 2)
+  refundCurrency     Currency?  @map("refund_currency")
+  // Audit
+  editedBy      String?         @map("edited_by") // User or customer ID
+  editReason    String?         @map("edit_reason") @db.Text
+  adminNotes    String?         @map("admin_notes") @db.Text
+  createdAt     DateTime        @default(now()) @map("created_at")
+  processedAt   DateTime?       @map("processed_at")
+
+  @@index([orderId])
+  @@index([editType])
+  @@index([status])
+  @@index([createdAt])
+  @@map("order_edits")
   @@schema("apolo")
 }

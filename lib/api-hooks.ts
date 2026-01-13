@@ -295,6 +295,136 @@ export function useUpdateOrderStatus() {
 }
 
 // ============================================
+// ORDER EDITING
+// ============================================
+
+export type OrderEditType = "QUANTITY_CHANGE" | "ITEM_ADDED" | "ITEM_CANCELLED" | "ADDRESS_CHANGE" | "TOTALS_RECALC";
+export type OrderEditStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export interface OrderEdit {
+  id: string;
+  orderId: string;
+  editType: OrderEditType;
+  status: OrderEditStatus;
+  itemId?: string;
+  productId?: string;
+  productName?: string;
+  previousQuantity?: number;
+  newQuantity?: number;
+  unitPriceUsd?: number;
+  unitPriceKhr?: number;
+  previousAddress?: ShippingAddress;
+  newAddress?: ShippingAddress;
+  totalDifferenceUsd?: number;
+  totalDifferenceKhr?: number;
+  refundRequired: boolean;
+  refundAmount?: number;
+  refundCurrency?: "USD" | "KHR";
+  editedBy?: string;
+  editReason?: string;
+  adminNotes?: string;
+  createdAt: string;
+  processedAt?: string;
+}
+
+export interface ShippingAddress {
+  street: string;
+  city: string;
+  province?: string;
+  postalCode?: string;
+  phone?: string;
+  recipientName?: string;
+}
+
+export interface OrderEditResult {
+  success: boolean;
+  edits: OrderEdit[];
+  newTotalUsd: number;
+  newTotalKhr: number;
+  totalDifferenceUsd: number;
+  totalDifferenceKhr: number;
+  refundRequired: boolean;
+  refundAmount: number;
+}
+
+export interface OrderEditability {
+  id: string;
+  isEditable: boolean;
+  editableReason?: string;
+  shippingAddress?: ShippingAddress;
+}
+
+export interface QuantityChangeEdit {
+  type: "QUANTITY_CHANGE";
+  itemId: string;
+  newQuantity: number;
+  reason?: string;
+}
+
+export interface AddItemEdit {
+  type: "ITEM_ADDED";
+  productId: string;
+  quantity: number;
+  reason?: string;
+}
+
+export interface CancelItemEdit {
+  type: "ITEM_CANCELLED";
+  itemId: string;
+  reason?: string;
+}
+
+export interface AddressChangeEdit {
+  type: "ADDRESS_CHANGE";
+  newAddress: ShippingAddress;
+  reason?: string;
+}
+
+export type OrderEditInput = QuantityChangeEdit | AddItemEdit | CancelItemEdit | AddressChangeEdit;
+
+export function useOrderEdits(orderId: string) {
+  return useQuery({
+    queryKey: ["order-edits", orderId],
+    queryFn: () =>
+      fetchAPI<{ edits: OrderEdit[]; order: OrderEditability }>(
+        `/api/orders/edit?orderId=${orderId}`
+      ),
+    enabled: !!orderId,
+  });
+}
+
+export function useApplyOrderEdits() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ orderId, edits }: { orderId: string; edits: OrderEditInput[] }) =>
+      fetchAPI<OrderEditResult>("/api/orders/edit", {
+        method: "POST",
+        body: JSON.stringify({ orderId, edits }),
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["order", variables.orderId] });
+      queryClient.invalidateQueries({ queryKey: ["order-edits", variables.orderId] });
+    },
+  });
+}
+
+export function useDisableOrderEditing() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (orderId: string) =>
+      fetchAPI<{ success: boolean; message: string }>(
+        `/api/orders/edit?orderId=${orderId}`,
+        { method: "DELETE" }
+      ),
+    onSuccess: (_, orderId) => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["order-edits", orderId] });
+    },
+  });
+}
+
+// ============================================
 // CUSTOMERS
 // ============================================
 
