@@ -40,6 +40,7 @@ import { CustomerSegmentsPage } from "./pages/customer-segments-page"
 import { ABTestingPage } from "./pages/ab-testing-page"
 import { TaxRatesPage } from "./pages/tax-rates-page"
 import { InstagramShopPage } from "./pages/instagram-shop-page"
+import { TikTokShopPage } from "./pages/tiktok-shop-page"
 import { useOrders, useLowStockItems, useAdminReviews } from "@/lib/api-hooks"
 
 type NavItem =
@@ -81,6 +82,7 @@ type NavItem =
   | "ab-testing"
   | "tax-rates"
   | "instagram-shop"
+  | "tiktok-shop"
 
 export function AdminDashboard() {
   const [activeNav, setActiveNav] = useState<NavItem>("dashboard")
@@ -172,6 +174,8 @@ export function AdminDashboard() {
         return <TaxRatesPage />
       case "instagram-shop":
         return <InstagramShopPage />
+      case "tiktok-shop":
+        return <TikTokShopPage />
       default:
         return <DashboardPage />
     }
