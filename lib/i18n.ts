@@ -106,6 +106,22 @@ export const translations = {
       hurry: "Hurry up!",
       save: "Save",
     },
+    // Social Proof
+    socialProof: {
+      purchased: "purchased",
+      peopleViewing: "people viewing",
+      sold: "sold",
+      securePayment: "Secure Payment",
+      fastDelivery: "Fast Delivery",
+      qualityGuarantee: "Quality Guarantee",
+      justNow: "just now",
+      minuteAgo: "minute ago",
+      minutesAgo: "minutes ago",
+      hourAgo: "hour ago",
+      hoursAgo: "hours ago",
+      dayAgo: "day ago",
+      daysAgo: "days ago",
+    },
     // Loyalty Program
     loyalty: {
       title: "Loyalty Program",
@@ -1319,6 +1335,22 @@ export const translations = {
       off: "បញ្ចុះ",
       hurry: "ប្រញាប់ឡើង!",
       save: "សន្សំ",
+    },
+    // Social Proof
+    socialProof: {
+      purchased: "បានទិញ",
+      peopleViewing: "នាក់កំពុងមើល",
+      sold: "បានលក់",
+      securePayment: "ការទូទាត់ប្រកបដោយសុវត្ថិភាព",
+      fastDelivery: "ដឹកជញ្ជូនរហ័ស",
+      qualityGuarantee: "ធានាគុណភាព",
+      justNow: "ទើបតែ",
+      minuteAgo: "នាទីមុន",
+      minutesAgo: "នាទីមុន",
+      hourAgo: "ម៉ោងមុន",
+      hoursAgo: "ម៉ោងមុន",
+      dayAgo: "ថ្ងៃមុន",
+      daysAgo: "ថ្ងៃមុន",
     },
     // Loyalty Program
     loyalty: {

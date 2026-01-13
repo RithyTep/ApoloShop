@@ -27,6 +27,7 @@ import { TeamRenderer } from "./customizer/renderers/team-renderer"
 import { AnnouncementBanner } from "./shop/announcement-banner"
 import { PWAInstallPrompt, PWAUpdateBanner, OfflineIndicator } from "./pwa-install-prompt"
 import { ChatWidget } from "./chat-widget"
+import { SocialProofNotification } from "./social-proof"
 import { usePWA } from "@/lib/use-pwa"
 import {
   trackAddToCart,
@@ -350,6 +351,9 @@ export function ShopApp() {
         currency={currency}
         language={language}
       />
+
+      {/* Social Proof Notifications */}
+      <SocialProofNotification language={language === "en" ? "EN" : "KH"} />
 
       {/* PWA Components */}
       <PWAInstallPrompt language={language} />

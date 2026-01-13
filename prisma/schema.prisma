@@ -2774,3 +2774,36 @@ model ReferralCode {
   @@map("referral_codes")
   @@schema("apolo")
 }
+
+// ============================================
+// SOCIAL PROOF
+// ============================================
+
+// Social proof configuration for the shop
+model SocialProofConfig {
+  id                      String   @id @default(cuid())
+  // Recent purchase notifications
+  showRecentPurchases     Boolean  @default(true) @map("show_recent_purchases")
+  purchaseDisplayDelay    Int      @default(5) @map("purchase_display_delay") // Seconds between notifications
+  purchaseDisplayDuration Int      @default(5) @map("purchase_display_duration") // Seconds to show each notification
+  purchaseTimeWindow      Int      @default(24) @map("purchase_time_window") // Hours to look back for purchases
+  // Currently viewing count
+  showViewerCount         Boolean  @default(true) @map("show_viewer_count")
+  viewerCountMin          Int      @default(5) @map("viewer_count_min") // Minimum simulated viewers
+  viewerCountMax          Int      @default(20) @map("viewer_count_max") // Maximum simulated viewers
+  // Items sold counter
+  showSoldCount           Boolean  @default(true) @map("show_sold_count")
+  // Trust badges
+  showTrustBadges         Boolean  @default(true) @map("show_trust_badges")
+  enabledBadges           Json     @default("[\"secure\", \"guarantee\", \"shipping\"]") @map("enabled_badges") // Array of badge IDs
+  // Display position
+  notificationPosition    String   @default("bottom-left") @map("notification_position") // bottom-left, bottom-right, top-left, top-right
+  // Status
+  isActive                Boolean  @default(true) @map("is_active")
+  // Timestamps
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  @@map("social_proof_config")
+  @@schema("apolo")
+}

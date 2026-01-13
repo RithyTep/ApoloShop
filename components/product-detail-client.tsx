@@ -16,6 +16,7 @@ import { ProductRecommendations } from "@/components/product-recommendations"
 import { ProductReviews } from "@/components/product-reviews"
 import { StarRating } from "@/components/star-rating"
 import { VariantSelector, ProductVariant } from "@/components/variant-selector"
+import { ProductSocialProof } from "@/components/social-proof"
 
 interface ProductWithVariants extends Product {
   _reviewStats?: { averageRating: number; totalReviews: number }
@@ -263,6 +264,12 @@ export function ProductDetailClient({ product: initialProduct, language: initial
             <div className="text-3xl font-bold text-primary">
               {formatPrice(currentPriceUsd, currentPriceKhr)}
             </div>
+
+            {/* Social Proof - Viewers & Sold Count */}
+            <ProductSocialProof
+              productId={product.id}
+              language={language}
+            />
 
             {/* Description */}
             {getDescription(product.descriptionEn, product.descriptionKh) && (

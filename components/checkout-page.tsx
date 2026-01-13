@@ -30,6 +30,7 @@ import { useCreateOrder, type OrderChannel } from "@/lib/api-hooks"
 import { translations } from "@/lib/i18n"
 import type { PaymentGatewayType, PaymentInitResponse } from "@/lib/payment-gateways"
 import { CouponInput } from "@/components/coupon-input"
+import { TrustStrip } from "@/components/social-proof"
 
 interface ShippingAddress {
   id: string
@@ -1050,6 +1051,9 @@ export function CheckoutPage({
                 <span className="text-primary">{formatPrice(finalTotal)}</span>
               </div>
             </div>
+
+            {/* Trust Badges */}
+            <TrustStrip language={language} className="mt-4 -mx-6 px-6" />
 
             {/* Place Order Button */}
             <Button
