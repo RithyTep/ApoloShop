@@ -2836,3 +2836,34 @@ Project: ApoloShop - Product Search Feature
   - Expandable UI with ChevronUp/ChevronDown for long Q&A lists
   - Admin page needs both moderation (approve/reject) and response (answer) capabilities
 ---
+
+## 2026-01-13 - US-091
+- **Implemented**: Size guide and fit finder feature
+- **Files changed**:
+  - `prisma/schema.prisma` (added SizeChart, SizeProfile, FitQuizResponse models, SizeChartType/MeasurementUnit/FitType/Gender/FitFeedback enums)
+  - `app/api/size-charts/route.ts` (new - CRUD for size charts)
+  - `app/api/size-profiles/route.ts` (new - customer size profile CRUD)
+  - `app/api/fit-quiz/route.ts` (new - quiz submission with size recommendation)
+  - `components/size-guide.tsx` (new - visual size chart component)
+  - `components/fit-finder.tsx` (new - multi-step fit quiz wizard)
+  - `components/size-profile.tsx` (new - customer size profile form)
+  - `lib/i18n.ts` (added sizeGuide translations for EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **SizeChart model**: nameEn/nameKh, brandEn/brandKh, chartType, unit, sizes (JSON), measurementTypes, fitType, categoryId/productId
+  - **SizeProfile model**: customerId/guestId, gender, height/weight/age, body measurements (chest/waist/hips/etc.), footLength/footWidth, preferredFit, savedSizes (JSON)
+  - **FitQuizResponse model**: Quiz answers, recommendedSize, purchasedSize, fitFeedback for ML feedback loop
+  - **Size recommendation algorithm**: BMI-based calculation, body measurements matching, fit preference adjustments
+  - **SizeGuide component**: Visual table, cm/inch unit toggle, highlighted selected size, fit type badges
+  - **FitFinder component**: 5-step wizard (intro/basics/bodyType/measurements/preference), progress bar, result with size badge
+  - **SizeProfile component**: Full measurement form, saved sizes per category, gender/fit preference
+  - **BrandComparison component**: Compare sizes across different brands
+- **Learnings for future iterations**:
+  - Three models needed: SizeChart (product/category config), SizeProfile (user data), FitQuizResponse (quiz history + feedback)
+  - JSON columns work well for sizes array and savedSizes map
+  - Size recommendation algorithm uses BMI, body type, height adjustments, and fit preference
+  - FitFeedback enum enables future ML training on size accuracy
+  - Multi-step wizard pattern: array of Step types, currentStepIndex, handleNext/handleBack
+  - Unit conversion: 1 inch = 2.54 cm, store in chart's native unit and convert on display
+  - Support both customerId (logged-in) and guestId (anonymous) for quiz and profiles
+---
