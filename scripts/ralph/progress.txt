@@ -2867,3 +2867,36 @@ Project: ApoloShop - Product Search Feature
   - Unit conversion: 1 inch = 2.54 cm, store in chart's native unit and convert on display
   - Support both customerId (logged-in) and guestId (anonymous) for quiz and profiles
 ---
+
+## 2026-01-13 - US-092
+- **Implemented**: Delivery date estimation feature
+- **Files changed**:
+  - `lib/delivery-estimate.ts` (new - delivery estimation service)
+  - `app/api/delivery-estimate/route.ts` (new - GET/POST API endpoint)
+  - `components/delivery-estimate.tsx` (new - DeliveryEstimate component)
+  - `components/product-detail-client.tsx` (modified - integrated DeliveryEstimate)
+  - `lib/i18n.ts` (modified - added delivery translations EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Business days calculation**: addBusinessDays() skips weekends and holidays
+  - **Cambodia holidays 2025-2026**: Public holiday list for accurate business day calculation
+  - **isWeekend/isHoliday/isBusinessDay**: Helper functions for date calculations
+  - **formatDeliveryDate**: Formats dates in EN (Intl) or Khmer with day/month names
+  - **getNextBusinessDay**: Returns next processing day, accounting for 3PM cutoff
+  - **willProcessToday**: Checks if order will be processed same day
+  - **GET /api/delivery-estimate**: Estimates for all zones or filtered by region
+  - **POST /api/delivery-estimate**: Calculate for specific zone/region/shipping method
+  - **DeliveryEstimateResult**: zoneId, zoneName (en/kh), estimatedRange, businessDays, isExpress, shippingMethod
+  - **DeliveryEstimate component**: Full card display with date range, express/standard/free badges
+  - **DeliveryEstimateInline**: Compact version for product cards
+  - **showAllOptions**: Expandable view with multiple shipping options
+  - **processesToday indicator**: Shows if order will process same day
+- **Learnings for future iterations**:
+  - ShippingZone model already has minDeliveryDays/maxDeliveryDays - reuse for estimates
+  - Cambodia holidays vary (lunar calendar) - some need manual update each year
+  - 3PM cutoff is common for same-day processing
+  - Khmer locale (km-KH) may not be available in all browsers - provide fallback
+  - Intl.DateTimeFormat is the modern way to format dates with locale support
+  - Express = minDays <= 2, Free Shipping = rateType === 'FREE'
+  - Set type for holidays uses O(1) lookup for isHoliday checks
+---

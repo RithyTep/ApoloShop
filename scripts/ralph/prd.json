@@ -1450,8 +1450,8 @@
         "Build passes: bun run build"
       ],
       "priority": 92,
-      "passes": false,
-      "notes": "Sets clear customer expectations"
+      "passes": true,
+      "notes": "Implemented lib/delivery-estimate.ts with business days/holidays calculation, GET/POST /api/delivery-estimate endpoint, DeliveryEstimate component with express/standard/free badges, integrated into product detail page, bilingual EN/KH support"
     },
     {
       "id": "US-093",
