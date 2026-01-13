@@ -31,6 +31,7 @@ import {
   TrendingUp,
   Store,
   Calculator,
+  Webhook,
   type LucideIcon,
 } from "lucide-react"
 import { useState } from "react"
@@ -66,6 +67,7 @@ type NavItem =
   | "analytics"
   | "pos-integration"
   | "accounting"
+  | "webhooks"
 
 interface SidebarProps {
   activeNav: NavItem
@@ -135,6 +137,7 @@ export function Sidebar({ activeNav, setActiveNav, orderCount = 0, lowStockCount
         { id: "payments", label: "Payments", icon: CreditCard },
         { id: "accounting", label: "Accounting", icon: Calculator },
         { id: "pos-integration", label: "POS Integration", icon: Store },
+        { id: "webhooks", label: "Webhooks", icon: Webhook },
         { id: "reports", label: "Reports", icon: BarChart3 },
         { id: "analytics", label: "Analytics", icon: TrendingUp },
         { id: "performance", label: "Performance", icon: Activity },

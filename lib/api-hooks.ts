@@ -4795,3 +4795,233 @@ export function useAdvancedAnalytics(options?: { startDate?: string; endDate?: s
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
+
+// ============================================
+// WEBHOOK MANAGEMENT
+// ============================================
+
+export type WebhookEventType = "ORDER_CREATED" | "ORDER_UPDATED" | "PRODUCT_UPDATED" | "CUSTOMER_CREATED";
+export type WebhookDeliveryStatus = "PENDING" | "SUCCESS" | "FAILED" | "RETRYING";
+
+export interface Webhook {
+  id: string;
+  name: string;
+  url: string;
+  events: WebhookEventType[];
+  secret: string; // Masked in responses
+  isActive: boolean;
+  description?: string;
+  headers?: Record<string, string>;
+  clientId?: string;
+  lastTriggeredAt?: string;
+  successCount: number;
+  failureCount: number;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    deliveryLogs: number;
+  };
+}
+
+export interface WebhookDeliveryLog {
+  id: string;
+  webhookId: string;
+  event: WebhookEventType;
+  payload: Record<string, unknown>;
+  status: WebhookDeliveryStatus;
+  httpStatus?: number;
+  response?: string;
+  errorMessage?: string;
+  attempt: number;
+  maxAttempts: number;
+  nextRetryAt?: string;
+  sentAt?: string;
+  completedAt?: string;
+  durationMs?: number;
+  signature?: string;
+  createdAt: string;
+}
+
+export interface WebhooksResponse {
+  webhooks: Webhook[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface WebhookDetailResponse {
+  webhook: Webhook;
+  stats: {
+    totalDeliveries: number;
+    successCount: number;
+    failureCount: number;
+    successRate: string;
+    lastTriggeredAt?: string;
+  };
+  deliveryLogs: WebhookDeliveryLog[];
+}
+
+export interface WebhooksParams {
+  page?: number;
+  limit?: number;
+  clientId?: string;
+  isActive?: boolean;
+}
+
+export interface WebhookCreateInput {
+  name: string;
+  url: string;
+  events: WebhookEventType[];
+  description?: string;
+  headers?: Record<string, string>;
+  clientId?: string;
+}
+
+export interface WebhookUpdateInput {
+  id: string;
+  name?: string;
+  url?: string;
+  events?: WebhookEventType[];
+  description?: string;
+  headers?: Record<string, string>;
+  isActive?: boolean;
+  regenerateSecret?: boolean;
+}
+
+/**
+ * Hook to fetch webhooks with pagination
+ */
+export function useWebhooks(params: WebhooksParams = {}) {
+  const queryString = new URLSearchParams();
+  if (params.page) queryString.set("page", String(params.page));
+  if (params.limit) queryString.set("limit", String(params.limit));
+  if (params.clientId) queryString.set("clientId", params.clientId);
+  if (params.isActive !== undefined) queryString.set("isActive", String(params.isActive));
+
+  return useQuery({
+    queryKey: ["webhooks", params],
+    queryFn: () =>
+      fetchAPI<WebhooksResponse>(`/api/webhooks?${queryString.toString()}`),
+    staleTime: 30000,
+  });
+}
+
+/**
+ * Hook to fetch webhook details and delivery logs
+ */
+export function useWebhookDetail(webhookId: string | null) {
+  return useQuery({
+    queryKey: ["webhook-detail", webhookId],
+    queryFn: () =>
+      fetchAPI<WebhookDetailResponse>(`/api/webhooks/${webhookId}`),
+    enabled: !!webhookId,
+    staleTime: 10000,
+  });
+}
+
+/**
+ * Hook to create a webhook
+ */
+export function useCreateWebhook() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: WebhookCreateInput) =>
+      fetchAPI<{ webhook: Webhook; message: string }>("/api/webhooks", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["webhooks"] });
+    },
+  });
+}
+
+/**
+ * Hook to update a webhook
+ */
+export function useUpdateWebhook() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: WebhookUpdateInput) =>
+      fetchAPI<{ webhook: Webhook; message: string; secretRegenerated?: boolean }>("/api/webhooks", {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["webhooks"] });
+      queryClient.invalidateQueries({ queryKey: ["webhook-detail", variables.id] });
+    },
+  });
+}
+
+/**
+ * Hook to delete a webhook
+ */
+export function useDeleteWebhook() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (webhookId: string) =>
+      fetchAPI<{ message: string }>(`/api/webhooks?id=${webhookId}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["webhooks"] });
+    },
+  });
+}
+
+/**
+ * Hook to test a webhook
+ */
+export function useTestWebhook() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (webhookId: string) =>
+      fetchAPI<{
+        success: boolean;
+        message: string;
+        deliveryLogId: string;
+        httpStatus?: number;
+        error?: string;
+        durationMs?: number;
+      }>(`/api/webhooks/${webhookId}`, {
+        method: "POST",
+      }),
+    onSuccess: (_, webhookId) => {
+      queryClient.invalidateQueries({ queryKey: ["webhook-detail", webhookId] });
+      queryClient.invalidateQueries({ queryKey: ["webhooks"] });
+    },
+  });
+}
+
+/**
+ * Hook to retry a failed webhook delivery
+ */
+export function useRetryWebhookDelivery() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (deliveryLogId: string) =>
+      fetchAPI<{
+        success: boolean;
+        message: string;
+        deliveryLogId: string;
+        httpStatus?: number;
+        error?: string;
+        durationMs?: number;
+      }>(`/api/webhooks/${deliveryLogId}/retry`, {
+        method: "POST",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["webhook-detail"] });
+      queryClient.invalidateQueries({ queryKey: ["webhooks"] });
+    },
+  });
+}

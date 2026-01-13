@@ -758,6 +758,7 @@ model Client {
   customizations ShopCustomization[]
   subscription Subscription?
   posProviders POSProvider[]
+  webhooks     Webhook[]
 
   @@index([slug])
   @@index([domain])
@@ -2249,5 +2250,86 @@ model POSCustomerMapping {
   @@index([customerId])
   @@index([posCustomerId])
   @@map("pos_customer_mappings")
+  @@schema("apolo")
+}
+
+// ============================================
+// WEBHOOK INTEGRATIONS
+// ============================================
+
+enum WebhookEvent {
+  ORDER_CREATED
+  ORDER_UPDATED
+  PRODUCT_UPDATED
+  CUSTOMER_CREATED
+
+  @@schema("apolo")
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  RETRYING
+
+  @@schema("apolo")
+}
+
+model Webhook {
+  id          String         @id @default(cuid())
+  clientId    String?        @map("client_id")
+  client      Client?        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name        String         // User-friendly name for the webhook
+  url         String         // Target URL for webhook delivery
+  events      WebhookEvent[] // Array of events this webhook subscribes to
+  secret      String         // Secret key for HMAC signature verification
+  isActive    Boolean        @default(true) @map("is_active")
+  // Metadata
+  description String?
+  headers     Json?          // Custom headers to include in requests
+  // Stats
+  lastTriggeredAt DateTime?  @map("last_triggered_at")
+  successCount    Int        @default(0) @map("success_count")
+  failureCount    Int        @default(0) @map("failure_count")
+  // Timestamps
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  deliveryLogs WebhookDeliveryLog[]
+
+  @@index([clientId])
+  @@index([isActive])
+  @@map("webhooks")
+  @@schema("apolo")
+}
+
+model WebhookDeliveryLog {
+  id           String                @id @default(cuid())
+  webhookId    String                @map("webhook_id")
+  webhook      Webhook               @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  event        WebhookEvent          // The event that triggered this delivery
+  payload      Json                  // The payload sent to the webhook URL
+  // Delivery details
+  status       WebhookDeliveryStatus @default(PENDING)
+  httpStatus   Int?                  @map("http_status") // Response status code
+  response     String?               // Response body (truncated if too long)
+  errorMessage String?               @map("error_message")
+  // Retry information
+  attempt      Int                   @default(1) // Current attempt number
+  maxAttempts  Int                   @default(3) @map("max_attempts")
+  nextRetryAt  DateTime?             @map("next_retry_at")
+  // Timing
+  sentAt       DateTime?             @map("sent_at")
+  completedAt  DateTime?             @map("completed_at")
+  durationMs   Int?                  @map("duration_ms") // How long the request took
+  // Signature for verification
+  signature    String?               // The HMAC signature sent
+  createdAt    DateTime              @default(now()) @map("created_at")
+
+  @@index([webhookId])
+  @@index([status])
+  @@index([event])
+  @@index([createdAt])
+  @@map("webhook_delivery_logs")
   @@schema("apolo")
 }
