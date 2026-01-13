@@ -2936,3 +2936,30 @@ Project: ApoloShop - Product Search Feature
   - Inventory updates must be bidirectional: reduce on add/increase, increase on cancel/decrease
   - Client-side difference calculation uses products data for add items (not yet in order)
 ---
+
+## 2026-01-13 - US-094
+- **Implemented**: Split shipments functionality
+- **Files changed**:
+  - `prisma/schema.prisma` (added Shipment, ShipmentItem, ShipmentStatusHistory models, ShipmentStatus/ShipmentType enums)
+  - `lib/split-shipment-service.ts` (new file - split shipment detection and management)
+  - `app/api/shipments/route.ts` (new file - shipments API endpoint)
+  - `components/split-shipment-option.tsx` (new file - checkout UI component)
+  - `components/pages/shipments-page.tsx` (new file - admin fulfillment workflow)
+  - `lib/i18n.ts` (added splitShipment translations for EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Availability detection**: checkCartAvailability() checks stock for cart items, returns in_stock/low_stock/backordered/preorder/out_of_stock status
+  - **Split options**: getSplitShipmentOptions() calculates immediate vs delayed shipment items with shipping charges
+  - **Shipment models**: Shipment linked to Order, ShipmentItem linked to OrderItem, ShipmentStatusHistory for tracking
+  - **API endpoints**: GET (list/check availability/split options), POST (create single/split), PATCH (update status), DELETE (cancel)
+  - **Checkout component**: SplitShipmentOption shows split vs combined shipping with cost comparison, item breakdown, estimated dates
+  - **Admin UI**: ShipmentsPage with tabs (pending/processing/shipped/all), status updates, tracking number entry, cancel with reason
+  - **Separate tracking**: Each shipment has its own trackingNumber and courier
+  - **Shipping charges**: Split shipments have per-shipment charges, combined shows savings
+- **Learnings for future iterations**:
+  - Shipment number format: SHP-{orderNumber suffix}-{A,B,C...} for sequential split shipments
+  - Customer consent tracked via customerConsent boolean on Shipment model
+  - ShipmentItem.availabilityStatus captures status at time of shipment creation
+  - Status history allows full audit trail of shipment progression
+  - Default shipping charges: $2.50 base + $1.50 surcharge per split shipment
+---

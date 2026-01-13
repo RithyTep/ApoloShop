@@ -512,6 +512,7 @@ model Order {
   tracking    OrderTracking?
   referrals   Referral[]
   edits       OrderEdit[]
+  shipments   Shipment[]
 
   // Order editing fields
   isEditable      Boolean   @default(true) @map("is_editable") // Can be edited before shipping
@@ -3502,5 +3503,111 @@ model OrderEdit {
   @@index([status])
   @@index([createdAt])
   @@map("order_edits")
+  @@schema("apolo")
+}
+
+// ============================================
+// SPLIT SHIPMENTS
+// ============================================
+
+enum ShipmentStatus {
+  PENDING         // Shipment created, waiting for fulfillment
+  PROCESSING      // Being prepared for shipping
+  SHIPPED         // Shipped, in transit
+  DELIVERED       // Successfully delivered
+  CANCELLED       // Shipment cancelled
+  @@schema("apolo")
+}
+
+enum ShipmentType {
+  STANDARD        // Regular shipment
+  SPLIT           // Part of a split shipment (some items shipped separately)
+  PARTIAL         // Partial shipment (some items available, others backordered)
+  @@schema("apolo")
+}
+
+model Shipment {
+  id              String          @id @default(cuid())
+  orderId         String          @map("order_id")
+  order           Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  // Shipment identification
+  shipmentNumber  String          @unique @map("shipment_number") // e.g., SHP-001-A, SHP-001-B
+  type            ShipmentType    @default(STANDARD)
+  status          ShipmentStatus  @default(PENDING)
+  // Tracking
+  trackingNumber  String?         @map("tracking_number")
+  courier         CourierProvider @default(OTHER)
+  courierName     String?         @map("courier_name")
+  // Estimated and actual dates
+  estimatedShipDate   DateTime?   @map("estimated_ship_date")
+  actualShipDate      DateTime?   @map("actual_ship_date")
+  estimatedDeliveryDate DateTime? @map("estimated_delivery_date")
+  actualDeliveryDate   DateTime?  @map("actual_delivery_date")
+  // Shipping charges for this shipment
+  shippingChargeUsd Decimal?      @map("shipping_charge_usd") @db.Decimal(10, 2)
+  shippingChargeKhr Int?          @map("shipping_charge_khr")
+  // Customer opted for split shipment
+  customerConsent   Boolean       @default(false) @map("customer_consent")
+  // Shipping address (snapshot)
+  shippingAddress   Json?         @map("shipping_address")
+  // Notes
+  notes           String?         @db.Text
+  adminNotes      String?         @map("admin_notes") @db.Text
+  // Timestamps
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  // Items in this shipment
+  items           ShipmentItem[]
+  // Status history
+  statusHistory   ShipmentStatusHistory[]
+
+  @@index([orderId])
+  @@index([status])
+  @@index([type])
+  @@index([trackingNumber])
+  @@index([createdAt])
+  @@map("shipments")
+  @@schema("apolo")
+}
+
+model ShipmentItem {
+  id              String      @id @default(cuid())
+  shipmentId      String      @map("shipment_id")
+  shipment        Shipment    @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  orderItemId     String      @map("order_item_id")
+  // Product info (snapshot)
+  productId       String?     @map("product_id")
+  productName     String      @map("product_name")
+  productSku      String?     @map("product_sku")
+  // Quantity in this shipment (may be less than order quantity for splits)
+  quantity        Int
+  // Availability status at time of shipment creation
+  availabilityStatus String?  @map("availability_status") // "in_stock", "low_stock", "backordered", "preorder"
+  expectedAvailableDate DateTime? @map("expected_available_date") // For backordered/preorder items
+  // Timestamps
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  @@index([shipmentId])
+  @@index([orderItemId])
+  @@index([productId])
+  @@map("shipment_items")
+  @@schema("apolo")
+}
+
+model ShipmentStatusHistory {
+  id              String          @id @default(cuid())
+  shipmentId      String          @map("shipment_id")
+  shipment        Shipment        @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  status          ShipmentStatus
+  location        String?         // Location/hub where status changed
+  notes           String?         @db.Text
+  notificationSent Boolean        @default(false) @map("notification_sent")
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  @@index([shipmentId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("shipment_status_history")
   @@schema("apolo")
 }

@@ -1482,8 +1482,8 @@
         "Build passes: bun run build"
       ],
       "priority": 94,
-      "passes": false,
-      "notes": "Improves delivery speed for available items"
+      "passes": true,
+      "notes": "Implemented Shipment/ShipmentItem/ShipmentStatusHistory Prisma models. Created /api/shipments endpoint with availability checking, split options detection, shipment CRUD. SplitShipmentOption checkout component shows immediate vs delayed shipments with costs. ShipmentsPage admin for fulfillment workflow with status updates, tracking, cancel. Bilingual translations (EN/KH)."
     },
     {
       "id": "US-095",
