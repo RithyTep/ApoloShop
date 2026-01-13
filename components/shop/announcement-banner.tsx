@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react"
 import { X, ArrowRight } from "lucide-react"
 import { AnnouncementConfig } from "@/lib/api-hooks"
+import { type Language } from "@/lib/i18n"
 
 interface AnnouncementBannerProps {
   config: AnnouncementConfig
-  language: "EN" | "KH"
+  language: Language
   currentPage?: "home" | "checkout" | "other"
 }
 
@@ -68,8 +69,10 @@ export function AnnouncementBanner({ config, language, currentPage = "other" }: 
     )
   }
 
-  const text = language === "EN" ? config.textEn : config.textKh
-  const linkText = language === "EN" ? config.linkTextEn : config.linkTextKh
+  // Announcement only supports EN/KH, other languages fall back to EN
+  const isKhmer = language === "kh"
+  const text = isKhmer ? config.textKh : config.textEn
+  const linkText = isKhmer ? config.linkTextKh : config.linkTextEn
 
   return (
     <div

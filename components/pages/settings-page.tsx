@@ -14,6 +14,8 @@ import { getAllComponents, getDefaultConfig, mergeWithDefaults, type ComponentRe
 import { ClientThemeEditor } from "@/components/client-theme-editor"
 import { type GA4Settings } from "@/providers/ga4-provider"
 import { type FBPixelSettings } from "@/providers/fb-pixel-provider"
+import { SUPPORTED_LANGUAGES, LANGUAGE_CONFIG, type Language } from "@/lib/i18n"
+import { Globe, Check } from "lucide-react"
 
 export function SettingsPage() {
   const { toast } = useToast()
@@ -57,6 +59,13 @@ export function SettingsPage() {
     accessToken: "",
     testEventCode: "",
     debugMode: false,
+  })
+
+  // Language settings state
+  const [languageSettings, setLanguageSettings] = useState({
+    defaultLanguage: "en" as Language,
+    enabledLanguages: ["en", "kh"] as Language[],
+    autoDetect: true,
   })
 
   // Component registry state
@@ -109,6 +118,15 @@ export function SettingsPage() {
           debugMode: fbPixel.debugMode ?? false,
         })
       }
+      // Load Language settings
+      if (s.language) {
+        const langSettings = s.language as { defaultLanguage?: Language; enabledLanguages?: Language[]; autoDetect?: boolean }
+        setLanguageSettings({
+          defaultLanguage: langSettings.defaultLanguage ?? "en",
+          enabledLanguages: langSettings.enabledLanguages ?? ["en", "kh"],
+          autoDetect: langSettings.autoDetect ?? true,
+        })
+      }
     }
   }, [data])
 
@@ -142,6 +160,57 @@ export function SettingsPage() {
     } catch (error) {
       toast({ title: "Error", description: (error as Error).message, variant: "destructive" })
     }
+  }
+
+  const handleSaveLanguage = async () => {
+    // Ensure at least one language is enabled
+    if (languageSettings.enabledLanguages.length === 0) {
+      toast({
+        title: "No Languages Enabled",
+        description: "At least one language must be enabled",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Ensure default language is in enabled languages
+    if (!languageSettings.enabledLanguages.includes(languageSettings.defaultLanguage)) {
+      toast({
+        title: "Invalid Default Language",
+        description: "Default language must be one of the enabled languages",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      await updateMutation.mutateAsync({
+        language: {
+          defaultLanguage: languageSettings.defaultLanguage,
+          enabledLanguages: languageSettings.enabledLanguages,
+          autoDetect: languageSettings.autoDetect,
+        },
+      })
+      toast({ title: "Language settings saved successfully" })
+    } catch (error) {
+      toast({ title: "Error", description: (error as Error).message, variant: "destructive" })
+    }
+  }
+
+  const handleToggleLanguage = (lang: Language) => {
+    setLanguageSettings((prev) => {
+      const isEnabled = prev.enabledLanguages.includes(lang)
+      if (isEnabled) {
+        // Don't allow disabling if it's the last language
+        if (prev.enabledLanguages.length === 1) return prev
+        // If disabling the default language, switch default to first remaining
+        const newEnabled = prev.enabledLanguages.filter((l) => l !== lang)
+        const newDefault = prev.defaultLanguage === lang ? newEnabled[0] : prev.defaultLanguage
+        return { ...prev, enabledLanguages: newEnabled, defaultLanguage: newDefault }
+      } else {
+        return { ...prev, enabledLanguages: [...prev.enabledLanguages, lang] }
+      }
+    })
   }
 
   const handleSaveGA4 = async () => {
@@ -387,6 +456,110 @@ export function SettingsPage() {
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             {updateMutation.isPending ? "Saving..." : "Save Changes"}
+          </Button>
+        </div>
+      </Card>
+
+      {/* Language Settings */}
+      <Card className="p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Globe className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-bold text-foreground">Language Settings</h2>
+        </div>
+        <p className="text-muted-foreground text-sm mb-4">
+          Configure supported languages for your shop. Thai, Vietnamese, and Chinese are available for Southeast Asian markets.
+        </p>
+        <div className="space-y-4">
+          <div>
+            <Label className="font-medium mb-3 block">Enabled Languages</Label>
+            <p className="text-sm text-muted-foreground mb-3">
+              Select which languages your customers can use.
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {SUPPORTED_LANGUAGES.map((lang) => {
+                const config = LANGUAGE_CONFIG[lang]
+                const isEnabled = languageSettings.enabledLanguages.includes(lang)
+                const isDefault = languageSettings.defaultLanguage === lang
+                return (
+                  <div
+                    key={lang}
+                    onClick={() => handleToggleLanguage(lang)}
+                    className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
+                      isEnabled
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-muted-foreground"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{config.flag}</span>
+                      <div>
+                        <span className="text-sm font-medium">{config.name}</span>
+                        <span className="text-xs text-muted-foreground ml-1">({config.nativeName})</span>
+                      </div>
+                    </div>
+                    {isEnabled && (
+                      <Check className="h-4 w-4 text-primary" />
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="defaultLanguage" className="font-medium">Default Language</Label>
+            <p className="text-sm text-muted-foreground mb-2">
+              Language to use when no preference is detected.
+            </p>
+            <Select
+              value={languageSettings.defaultLanguage}
+              onValueChange={(value) => setLanguageSettings({ ...languageSettings, defaultLanguage: value as Language })}
+            >
+              <SelectTrigger className="w-full max-w-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {languageSettings.enabledLanguages.map((lang) => {
+                  const config = LANGUAGE_CONFIG[lang]
+                  return (
+                    <SelectItem key={lang} value={lang}>
+                      <span className="flex items-center gap-2">
+                        <span>{config.flag}</span>
+                        <span>{config.name}</span>
+                      </span>
+                    </SelectItem>
+                  )
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="autoDetect" className="font-medium">Auto-detect Browser Language</Label>
+              <p className="text-sm text-muted-foreground">
+                Automatically detect and use the customer&apos;s browser language preference.
+              </p>
+            </div>
+            <Switch
+              id="autoDetect"
+              checked={languageSettings.autoDetect}
+              onCheckedChange={(checked) => setLanguageSettings({ ...languageSettings, autoDetect: checked })}
+            />
+          </div>
+
+          <div className="pt-2 border-t">
+            <p className="text-xs text-muted-foreground mb-3">
+              Note: RTL languages (Arabic, Hebrew) are planned for future release. All enabled languages support bidirectional text rendering when ready.
+            </p>
+          </div>
+
+          <Button
+            onClick={handleSaveLanguage}
+            disabled={updateMutation.isPending}
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            {updateMutation.isPending ? "Saving..." : "Save Language Settings"}
           </Button>
         </div>
       </Card>

@@ -35,6 +35,7 @@ import {
   trackBeginCheckout,
   cartItemToGA4Item,
 } from "@/lib/ga4"
+import { type Language, detectBrowserLanguage, getTranslation, getDirection } from "@/lib/i18n"
 
 export interface CartItem {
   id: string
@@ -47,12 +48,41 @@ export interface CartItem {
 
 type Page = "shop" | "checkout"
 
+// Local storage key for language preference
+const LANGUAGE_STORAGE_KEY = "apolo_language"
+
 export function ShopApp() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState<Page>("shop")
-  const [language, setLanguage] = useState<"EN" | "KH">("EN")
+  const [language, setLanguage] = useState<Language>("en")
   const [currency, setCurrency] = useState<"USD" | "KHR">("USD")
+  const [hasDetectedLanguage, setHasDetectedLanguage] = useState(false)
+
+  // Auto-detect browser language on initial load
+  useEffect(() => {
+    if (hasDetectedLanguage) return
+
+    // Check for stored preference first
+    const storedLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) as Language | null
+    if (storedLang && ["en", "kh", "th", "vi", "zh"].includes(storedLang)) {
+      setLanguage(storedLang)
+    } else {
+      // Auto-detect from browser
+      const detectedLang = detectBrowserLanguage()
+      setLanguage(detectedLang)
+    }
+    setHasDetectedLanguage(true)
+  }, [hasDetectedLanguage])
+
+  // Persist language preference
+  const handleLanguageChange = useCallback((newLang: Language) => {
+    setLanguage(newLang)
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, newLang)
+    // Update document direction for RTL support
+    document.documentElement.dir = getDirection(newLang)
+    document.documentElement.lang = newLang
+  }, [])
 
   // Load shop customization
   const { data: customization } = useShopCustomization()
@@ -178,7 +208,7 @@ export function ShopApp() {
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
       >
-        {language === "EN" ? "Skip to main content" : "រំលងទៅខ្លឹមសារសំខាន់"}
+        {getTranslation(language).accessibility.skipToContent}
       </a>
 
       {/* Announcement Banner */}
@@ -194,7 +224,8 @@ export function ShopApp() {
         cartCount={cart.length}
         onCartClick={() => setIsCartOpen(true)}
         language={language}
-        onLanguageChange={setLanguage}
+        onLanguageChange={handleLanguageChange}
+        showAllLanguages={true} // Enable multi-language dropdown
         currency={currency}
         onCurrencyChange={setCurrency}
         shopName={config?.theme?.shopName || clientThemeData?.client?.name}
@@ -211,7 +242,7 @@ export function ShopApp() {
       />
 
       {currentPage === "shop" ? (
-        <main id="main-content" className="pt-20" role="main" aria-label={language === "EN" ? "Shop products" : "ផលិតផលហាង"}>
+        <main id="main-content" className="pt-20" role="main" aria-label={getTranslation(language).accessibility.productListing}>
           {/* Render customized sections */}
           {sections.length > 0 ? (
             sections.map((section) => {

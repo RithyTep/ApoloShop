@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Product } from "@/lib/api-hooks"
-import { translations } from "@/lib/i18n"
+import { getTranslation, type Language } from "@/lib/i18n"
 import { trackSearch } from "@/lib/ga4"
 
 interface SearchResult {
@@ -25,7 +25,7 @@ interface SearchDropdownProps {
   isOpen: boolean
   onClose: () => void
   onProductSelect?: (product: Product) => void
-  language: "EN" | "KH"
+  language: Language
   currency: "USD" | "KHR"
   branding?: SearchBranding
 }
@@ -146,14 +146,20 @@ export function SearchDropdown({
   }
 
   const getProductName = (product: Product) => {
-    return language === "EN" ? product.nameEn : product.nameKh
+    // Prefer English for languages that don't have product translations
+    // Khmer products may have nameKh, others fall back to nameEn
+    if (language === "kh" && product.nameKh) {
+      return product.nameKh
+    }
+    return product.nameEn || product.nameKh
   }
 
-  const t = translations[language === "EN" ? "en" : "kh"]
-  const langKey = language === "EN" ? "en" : "kh"
+  const t = getTranslation(language)
+  // For branding custom messages, map to en/kh keys (custom messages only support en/kh)
+  const brandingLangKey = language === "kh" ? "kh" : "en"
 
   // Use custom no results message from branding if provided, otherwise use default translation
-  const noResultsText = branding?.customNoResultsMessage?.[langKey] || t.search.noResults
+  const noResultsText = branding?.customNoResultsMessage?.[brandingLangKey] || t.search.noResults
   const searchingText = t.search.searching
 
   // Build custom styles from branding
@@ -179,7 +185,7 @@ export function SearchDropdown({
       className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-lg shadow-lg z-50 overflow-hidden"
       style={dropdownStyles}
       role="listbox"
-      aria-label={language === "EN" ? "Search results" : "លទ្ធផលស្វែងរក"}
+      aria-label={t.search.viewAll}
       aria-live="polite"
     >
       {isLoading ? (
@@ -205,7 +211,7 @@ export function SearchDropdown({
           {noResultsText}
         </div>
       ) : results && results.products.length > 0 ? (
-        <div className="py-1" role="group" aria-label={language === "EN" ? `${results.products.length} results found` : `រកឃើញ ${results.products.length} លទ្ធផល`}>
+        <div className="py-1" role="group" aria-label={`${results.products.length} ${t.accessibility.items}`}>
           {results.products.map((product, index) => {
             const isHighlighted = index === highlightedIndex
             const highlightStyle = getHighlightStyle(isHighlighted)

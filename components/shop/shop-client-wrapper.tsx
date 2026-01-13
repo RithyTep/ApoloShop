@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import { useState, useEffect, type ReactNode } from "react"
 import { Header } from "@/components/header"
 import { CartDrawer } from "@/components/cart-drawer"
 import { CheckoutPage } from "@/components/checkout-page"
@@ -11,6 +11,7 @@ import {
   type CartItem,
 } from "@/lib/shop-context"
 import type { ShopTheme, Product } from "@/lib/api-hooks"
+import { type Language, detectBrowserLanguage } from "@/lib/i18n"
 
 interface ShopClientWrapperProps {
   theme: ShopTheme
@@ -20,10 +21,23 @@ interface ShopClientWrapperProps {
 
 type Page = "shop" | "checkout"
 
+const LANGUAGE_STORAGE_KEY = "apolo_language"
+
 export function ShopClientWrapper({ theme, products, children }: ShopClientWrapperProps) {
   const [cart, setCart] = useState<CartItem[]>([])
-  const [language, setLanguage] = useState<"EN" | "KH">("EN")
+  const [language, setLanguage] = useState<Language>("en")
   const [currency, setCurrency] = useState<"USD" | "KHR">("USD")
+
+  // Auto-detect browser language on initial load
+  useEffect(() => {
+    const storedLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) as Language | null
+    if (storedLang && ["en", "kh", "th", "vi", "zh"].includes(storedLang)) {
+      setLanguage(storedLang)
+    } else {
+      const detectedLang = detectBrowserLanguage()
+      setLanguage(detectedLang)
+    }
+  }, [])
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState<Page>("shop")
 

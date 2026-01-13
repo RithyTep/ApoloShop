@@ -8,13 +8,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { type Language } from "@/lib/i18n"
 
 interface StoreStatusProps {
-  language: "EN" | "KH"
+  language: Language
 }
 
 export function StoreStatus({ language }: StoreStatusProps) {
   const { data: status, isLoading } = useStoreStatus()
+  // Use Khmer for "kh", English for all other languages (including th, vi, zh)
+  const isKhmer = language === "kh"
 
   if (isLoading || !status) {
     return (
@@ -35,36 +38,36 @@ export function StoreStatus({ language }: StoreStatusProps) {
   if (isHoliday && status.holiday) {
     if (status.reason === "holiday") {
       // Full day closure
-      displayText = language === "EN" ? "Closed" : "បិទ"
-      tooltipText = language === "EN"
-        ? `Closed for ${status.holiday.nameEn}`
-        : `បិទសម្រាប់${status.holiday.nameKh}`
+      displayText = isKhmer ? "បិទ" : "Closed"
+      tooltipText = isKhmer
+        ? `បិទសម្រាប់${status.holiday.nameKh}`
+        : `Closed for ${status.holiday.nameEn}`
     } else {
       // Special holiday hours
       displayText = isOpen
-        ? (language === "EN" ? "Open" : "បើក")
-        : (language === "EN" ? "Closed" : "បិទ")
-      tooltipText = language === "EN"
-        ? `${status.holiday.nameEn}: ${status.holiday.openTime} - ${status.holiday.closeTime}`
-        : `${status.holiday.nameKh}: ${status.holiday.openTime} - ${status.holiday.closeTime}`
+        ? (isKhmer ? "បើក" : "Open")
+        : (isKhmer ? "បិទ" : "Closed")
+      tooltipText = isKhmer
+        ? `${status.holiday.nameKh}: ${status.holiday.openTime} - ${status.holiday.closeTime}`
+        : `${status.holiday.nameEn}: ${status.holiday.openTime} - ${status.holiday.closeTime}`
     }
   } else if (status.hours) {
     // Regular hours
     displayText = isOpen
-      ? (language === "EN" ? "Open" : "បើក")
-      : (language === "EN" ? "Closed" : "បិទ")
+      ? (isKhmer ? "បើក" : "Open")
+      : (isKhmer ? "បិទ" : "Closed")
 
     if (status.hours.isOpen && status.hours.openTime && status.hours.closeTime) {
-      tooltipText = language === "EN"
-        ? `Hours: ${status.hours.openTime} - ${status.hours.closeTime}`
-        : `ម៉ោងបើក: ${status.hours.openTime} - ${status.hours.closeTime}`
+      tooltipText = isKhmer
+        ? `ម៉ោងបើក: ${status.hours.openTime} - ${status.hours.closeTime}`
+        : `Hours: ${status.hours.openTime} - ${status.hours.closeTime}`
     } else {
-      tooltipText = language === "EN" ? "Closed today" : "បិទថ្ងៃនេះ"
+      tooltipText = isKhmer ? "បិទថ្ងៃនេះ" : "Closed today"
     }
   } else {
     displayText = isOpen
-      ? (language === "EN" ? "Open" : "បើក")
-      : (language === "EN" ? "Closed" : "បិទ")
+      ? (isKhmer ? "បើក" : "Open")
+      : (isKhmer ? "បិទ" : "Closed")
     tooltipText = ""
   }
 
