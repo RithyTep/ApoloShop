@@ -3574,6 +3574,13 @@ model Shipment {
   customerConsent   Boolean       @default(false) @map("customer_consent")
   // Shipping address (snapshot)
   shippingAddress   Json?         @map("shipping_address")
+  // Multi-address checkout support
+  isMultiAddress    Boolean       @default(false) @map("is_multi_address")
+  recipientName     String?       @map("recipient_name") // Different recipient for multi-address
+  recipientPhone    String?       @map("recipient_phone")
+  giftMessage       String?       @map("gift_message") @db.Text // Gift message for this shipment
+  isGift            Boolean       @default(false) @map("is_gift") // Hide prices on packing slip
+  hideItemPrices    Boolean       @default(false) @map("hide_item_prices")
   // Notes
   notes           String?         @db.Text
   adminNotes      String?         @map("admin_notes") @db.Text
