@@ -3031,3 +3031,33 @@ Project: ApoloShop - Product Search Feature
   - Scheduled posts use scheduledFor field; status SCHEDULED indicates future publishing
   - Category hierarchy via parentId enables subcategories
 ---
+
+## 2026-01-13 - US-097
+- **Implemented**: Instagram shop integration for social commerce
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added InstagramAccount, InstagramProduct, InstagramPost, InstagramProductTag, InstagramOrder models and enums)
+  - `app/api/instagram/route.ts` (new file - comprehensive API endpoint)
+  - `components/pages/instagram-shop-page.tsx` (new file - admin dashboard UI)
+  - `components/sidebar.tsx` (modified - added instagram-shop nav item)
+  - `components/admin-dashboard.tsx` (modified - added InstagramShopPage routing)
+  - `lib/i18n.ts` (modified - added instagram translations EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **InstagramAccount model**: Business account connection with OAuth tokens, status, sync settings, follower/media counts
+  - **InstagramProduct model**: Product catalog sync with FB/IG catalog IDs, sync status, performance metrics (impressions, clicks, saves)
+  - **InstagramPost model**: Posts with engagement metrics (likes, comments, reach), product clicks, conversions, revenue tracking
+  - **InstagramProductTag**: Junction table for products tagged in posts with position coordinates
+  - **InstagramOrder model**: Orders from Instagram checkout with buyer info, items, totals, import status
+  - **API endpoints**: GET (accounts, products, posts, orders, analytics), POST (connect, sync_products, tag_post, import_order, convert_order), PATCH (update_account, update_product_sync, update_post_metrics), DELETE (disconnect, remove, unsync)
+  - **InstagramShopPage UI**: Tabbed interface (Overview, Products, Posts, Orders, Settings) with account summary cards, performance metrics, product sync dialog, order import functionality
+  - **Performance analytics**: Total reach, engagement, product clicks, revenue, top posts, top products
+  - **Bilingual support**: Full EN/KH translations for all Instagram UI elements
+  - **OrderChannel enum**: Added INSTAGRAM, FACEBOOK, TIKTOK for social commerce orders
+- **Learnings for future iterations**:
+  - OAuth flow for Instagram requires FB Business account and Commerce Manager setup
+  - Product catalog sync uses FB/IG Catalog Product IDs for tracking
+  - Post metrics (reach, impressions) require Instagram Insights API access
+  - Instagram order conversion creates regular Order with INSTAGRAM channel
+  - Performance tracking enables ROI measurement per post and product
+  - Social commerce channels (IG, FB, TikTok) share similar patterns - consider shared abstraction
+---

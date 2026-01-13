@@ -1530,8 +1530,8 @@
         "Build passes: bun run build"
       ],
       "priority": 97,
-      "passes": false,
-      "notes": "Social commerce is huge in Cambodia"
+      "passes": true,
+      "notes": "Implemented InstagramAccount/Product/Post/Order models, API endpoints, InstagramShopPage admin UI with performance analytics"
     },
     {
       "id": "US-098",
