@@ -38,6 +38,7 @@ import {
   RotateCcw,
   Receipt,
   Bell,
+  BookOpen,
   type LucideIcon,
 } from "lucide-react"
 import { useState } from "react"
@@ -53,6 +54,7 @@ type NavItem =
   | "payments"
   | "promotions"
   | "content"
+  | "blog"
   | "users"
   | "reports"
   | "settings"
@@ -141,6 +143,7 @@ export function Sidebar({ activeNav, setActiveNav, orderCount = 0, lowStockCount
         { id: "customer-segments", label: "Segments", icon: UserCheck },
         { id: "abandoned-carts", label: "Abandoned Carts", icon: ShoppingCartIcon },
         { id: "ab-testing", label: "A/B Testing", icon: FlaskConical },
+        { id: "blog", label: "Blog", icon: BookOpen },
         { id: "content", label: "Content", icon: FileText },
         { id: "customizer", label: "Customizer", icon: Palette },
       ],

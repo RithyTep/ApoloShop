@@ -46,6 +46,7 @@ model User {
   socialAccounts      SocialAccount[]
   passwordResetTokens PasswordResetToken[]
   emailVerifyTokens   EmailVerifyToken[]
+  blogPosts           BlogPost[]
 
   @@map("users")
   @@schema("apolo")
@@ -319,6 +320,7 @@ model Product {
   productSubscriptions ProductSubscription[]
   stockNotifications   StockNotification[]
   questions     ProductQuestion[]
+  blogPostProducts     BlogPostProduct[]
 
   @@index([clientId])
   @@index([categoryId])
@@ -3723,5 +3725,159 @@ model PickupStatusHistory {
   @@index([status])
   @@index([createdAt])
   @@map("pickup_status_history")
+  @@schema("apolo")
+}
+
+// ============================================
+// BLOG & CONTENT MANAGEMENT (US-096)
+// ============================================
+
+enum BlogPostStatus {
+  DRAFT       // Not published, only visible to admins
+  PUBLISHED   // Live and visible to public
+  SCHEDULED   // Scheduled for future publication
+  ARCHIVED    // Hidden from public but preserved
+
+  @@schema("apolo")
+}
+
+// Blog post model for content marketing
+model BlogPost {
+  id              String          @id @default(cuid())
+  slug            String          @unique // URL-friendly identifier
+  // Bilingual content
+  titleEn         String          @map("title_en")
+  titleKh         String          @map("title_kh")
+  contentEn       String          @map("content_en") @db.Text // Rich text HTML content
+  contentKh       String          @map("content_kh") @db.Text
+  excerptEn       String?         @map("excerpt_en") @db.Text // Short preview text
+  excerptKh       String?         @map("excerpt_kh") @db.Text
+  // Author relationship
+  authorId        String          @map("author_id")
+  author          User            @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  // Featured image
+  featuredImage   String?         @map("featured_image") // URL to featured image
+  featuredImageAlt String?        @map("featured_image_alt") // Alt text for accessibility
+  // Publication status
+  status          BlogPostStatus  @default(DRAFT)
+  publishedAt     DateTime?       @map("published_at")
+  scheduledFor    DateTime?       @map("scheduled_for") // For scheduled posts
+  // Category relationship
+  categoryId      String?         @map("category_id")
+  category        BlogCategory?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  // SEO fields
+  metaTitle       String?         @map("meta_title") // SEO title (defaults to titleEn)
+  metaDescription String?         @map("meta_description") @db.Text // SEO description
+  metaKeywords    String?         @map("meta_keywords") // Comma-separated keywords
+  canonicalUrl    String?         @map("canonical_url") // Canonical URL for SEO
+  ogImage         String?         @map("og_image") // Open Graph image URL
+  // Reading metrics
+  readingTimeMin  Int?            @map("reading_time_min") // Estimated reading time
+  viewCount       Int             @default(0) @map("view_count") // View counter
+  // Timestamps
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  tags            BlogPostTag[]
+  relatedProducts BlogPostProduct[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([publishedAt])
+  @@index([categoryId])
+  @@index([authorId])
+  @@index([createdAt])
+  @@map("blog_posts")
+  @@schema("apolo")
+}
+
+// Blog categories for organization
+model BlogCategory {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  nameEn      String   @map("name_en")
+  nameKh      String   @map("name_kh")
+  descriptionEn String? @map("description_en") @db.Text
+  descriptionKh String? @map("description_kh") @db.Text
+  // SEO fields
+  metaTitle   String?  @map("meta_title")
+  metaDescription String? @map("meta_description") @db.Text
+  // Display order
+  sortOrder   Int      @default(0) @map("sort_order")
+  // Parent category for hierarchy (optional)
+  parentId    String?  @map("parent_id")
+  parent      BlogCategory? @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    BlogCategory[] @relation("CategoryHierarchy")
+  // Status
+  isActive    Boolean  @default(true) @map("is_active")
+  // Timestamps
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  posts       BlogPost[]
+
+  @@index([slug])
+  @@index([parentId])
+  @@index([isActive])
+  @@index([sortOrder])
+  @@map("blog_categories")
+  @@schema("apolo")
+}
+
+// Blog tags for content organization
+model BlogTag {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  nameEn    String   @map("name_en")
+  nameKh    String   @map("name_kh")
+  // Usage tracking
+  postCount Int      @default(0) @map("post_count")
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  posts     BlogPostTag[]
+
+  @@index([slug])
+  @@index([postCount])
+  @@map("blog_tags")
+  @@schema("apolo")
+}
+
+// Junction table for BlogPost <-> BlogTag many-to-many
+model BlogPostTag {
+  id        String   @id @default(cuid())
+  postId    String   @map("post_id")
+  post      BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tagId     String   @map("tag_id")
+  tag       BlogTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([postId, tagId])
+  @@index([postId])
+  @@index([tagId])
+  @@map("blog_post_tags")
+  @@schema("apolo")
+}
+
+// Junction table for BlogPost <-> Product (related products in posts)
+model BlogPostProduct {
+  id          String   @id @default(cuid())
+  postId      String   @map("post_id")
+  post        BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  productId   String   @map("product_id")
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  // Display order for related products
+  sortOrder   Int      @default(0) @map("sort_order")
+  // Optional custom text for product mention
+  mentionText String?  @map("mention_text") @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([postId, productId])
+  @@index([postId])
+  @@index([productId])
+  @@index([sortOrder])
+  @@map("blog_post_products")
   @@schema("apolo")
 }

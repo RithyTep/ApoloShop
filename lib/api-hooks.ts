@@ -6228,3 +6228,362 @@ export function useDeleteQuestion() {
     },
   });
 }
+
+// ============================================
+// BLOG & CONTENT MANAGEMENT (US-096)
+// ============================================
+
+export type BlogPostStatus = "DRAFT" | "PUBLISHED" | "SCHEDULED" | "ARCHIVED";
+
+export interface BlogAuthor {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface BlogCategory {
+  id: string;
+  slug: string;
+  nameEn: string;
+  nameKh: string;
+  descriptionEn?: string;
+  descriptionKh?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  sortOrder: number;
+  parentId?: string;
+  parent?: BlogCategory;
+  children?: BlogCategory[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  _count?: { posts: number };
+}
+
+export interface BlogTag {
+  id: string;
+  slug: string;
+  nameEn: string;
+  nameKh: string;
+  postCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BlogRelatedProduct {
+  id: string;
+  nameEn: string;
+  nameKh: string;
+  slug?: string;
+  priceUsd?: number;
+  priceKhr?: number;
+  imageUrl?: string;
+}
+
+export interface BlogPost {
+  id: string;
+  slug: string;
+  titleEn: string;
+  titleKh: string;
+  contentEn: string;
+  contentKh: string;
+  excerptEn?: string;
+  excerptKh?: string;
+  authorId: string;
+  author: BlogAuthor;
+  featuredImage?: string;
+  featuredImageAlt?: string;
+  status: BlogPostStatus;
+  publishedAt?: string;
+  scheduledFor?: string;
+  categoryId?: string;
+  category?: BlogCategory;
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords?: string;
+  canonicalUrl?: string;
+  ogImage?: string;
+  readingTimeMin?: number;
+  viewCount: number;
+  tags: BlogTag[];
+  relatedProducts?: BlogRelatedProduct[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BlogPostInput {
+  slug?: string;
+  titleEn: string;
+  titleKh: string;
+  contentEn: string;
+  contentKh: string;
+  excerptEn?: string;
+  excerptKh?: string;
+  authorId: string;
+  featuredImage?: string;
+  featuredImageAlt?: string;
+  status?: BlogPostStatus;
+  publishedAt?: string;
+  scheduledFor?: string;
+  categoryId?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords?: string;
+  canonicalUrl?: string;
+  ogImage?: string;
+  tagIds?: string[];
+  relatedProductIds?: string[];
+}
+
+export interface BlogPostsResponse {
+  posts: BlogPost[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface BlogCategoriesResponse {
+  categories: BlogCategory[];
+}
+
+export interface BlogTagsResponse {
+  tags: BlogTag[];
+}
+
+/**
+ * Hook to fetch blog posts with filters
+ */
+export function useBlogPosts(options?: {
+  status?: BlogPostStatus;
+  categoryId?: string;
+  authorId?: string;
+  tag?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+  includeRelated?: boolean;
+  publicOnly?: boolean;
+}) {
+  const params = new URLSearchParams();
+  if (options?.status) params.set("status", options.status);
+  if (options?.categoryId) params.set("categoryId", options.categoryId);
+  if (options?.authorId) params.set("authorId", options.authorId);
+  if (options?.tag) params.set("tag", options.tag);
+  if (options?.search) params.set("search", options.search);
+  if (options?.page) params.set("page", String(options.page));
+  if (options?.limit) params.set("limit", String(options.limit));
+  if (options?.includeRelated) params.set("includeRelated", "true");
+  if (options?.publicOnly) params.set("publicOnly", "true");
+
+  return useQuery({
+    queryKey: ["blog-posts", options],
+    queryFn: () => fetchAPI<BlogPostsResponse>(`/api/blog?${params.toString()}`),
+    staleTime: 30 * 1000,
+  });
+}
+
+/**
+ * Hook to fetch a single blog post by slug
+ */
+export function useBlogPost(slug: string) {
+  return useQuery({
+    queryKey: ["blog-post", slug],
+    queryFn: () => fetchAPI<BlogPostsResponse>(`/api/blog?slug=${slug}&includeRelated=true`),
+    enabled: !!slug,
+    select: (data) => data.posts[0] || null,
+  });
+}
+
+/**
+ * Hook to create a blog post
+ */
+export function useCreateBlogPost() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: BlogPostInput) =>
+      fetchAPI<BlogPost>("/api/blog", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blog-posts"] });
+    },
+  });
+}
+
+/**
+ * Hook to update a blog post
+ */
+export function useUpdateBlogPost() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: Partial<BlogPostInput> & { id: string }) =>
+      fetchAPI<BlogPost>("/api/blog", {
+        method: "PUT",
+        body: JSON.stringify({ id, ...data }),
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["blog-posts"] });
+      queryClient.invalidateQueries({ queryKey: ["blog-post", variables.id] });
+    },
+  });
+}
+
+/**
+ * Hook to delete a blog post
+ */
+export function useDeleteBlogPost() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchAPI<{ success: boolean }>(`/api/blog?id=${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blog-posts"] });
+    },
+  });
+}
+
+/**
+ * Hook to fetch blog categories
+ */
+export function useBlogCategories(options?: {
+  activeOnly?: boolean;
+  includeCount?: boolean;
+  hierarchical?: boolean;
+}) {
+  const params = new URLSearchParams();
+  if (options?.activeOnly) params.set("activeOnly", "true");
+  if (options?.includeCount) params.set("includeCount", "true");
+  if (options?.hierarchical) params.set("hierarchical", "true");
+
+  return useQuery({
+    queryKey: ["blog-categories", options],
+    queryFn: () => fetchAPI<BlogCategoriesResponse>(`/api/blog/categories?${params.toString()}`),
+    staleTime: 60 * 1000,
+  });
+}
+
+/**
+ * Hook to create a blog category
+ */
+export function useCreateBlogCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<BlogCategory>) =>
+      fetchAPI<BlogCategory>("/api/blog/categories", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blog-categories"] });
+    },
+  });
+}
+
+/**
+ * Hook to update a blog category
+ */
+export function useUpdateBlogCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: Partial<BlogCategory> & { id: string }) =>
+      fetchAPI<BlogCategory>("/api/blog/categories", {
+        method: "PUT",
+        body: JSON.stringify({ id, ...data }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blog-categories"] });
+    },
+  });
+}
+
+/**
+ * Hook to delete a blog category
+ */
+export function useDeleteBlogCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchAPI<{ success: boolean }>(`/api/blog/categories?id=${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blog-categories"] });
+    },
+  });
+}
+
+/**
+ * Hook to fetch blog tags
+ */
+export function useBlogTags(options?: {
+  search?: string;
+  popular?: boolean;
+  limit?: number;
+}) {
+  const params = new URLSearchParams();
+  if (options?.search) params.set("search", options.search);
+  if (options?.popular) params.set("popular", "true");
+  if (options?.limit) params.set("limit", String(options.limit));
+
+  return useQuery({
+    queryKey: ["blog-tags", options],
+    queryFn: () => fetchAPI<BlogTagsResponse>(`/api/blog/tags?${params.toString()}`),
+    staleTime: 60 * 1000,
+  });
+}
+
+/**
+ * Hook to create a blog tag
+ */
+export function useCreateBlogTag() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<BlogTag>) =>
+      fetchAPI<BlogTag>("/api/blog/tags", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blog-tags"] });
+    },
+  });
+}
+
+/**
+ * Hook to update a blog tag
+ */
+export function useUpdateBlogTag() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: Partial<BlogTag> & { id: string }) =>
+      fetchAPI<BlogTag>("/api/blog/tags", {
+        method: "PUT",
+        body: JSON.stringify({ id, ...data }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blog-tags"] });
+    },
+  });
+}
+
+/**
+ * Hook to delete a blog tag
+ */
+export function useDeleteBlogTag() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchAPI<{ success: boolean }>(`/api/blog/tags?id=${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blog-tags"] });
+    },
+  });
+}

@@ -11,6 +11,7 @@ import { InventoryPage } from "./pages/inventory-page"
 import { PaymentsPage } from "./pages/payments-page"
 import { PromotionsPage } from "./pages/promotions-page"
 import { ContentPage } from "./pages/content-page"
+import { BlogPage } from "./pages/blog-page"
 import { UsersPage } from "./pages/users-page"
 import { ReportsPage } from "./pages/reports-page"
 import { SettingsPage } from "./pages/settings-page"
@@ -50,6 +51,7 @@ type NavItem =
   | "payments"
   | "promotions"
   | "content"
+  | "blog"
   | "users"
   | "reports"
   | "settings"
@@ -110,6 +112,8 @@ export function AdminDashboard() {
         return <PromotionsPage />
       case "content":
         return <ContentPage />
+      case "blog":
+        return <BlogPage />
       case "users":
         return <UsersPage />
       case "reports":
