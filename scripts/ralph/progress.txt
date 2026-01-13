@@ -2347,3 +2347,32 @@ Project: ApoloShop - Product Search Feature
   - Truncate response body to prevent huge payloads in logs (1000 char limit)
   - Custom headers stored as JSON allow flexible integration with various services
 ---
+
+## 2026-01-13 - US-075
+- **Implemented**: Product bundling with "Frequently bought together" suggestions
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added Bundle, BundleItem models, BundleDiscountType enum)
+  - `app/api/bundles/route.ts` (new file - CRUD endpoint)
+  - `app/api/bundles/suggestions/route.ts` (new file - "frequently bought together" API)
+  - `components/product-bundle.tsx` (new file - ProductBundleCard, FrequentlyBoughtTogether, BundleList)
+  - `lib/api-hooks.ts` (modified - added bundle hooks and types)
+  - `lib/i18n.ts` (modified - added bundle translations EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - Bundle model with PERCENTAGE and FIXED discount types
+  - BundleItem model for product-bundle relationships with quantity and sort order
+  - Client relation for multi-tenant support
+  - API calculates bundle pricing dynamically (original, discounted, savings)
+  - Stock tracking across all bundle items
+  - /api/bundles/suggestions analyzes order history for "frequently bought together" products
+  - Falls back to same-category products when no order history exists
+  - ProductBundleCard shows all bundle items with pricing and savings badge
+  - FrequentlyBoughtTogether component for product detail pages with selectable items
+  - React Query hooks: useBundles, useBundle, useBundleSuggestions, useCreateBundle, useUpdateBundle, useDeleteBundle
+- **Learnings for future iterations**:
+  - Bundle pricing is calculated on-the-fly from product prices, not stored
+  - isInStock checks all bundle items have sufficient inventory
+  - Co-occurrence analysis uses OrderItem data to find frequently bought together products
+  - Suggested bundle discount is 10% by default
+  - BundleItem has unique constraint on [bundleId, productId] to prevent duplicates
+---

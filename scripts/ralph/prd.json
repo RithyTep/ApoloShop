@@ -1178,8 +1178,8 @@
         "Build passes: bun run build"
       ],
       "priority": 75,
-      "passes": false,
-      "notes": "Increases average order value"
+      "passes": true,
+      "notes": "Implemented Bundle/BundleItem models with PERCENTAGE/FIXED discount types, /api/bundles CRUD endpoint, /api/bundles/suggestions for 'frequently bought together', ProductBundleCard/FrequentlyBoughtTogether/BundleList components, React Query hooks, bilingual translations (EN/KH)"
     },
     {
       "id": "US-076",
