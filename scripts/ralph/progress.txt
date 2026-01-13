@@ -2963,3 +2963,33 @@ Project: ApoloShop - Product Search Feature
   - Status history allows full audit trail of shipment progression
   - Default shipping charges: $2.50 base + $1.50 surcharge per split shipment
 ---
+
+## 2026-01-13 - US-095
+- **Implemented**: Store pickup option (BOPIS - Buy Online, Pickup In-Store)
+- **Files changed**:
+  - `prisma/schema.prisma` (added StorePickup, PickupTimeSlot, PickupStatusHistory models, PickupStatus enum, pickupEnabled field on StoreLocation)
+  - `app/api/store-pickup/route.ts` (new file - store pickup API endpoint)
+  - `app/api/store-pickup/notify/route.ts` (new file - notification service)
+  - `app/api/store-pickup/qr/route.ts` (new file - QR code generation)
+  - `components/store-pickup-option.tsx` (new file - checkout component)
+  - `components/pickup-verification.tsx` (new file - customer QR/status display)
+  - `lib/i18n.ts` (added storePickup translations for EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **StorePickup model**: Links order to store with scheduledDate, timeSlot, verificationCode, qrCodeData, status tracking
+  - **PickupTimeSlot model**: Recurring (dayOfWeek) or one-time (specificDate) slots with maxPickups capacity
+  - **PickupStatusHistory**: Full audit trail of PENDING→CONFIRMED→PREPARING→READY→PICKED_UP transitions
+  - **API endpoints**: GET (stores/slots/verify/order), POST (create pickup/slot), PUT (status update), DELETE (cancel)
+  - **Notification service**: ready-for-pickup, reminder, confirmed email/Telegram notifications with cron job support
+  - **QR code generation**: Server-side PNG generation using qrcode library
+  - **Checkout component**: StorePickupOption with 4-step flow: store selection, date picker, time slot, notes
+  - **Customer component**: PickupVerification shows QR code, verification code, store details, pickup status history
+  - **Verification codes**: 6-character hex codes for in-store customer identification
+- **Learnings for future iterations**:
+  - Use crypto.randomBytes(3).toString("hex").toUpperCase() for short unique codes
+  - Time slot capacity: count active bookings (exclude CANCELLED/EXPIRED/PICKED_UP) per slot per date
+  - Status transitions use validation: e.g., can't go from PENDING directly to PICKED_UP
+  - QR code data includes orderId, verificationCode, orderNumber as JSON for scanner apps
+  - Server-side QR: use qrcode.toBuffer() not qrcode.react since latter needs client-side React
+  - pickupEnabled boolean on StoreLocation filters which stores appear in pickup selection
+---

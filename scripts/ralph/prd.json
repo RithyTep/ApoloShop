@@ -1498,8 +1498,8 @@
         "Build passes: bun run build"
       ],
       "priority": 95,
-      "passes": false,
-      "notes": "Omnichannel fulfillment option"
+      "passes": true,
+      "notes": "Implemented StorePickup/PickupTimeSlot/PickupStatusHistory models, pickupEnabled field on StoreLocation. /api/store-pickup endpoint with full CRUD, time slot management, verification code lookup. /api/store-pickup/notify for ready-for-pickup and reminder notifications. /api/store-pickup/qr for QR code generation. StorePickupOption component for checkout with store/date/time selection. PickupVerification component shows QR code and pickup status. Bilingual EN/KH translations for all store pickup features."
     },
     {
       "id": "US-096",
