@@ -5244,3 +5244,277 @@ export function useDeleteBundle() {
     },
   });
 }
+
+// ============================================
+// A/B TESTING EXPERIMENTS
+// ============================================
+
+export type ExperimentStatus = "DRAFT" | "RUNNING" | "PAUSED" | "COMPLETED";
+export type ExperimentType =
+  | "PRODUCT_PAGE"
+  | "CHECKOUT"
+  | "PRICING"
+  | "HOMEPAGE"
+  | "PROMOTION"
+  | "CUSTOM";
+
+export interface ExperimentVariant {
+  id: string;
+  experimentId: string;
+  name: string;
+  description?: string;
+  isControl: boolean;
+  trafficWeight: number;
+  config?: Record<string, unknown>;
+  visitors: number;
+  conversions: number;
+  revenue: number;
+  conversionRate: number;
+  avgOrderValue: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Experiment {
+  id: string;
+  name: string;
+  description?: string;
+  type: ExperimentType;
+  status: ExperimentStatus;
+  trafficPercent: number;
+  goalType: string;
+  goalDescription?: string;
+  confidenceLevel: number;
+  minSampleSize: number;
+  autoEndEnabled: boolean;
+  autoEndOnSignificance: boolean;
+  startedAt?: string;
+  endedAt?: string;
+  scheduledStartAt?: string;
+  scheduledEndAt?: string;
+  winningVariantId?: string;
+  isSignificant: boolean;
+  createdBy?: string;
+  createdAt: string;
+  updatedAt: string;
+  variants: ExperimentVariant[];
+}
+
+export interface ExperimentStats {
+  experiment: Omit<Experiment, "variants">;
+  summary: {
+    totalVisitors: number;
+    totalConversions: number;
+    totalRevenue: number;
+    overallConversionRate: number;
+    duration: { days: number; hours: number; formatted: string };
+    sampleProgress: number;
+    minSamplesReached: boolean;
+    requiredSampleSize: number;
+  };
+  variants: Array<
+    ExperimentVariant & {
+      significance?: {
+        zScore: number;
+        pValue: number;
+        confidence: number;
+        isSignificant: boolean;
+        treatmentBetter: boolean;
+        relativeImprovement: number;
+        marginOfError: number;
+      };
+      formatted?: {
+        summary: string;
+        controlRate: string;
+        treatmentRate: string;
+        improvement: string;
+        confidence: string;
+        recommendation: string;
+      };
+    }
+  >;
+  winner?: { id: string; name: string; isControl: boolean; conversionRate: number };
+  isSignificant: boolean;
+}
+
+export interface CreateExperimentInput {
+  name: string;
+  description?: string;
+  type?: ExperimentType;
+  trafficPercent?: number;
+  goalType?: string;
+  goalDescription?: string;
+  confidenceLevel?: number;
+  minSampleSize?: number;
+  autoEndEnabled?: boolean;
+  autoEndOnSignificance?: boolean;
+  scheduledStartAt?: string;
+  scheduledEndAt?: string;
+  variants: Array<{
+    name: string;
+    description?: string;
+    isControl: boolean;
+    trafficWeight: number;
+    config?: Record<string, unknown>;
+  }>;
+}
+
+export interface UpdateExperimentInput {
+  id: string;
+  name?: string;
+  description?: string;
+  type?: ExperimentType;
+  status?: ExperimentStatus;
+  trafficPercent?: number;
+  goalType?: string;
+  goalDescription?: string;
+  confidenceLevel?: number;
+  minSampleSize?: number;
+  autoEndEnabled?: boolean;
+  autoEndOnSignificance?: boolean;
+  scheduledStartAt?: string | null;
+  scheduledEndAt?: string | null;
+}
+
+/**
+ * Hook to fetch all experiments
+ */
+export function useExperiments(filters?: { status?: ExperimentStatus; type?: ExperimentType }) {
+  const params = new URLSearchParams();
+  if (filters?.status) params.set("status", filters.status);
+  if (filters?.type) params.set("type", filters.type);
+  const queryString = params.toString();
+
+  return useQuery({
+    queryKey: ["experiments", filters],
+    queryFn: () =>
+      fetchAPI<{ experiments: Experiment[] }>(
+        `/api/experiments${queryString ? `?${queryString}` : ""}`
+      ),
+  });
+}
+
+/**
+ * Hook to fetch a single experiment by ID
+ */
+export function useExperiment(id: string | null) {
+  return useQuery({
+    queryKey: ["experiment", id],
+    queryFn: () => fetchAPI<{ experiment: Experiment }>(`/api/experiments?id=${id}`),
+    enabled: !!id,
+  });
+}
+
+/**
+ * Hook to fetch detailed statistics for an experiment
+ */
+export function useExperimentStats(id: string | null) {
+  return useQuery({
+    queryKey: ["experiment-stats", id],
+    queryFn: () => fetchAPI<ExperimentStats>(`/api/experiments/stats?id=${id}`),
+    enabled: !!id,
+    refetchInterval: 30000, // Refresh every 30 seconds for live updates
+  });
+}
+
+/**
+ * Hook to create a new experiment
+ */
+export function useCreateExperiment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateExperimentInput) =>
+      fetchAPI<Experiment>("/api/experiments", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["experiments"] });
+    },
+  });
+}
+
+/**
+ * Hook to update an experiment
+ */
+export function useUpdateExperiment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateExperimentInput) =>
+      fetchAPI<Experiment>("/api/experiments", {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["experiments"] });
+      queryClient.invalidateQueries({ queryKey: ["experiment", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["experiment-stats", variables.id] });
+    },
+  });
+}
+
+/**
+ * Hook to delete an experiment
+ */
+export function useDeleteExperiment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (experimentId: string) =>
+      fetchAPI<{ success: boolean }>(`/api/experiments?id=${experimentId}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["experiments"] });
+    },
+  });
+}
+
+/**
+ * Hook to assign a visitor to an experiment variant
+ */
+export function useExperimentAssignment() {
+  return useMutation({
+    mutationFn: (data: { experimentId: string; visitorId: string; customerId?: string }) =>
+      fetchAPI<{
+        variantId: string;
+        variantName: string;
+        config: Record<string, unknown>;
+        inExperiment: boolean;
+        assignmentId?: string;
+      }>("/api/experiments/assign", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+  });
+}
+
+/**
+ * Hook to record a conversion for an experiment
+ */
+export function useExperimentConversion() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: {
+      assignmentId?: string;
+      experimentId?: string;
+      visitorId?: string;
+      conversionValue?: number;
+      orderId?: string;
+    }) =>
+      fetchAPI<{ success: boolean; converted: boolean; alreadyConverted?: boolean }>(
+        "/api/experiments/convert",
+        {
+          method: "POST",
+          body: JSON.stringify(data),
+        }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["experiments"] });
+      queryClient.invalidateQueries({ queryKey: ["experiment-stats"] });
+    },
+  });
+}

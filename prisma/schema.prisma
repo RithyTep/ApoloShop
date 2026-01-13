@@ -2538,3 +2538,125 @@ model CustomerSegmentMembership {
   @@map("customer_segment_memberships")
   @@schema("apolo")
 }
+
+// ============================================
+// A/B TESTING FRAMEWORK
+// ============================================
+
+enum ExperimentStatus {
+  DRAFT     // Being configured, not yet running
+  RUNNING   // Actively collecting data
+  PAUSED    // Temporarily stopped
+  COMPLETED // Ended (manual or auto-end)
+
+  @@schema("apolo")
+}
+
+enum ExperimentType {
+  PRODUCT_PAGE    // Test different product page layouts
+  CHECKOUT        // Test checkout flow variations
+  PRICING         // Test different prices
+  HOMEPAGE        // Test homepage variations
+  PROMOTION       // Test promotional banners/offers
+  CUSTOM          // Custom experiment type
+
+  @@schema("apolo")
+}
+
+model Experiment {
+  id               String           @id @default(cuid())
+  name             String           // Experiment name
+  description      String?          @db.Text
+  type             ExperimentType   @default(CUSTOM)
+  status           ExperimentStatus @default(DRAFT)
+  // Traffic configuration
+  trafficPercent   Int              @default(100) @map("traffic_percent") // % of total traffic included (1-100)
+  // Goal tracking
+  goalType         String           @default("conversion") @map("goal_type") // "conversion", "revenue", "clicks", "add_to_cart"
+  goalDescription  String?          @map("goal_description")
+  // Statistical settings
+  confidenceLevel  Int              @default(95) @map("confidence_level") // 90, 95, or 99
+  minSampleSize    Int              @default(100) @map("min_sample_size") // Min visitors per variant
+  // Auto-end configuration
+  autoEndEnabled   Boolean          @default(true) @map("auto_end_enabled")
+  autoEndOnSignificance Boolean     @default(true) @map("auto_end_on_significance")
+  // Timing
+  startedAt        DateTime?        @map("started_at")
+  endedAt          DateTime?        @map("ended_at")
+  scheduledStartAt DateTime?        @map("scheduled_start_at")
+  scheduledEndAt   DateTime?        @map("scheduled_end_at")
+  // Results cache
+  winningVariantId String?          @map("winning_variant_id")
+  isSignificant    Boolean          @default(false) @map("is_significant")
+  // Metadata
+  createdBy        String?          @map("created_by")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  variants         ExperimentVariant[]
+
+  @@index([status])
+  @@index([type])
+  @@index([startedAt])
+  @@index([endedAt])
+  @@map("experiments")
+  @@schema("apolo")
+}
+
+model ExperimentVariant {
+  id              String     @id @default(cuid())
+  experimentId    String     @map("experiment_id")
+  experiment      Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  name            String     // "Control", "Variant A", "Variant B", etc.
+  description     String?    @db.Text
+  isControl       Boolean    @default(false) @map("is_control") // True for control variant
+  // Traffic split (must sum to 100 across all variants)
+  trafficWeight   Int        @default(50) @map("traffic_weight") // Weight for random assignment
+  // Variant configuration (JSON for flexibility)
+  config          Json?      // { priceMultiplier: 1.1 } or { layoutId: "v2" } etc.
+  // Metrics (updated in real-time or batch)
+  visitors        Int        @default(0) // Total unique visitors assigned
+  conversions     Int        @default(0) // Conversions (based on experiment goal)
+  revenue         Decimal    @default(0) @db.Decimal(12, 2) // Total revenue for revenue goals
+  // Calculated metrics (updated periodically)
+  conversionRate  Decimal    @default(0) @map("conversion_rate") @db.Decimal(5, 4) // e.g., 0.0523 = 5.23%
+  avgOrderValue   Decimal    @default(0) @map("avg_order_value") @db.Decimal(10, 2)
+  // Timestamps
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  assignments     ExperimentAssignment[]
+
+  @@index([experimentId])
+  @@index([isControl])
+  @@map("experiment_variants")
+  @@schema("apolo")
+}
+
+// Track which variant each visitor was assigned to
+model ExperimentAssignment {
+  id             String            @id @default(cuid())
+  variantId      String            @map("variant_id")
+  variant        ExperimentVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  // Visitor identification (anonymous or customer)
+  visitorId      String            @map("visitor_id") // Browser fingerprint or cookie ID
+  customerId     String?           @map("customer_id") // Linked customer if logged in
+  // Conversion tracking
+  converted      Boolean           @default(false)
+  convertedAt    DateTime?         @map("converted_at")
+  conversionValue Decimal?         @map("conversion_value") @db.Decimal(10, 2) // Order value if revenue goal
+  orderId        String?           @map("order_id") // Associated order if applicable
+  // Metadata
+  ipAddress      String?           @map("ip_address")
+  userAgent      String?           @map("user_agent") @db.Text
+  createdAt      DateTime          @default(now()) @map("created_at")
+
+  @@unique([variantId, visitorId])
+  @@index([variantId])
+  @@index([visitorId])
+  @@index([customerId])
+  @@index([converted])
+  @@index([createdAt])
+  @@map("experiment_assignments")
+  @@schema("apolo")
+}

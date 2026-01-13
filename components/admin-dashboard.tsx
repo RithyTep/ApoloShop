@@ -34,6 +34,7 @@ import { AccountingPage } from "./pages/accounting-page"
 import { WebhooksPage } from "./pages/webhooks-page"
 import { AbandonedCartsPage } from "./pages/abandoned-carts-page"
 import { CustomerSegmentsPage } from "./pages/customer-segments-page"
+import { ABTestingPage } from "./pages/ab-testing-page"
 import { useOrders, useLowStockItems, useAdminReviews } from "@/lib/api-hooks"
 
 type NavItem =
@@ -69,6 +70,7 @@ type NavItem =
   | "webhooks"
   | "abandoned-carts"
   | "customer-segments"
+  | "ab-testing"
 
 export function AdminDashboard() {
   const [activeNav, setActiveNav] = useState<NavItem>("dashboard")
@@ -148,6 +150,8 @@ export function AdminDashboard() {
         return <AbandonedCartsPage />
       case "customer-segments":
         return <CustomerSegmentsPage />
+      case "ab-testing":
+        return <ABTestingPage />
       default:
         return <DashboardPage />
     }
