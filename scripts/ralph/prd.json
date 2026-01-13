@@ -1562,8 +1562,8 @@
         "Build passes: bun run build"
       ],
       "priority": 99,
-      "passes": false,
-      "notes": "TikTok commerce growing rapidly in SEA"
+      "passes": true,
+      "notes": "Implemented TikTokAccount/Product/Video/ProductTag/Order/LiveStream models, /api/tiktok endpoint with full CRUD for accounts/products/videos/orders/live-streams, TikTokShopPage admin UI with tabs for overview/products/videos/live-shopping/orders/settings, live shopping support with scheduling and analytics"
     },
     {
       "id": "US-100",
@@ -1578,8 +1578,8 @@
         "Build passes: bun run build"
       ],
       "priority": 100,
-      "passes": false,
-      "notes": "Influencer marketing attribution"
+      "passes": true,
+      "notes": "Implemented Influencer/InfluencerSale/InfluencerPayout models with tier system (STANDARD/BRONZE/SILVER/GOLD/PLATINUM), commission types (PERCENTAGE/FIXED), and payout methods (BANK_TRANSFER/PAYPAL/WING/ABA_BANK/CASH). /api/influencers endpoint with full CRUD, sales tracking, payout management, and CSV export. InfluencersPage admin UI with dashboard stats, top influencers, sales/payouts tabs, and payout creation. Bilingual EN/KH translations."
     },
     {
       "id": "US-101",

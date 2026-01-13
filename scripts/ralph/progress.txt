@@ -3089,3 +3089,63 @@ Project: ApoloShop - Product Search Feature
   - Message composer enables direct customer engagement from admin dashboard
   - Reused patterns from Instagram integration (product sync, order import, analytics) - validates shared abstraction approach
 ---
+
+## 2026-01-13 - US-099
+- **Implemented**: TikTok Shop integration with live shopping support
+- **Files changed**:
+  - `prisma/schema.prisma` (TikTok models already existed)
+  - `app/api/tiktok/route.ts` (new file - full API endpoint)
+  - `components/pages/tiktok-shop-page.tsx` (new file - admin UI)
+  - `components/admin-dashboard.tsx` (modified - added TikTokShopPage)
+  - `components/sidebar.tsx` (modified - added tiktok-shop nav item)
+  - `lib/i18n.ts` (modified - added EN/KH translations)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **TikTokAccount model**: Account connection with OAuth tokens, shop ID/name/status, follower/like/video counts, live shopping enabled flag
+  - **TikTokProduct model**: Product catalog sync with TikTok product IDs, sync status, performance metrics (impressions, clicks, addToCart, purchases, revenue, videosTagged)
+  - **TikTokVideo model**: Video tracking with videoId, title, description, coverUrl, shareUrl, duration, engagement metrics (likes, comments, shares, views, plays), commerce metrics (productClicks, conversions, revenue), isLive flag, liveStreamId
+  - **TikTokProductTag model**: Junction table for products tagged in videos with timestamp support
+  - **TikTokOrder model**: Orders from TikTok Shop with buyer info, items, totals, source tracking (sourceVideoId, sourceLiveId), import status
+  - **TikTokLiveStream model**: Live shopping streams with streamId, title, coverUrl, status (SCHEDULED/LIVE/ENDED/CANCELLED), scheduled/started/ended times, duration, engagement metrics (peakViewers, totalViewers, likes, comments, shares, gifts), commerce metrics (productClicks, addToCart, conversions, revenue), featuredProducts
+  - **API endpoints**: GET (accounts, products, videos, orders, live-streams, analytics), POST (connect, sync_products, tag_video, import_order, convert_order, schedule_live, update_live_status, disconnect, update_settings)
+  - **TikTokShopPage UI**: 6-tab interface (Overview, Products, Videos, Live Shopping, Orders, Settings) with account summary cards, video grid with performance metrics, live stream table, order management
+  - **Live Shopping support**: Schedule streams, track engagement, monitor conversions and revenue from live sessions
+  - **Performance analytics**: Video stats (views, plays, engagement), live stats (streams, viewers, conversions, revenue), top videos, top products
+- **Learnings for future iterations**:
+  - TikTok Live shopping is a major revenue driver in SEA markets
+  - Videos can be tagged with products at specific timestamps
+  - Orders can be attributed to specific videos or live streams via sourceVideoId/sourceLiveId
+  - TikTokLiveStatus enum (SCHEDULED, LIVE, ENDED, CANCELLED) tracks stream lifecycle
+  - Live stream metrics include giftCount for TikTok virtual gifts
+  - Reused patterns from Instagram/Facebook (account connect, product sync, order import) - validates multi-platform social commerce approach
+  - Music2 icon from lucide used for sidebar as TikTok brand icon
+---
+
+## 2026-01-13 - US-100
+- **Implemented**: Influencer commission tracking with sales attribution and payout management
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added Influencer, InfluencerSale, InfluencerPayout models and enums)
+  - `lib/influencer.ts` (new file - influencer service library)
+  - `app/api/influencers/route.ts` (new file - API endpoint)
+  - `lib/api-hooks.ts` (modified - added influencer React Query hooks)
+  - `components/pages/influencers-page.tsx` (new file - admin dashboard)
+  - `lib/i18n.ts` (modified - added EN/KH translations)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Influencer model**: Name, email, phone, socialPlatforms (JSON), affiliateCode (unique), affiliateLink, commissionRate (Decimal), commissionType (PERCENTAGE/FIXED), fixedCommission, tier (STANDARD/BRONZE/SILVER/GOLD/PLATINUM), isActive, isVerified, payoutMethod (BANK_TRANSFER/PAYPAL/WING/ABA_BANK/CASH), payoutDetails (JSON), minPayoutAmount, denormalized stats (totalSales, totalCommission, totalOrders, pendingPayout)
+  - **InfluencerSale model**: Links to influencer and order, orderTotal, commissionRate at time of sale, commissionAmount, affiliateCode (historical), source, status (PENDING/APPROVED/REJECTED/PAID), payoutId
+  - **InfluencerPayout model**: Period start/end, amount, currency, salesCount, totalSales, status (PENDING/PROCESSING/COMPLETED/FAILED), payoutMethod, payoutReference, paidAt, paidBy
+  - **API endpoints**: GET (list, dashboard, detail, stats, sales, payouts, payoutReport, validate code), POST (create, update, recordSale, approveSale, rejectSale, createPayout, processPayout), DELETE (deactivate)
+  - **lib/influencer.ts**: generateAffiliateCode (from name), validateAffiliateCode, recordInfluencerSale, approveInfluencerSale, rejectInfluencerSale, generatePayoutReport, createPayout, processPayout, getInfluencerStats, getInfluencerDashboardSummary, generatePayoutReportCSV
+  - **InfluencersPage UI**: Dashboard summary cards (total influencers, sales, commission, pending payouts), top 5 influencers, searchable/filterable influencer table, create/edit dialogs, detail dialog with tabs (overview, sales, payouts), payout creation dialog
+  - **React Query hooks**: useInfluencers, useInfluencerDashboard, useInfluencerDetail, useInfluencerStats, useInfluencerSales, useInfluencerPayouts, useInfluencerPayoutReport, useCreateInfluencer, useUpdateInfluencer, useDeleteInfluencer, useRecordInfluencerSale, useApproveInfluencerSale, useRejectInfluencerSale, useCreateInfluencerPayout, useProcessInfluencerPayout, useValidateAffiliateCode
+- **Learnings for future iterations**:
+  - Tier system allows graduated commission rates based on influencer performance
+  - Affiliate codes generated from influencer name (first 4 chars + random) for memorability
+  - Denormalized stats on Influencer model for fast dashboard queries
+  - Sales start as PENDING, move to APPROVED when order completes, then PAID when payout is processed
+  - Payouts aggregate unpaid APPROVED sales within a date range
+  - Commission can be percentage-based or fixed amount per sale
+  - Cambodia-specific payout methods: Wing, ABA Bank alongside international (PayPal, Bank Transfer)
+  - CSV export for payout reports enables external payment processing
+---
