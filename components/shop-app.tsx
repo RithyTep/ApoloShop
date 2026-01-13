@@ -1,10 +1,13 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { Header } from "./header"
 import { ProductGrid } from "./product-grid"
 import { CartDrawer } from "./cart-drawer"
 import { CheckoutPage } from "./checkout-page"
+import { CompareFloatingBar } from "./compare-button"
+import { ComparisonProvider } from "@/lib/comparison-context"
 import {
   useShopCustomization,
   useClientTheme as useClientThemeQuery,
@@ -59,6 +62,7 @@ const CURRENCY_STORAGE_KEY = "apolo_currency"
 const DEFAULT_ENABLED_CURRENCIES: Currency[] = ["USD", "KHR"]
 
 export function ShopApp() {
+  const router = useRouter()
   const [cart, setCart] = useState<CartItem[]>([])
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState<Page>("shop")
@@ -251,10 +255,11 @@ export function ShopApp() {
   const effectiveLogoUrl = config?.theme?.logoUrl || clientTheme?.logoUrl
 
   return (
-    <div
-      className="min-h-screen bg-background max-w-[1280px] mx-auto"
-      style={themeStyles as React.CSSProperties}
-    >
+    <ComparisonProvider>
+      <div
+        className="min-h-screen bg-background max-w-[1280px] mx-auto"
+        style={themeStyles as React.CSSProperties}
+      >
       {/* Skip to main content link - WCAG 2.4.1 */}
       <a
         href="#main-content"
@@ -416,6 +421,14 @@ export function ShopApp() {
 
       {/* Live Chat Widget */}
       <ChatWidget language={language} />
+
+      {/* Floating compare bar */}
+      <CompareFloatingBar
+        language={language === "en" ? "EN" : "KH"}
+        currency={currency}
+        onViewCompare={() => router.push("/shop/compare")}
+      />
     </div>
+    </ComparisonProvider>
   )
 }

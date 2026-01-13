@@ -2768,3 +2768,38 @@ Project: ApoloShop - Product Search Feature
   - sendBackInStockNotifications() marks each notification as sent after successful email
   - Admin page uses useState + useCallback for data fetching (no React Query needed for simple admin views)
 ---
+
+## 2026-01-13 - US-089
+- **Implemented**: Product comparison tool for side-by-side comparison
+- **Files changed**:
+  - `lib/comparison-context.tsx` (new file - ComparisonProvider, useComparison hook)
+  - `components/compare-button.tsx` (new file - CompareButton, CompareFloatingBar components)
+  - `components/comparison-table.tsx` (new file - ComparisonTable component)
+  - `app/shop/compare/page.tsx` (new file - comparison page with shareable URL)
+  - `app/shop/compare/compare-page-client.tsx` (new file - client component)
+  - `lib/i18n.ts` (modified - added compare translations for EN/KH)
+  - `components/shop/products-section.tsx` (modified - added CompareButton to product cards)
+  - `components/product-grid.tsx` (modified - added CompareButton to product cards)
+  - `components/shop/shop-client-wrapper.tsx` (modified - added ComparisonProvider, CompareFloatingBar)
+  - `components/shop-app.tsx` (modified - added ComparisonProvider, CompareFloatingBar)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **ComparisonProvider context**: Manages up to 4 products for comparison with localStorage persistence
+  - **CompareButton**: Icon and full variants, shows check when product is in compare list
+  - **CompareFloatingBar**: Fixed bottom bar showing selected products, clear/view actions
+  - **ComparisonTable**: Side-by-side table with product images, prices, categories, stock status, SKU, descriptions
+  - **Difference highlighting**: Rows where products differ are highlighted with background color and asterisk
+  - **Shareable URL**: /shop/compare?ids=id1,id2,id3 allows sharing comparisons
+  - **Click-to-copy**: Share button copies comparison URL to clipboard with feedback
+  - **Max 4 products**: Prevents adding more when limit reached, shows "Max 4 items" message
+  - **Quick navigation**: Click product in table navigates to product detail page
+  - **Bilingual support**: Full EN/KH translations for all comparison UI
+- **Learnings for future iterations**:
+  - ComparisonProvider uses localStorage key "apolo_compare_products" for persistence
+  - addToCompare returns boolean indicating success (false if at max or already in list)
+  - Product thumbnails in floating bar support hover-to-remove interaction
+  - ComparisonTable uses renderCell function for custom badge rendering (stock status)
+  - valuesDiffer helper checks if a field differs across products for highlighting
+  - Shareable URL loads products via /api/products/[id] endpoint
+  - Both shop-app.tsx and shop-client-wrapper.tsx need ComparisonProvider for different shop entry points
+---

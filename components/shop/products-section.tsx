@@ -9,6 +9,7 @@ import { useCart, useLanguage, useCurrency } from "@/lib/shop-context"
 import type { ProductsConfig, Product } from "@/lib/api-hooks"
 import { WishlistButton } from "@/components/wishlist-button"
 import { ProductQuickView, QuickViewButton } from "@/components/product-quick-view"
+import { CompareButton } from "@/components/compare-button"
 
 interface ProductsSectionProps {
   config: ProductsConfig
@@ -101,9 +102,15 @@ export function ProductsSection({ config, initialProducts }: ProductsSectionProp
                       <QuickViewButton onClick={() => openQuickView(product)} language={language} />
                     </div>
                   </div>
-                  {/* Wishlist button */}
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  {/* Wishlist and Compare buttons */}
+                  <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     <WishlistButton productId={product.id} size="sm" language={language} />
+                    <CompareButton
+                      product={product}
+                      language={language === "en" ? "EN" : "KH"}
+                      size="sm"
+                      variant="icon"
+                    />
                   </div>
                 </div>
 

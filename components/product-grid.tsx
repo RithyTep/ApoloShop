@@ -13,6 +13,7 @@ import { ProductQuickView, QuickViewButton } from "@/components/product-quick-vi
 import { StarRating } from "@/components/star-rating"
 import { FlashSaleBadge, FlashSaleCountdown, FlashSalePrice } from "@/components/flash-sale-countdown"
 import { PreOrderBadge, PreOrderCountdown } from "@/components/pre-order-countdown"
+import { CompareButton } from "@/components/compare-button"
 
 interface ProductGridProps {
   onAddToCart: (id: string, name: string, price: number, image: string) => void
@@ -272,9 +273,15 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
                         <QuickViewButton onClick={() => openQuickView(product)} language={language} />
                       </div>
                     </div>
-                    {/* Wishlist button */}
-                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    {/* Wishlist and Compare buttons */}
+                    <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <WishlistButton productId={product.id} size="sm" language={language} />
+                      <CompareButton
+                        product={product}
+                        language={language}
+                        size="sm"
+                        variant="icon"
+                      />
                     </div>
                   </div>
 
