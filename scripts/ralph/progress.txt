@@ -2682,3 +2682,27 @@ Project: ApoloShop - Product Search Feature
   - Settlement currency (base) is what shop receives; display currency is what customer sees
   - useCurrencyDetection only auto-sets currency if no stored preference exists
 ---
+
+## 2026-01-13 - US-086
+- **Implemented**: Subscription products (Subscribe & Save)
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added ProductSubscription, SubscriptionDelivery models, SubscriptionFrequency, ProductSubscriptionStatus enums)
+  - `app/api/subscriptions/route.ts` (new file - GET/POST/PATCH/DELETE endpoints)
+  - `components/subscribe-save.tsx` (new file - SubscribeSave UI component)
+  - `lib/i18n.ts` (modified - added productSubscription translations EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - ProductSubscription model: customerId, productId, variantId, frequency, quantity, discountPercent, nextDeliveryAt, status
+  - SubscriptionDelivery model: tracks each delivery/order from subscription
+  - Flexible frequency: WEEKLY, BIWEEKLY, MONTHLY, BIMONTHLY, QUARTERLY
+  - Default 10% Subscribe & Save discount
+  - PATCH actions: pause, resume, skip, update frequency/quantity
+  - DELETE soft-cancels with reason
+  - SubscribeSave component with expandable UI, frequency selector, pricing display
+- **Learnings for future iterations**:
+  - Named model `ProductSubscription` to avoid conflict with existing `Subscription` model (client billing)
+  - Used `productSubscription` key in i18n to distinguish from `subscription` (billing)
+  - calculateNextDeliveryDate helper handles all frequency types
+  - Subscription delivery tracking allows for order history and skip records
+  - Build passes without database sync (Prisma schema validates, runtime DB sync separate)
+---

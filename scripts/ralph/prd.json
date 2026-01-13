@@ -1354,8 +1354,8 @@
         "Build passes: bun run build"
       ],
       "priority": 86,
-      "passes": false,
-      "notes": "Recurring revenue for coffee, consumables"
+      "passes": true,
+      "notes": "Implemented ProductSubscription/SubscriptionDelivery models, /api/subscriptions endpoint (GET/POST/PATCH/DELETE), flexible frequency (weekly/biweekly/monthly/bimonthly/quarterly), 10% Subscribe & Save discount, pause/skip/resume/cancel functionality, SubscribeSave component, bilingual translations (EN/KH)"
     },
     {
       "id": "US-087",
