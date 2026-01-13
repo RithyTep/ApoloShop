@@ -7,6 +7,8 @@ import { useState } from "react"
 import { SearchDropdown } from "@/components/search-dropdown"
 import { getTranslation, type Language, SUPPORTED_LANGUAGES, getLanguageConfig } from "@/lib/i18n"
 import { LanguageSwitcher } from "@/components/language-switcher"
+import { CurrencySelector } from "@/components/currency-selector"
+import type { Currency } from "@prisma/client"
 
 interface SearchBranding {
   primaryColor?: string
@@ -20,8 +22,8 @@ interface HeaderProps {
   onCartClick: () => void
   language: Language
   onLanguageChange: (lang: Language) => void
-  currency: "USD" | "KHR"
-  onCurrencyChange: (curr: "USD" | "KHR") => void
+  currency: Currency
+  onCurrencyChange: (curr: Currency) => void
   shopName?: string
   logoUrl?: string
   primaryColor?: string
@@ -30,6 +32,9 @@ interface HeaderProps {
   onSearchChange?: (query: string) => void
   searchBranding?: SearchBranding
   showAllLanguages?: boolean // Show full language dropdown vs simple EN/KH toggle
+  enabledCurrencies?: Currency[] // List of enabled currencies for selector
+  showMultiCurrency?: boolean // Show advanced currency selector vs simple toggle
+  detectedCurrency?: Currency | null // Auto-detected currency for badge
 }
 
 export function Header({
@@ -47,6 +52,9 @@ export function Header({
   onSearchChange,
   searchBranding,
   showAllLanguages = false,
+  enabledCurrencies = ["USD", "KHR"],
+  showMultiCurrency = false,
+  detectedCurrency = null,
 }: HeaderProps) {
   const [internalSearchQuery, setInternalSearchQuery] = useState("")
   const [isSearchOpen, setIsSearchOpen] = useState(false)
@@ -167,33 +175,16 @@ export function Header({
               </div>
             )}
 
-            {/* Currency Pill Toggle */}
-            <div className="flex items-center bg-muted rounded-full p-0.5" role="group" aria-label={t.accessibility.currencySelection}>
-              <button
-                onClick={() => onCurrencyChange("USD")}
-                className={`px-2.5 py-1 text-xs font-medium rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 ${
-                  currency === "USD"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                aria-pressed={currency === "USD"}
-                aria-label="US Dollar"
-              >
-                $
-              </button>
-              <button
-                onClick={() => onCurrencyChange("KHR")}
-                className={`px-2.5 py-1 text-xs font-medium rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 ${
-                  currency === "KHR"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                aria-pressed={currency === "KHR"}
-                aria-label="Cambodian Riel"
-              >
-                ៛
-              </button>
-            </div>
+            {/* Currency Selector - supports both simple pill toggle and multi-currency dropdown */}
+            <CurrencySelector
+              currency={currency}
+              onCurrencyChange={onCurrencyChange}
+              language={language}
+              enabledCurrencies={enabledCurrencies}
+              variant={showMultiCurrency && enabledCurrencies.length > 2 ? "compact" : "pill"}
+              showDetectedBadge={showMultiCurrency}
+              detectedCurrency={detectedCurrency}
+            />
 
             {/* Cart Icon */}
             <button

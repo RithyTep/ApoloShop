@@ -1322,8 +1322,8 @@
         "Build passes: bun run build"
       ],
       "priority": 84,
-      "passes": false,
-      "notes": "Cambodia VAT is 10% - needs proper calculation"
+      "passes": true,
+      "notes": "Implemented TaxRate and TaxLog models with TaxType/TaxPricingMode enums. lib/tax-service.ts with calculateTax(), getTaxRate(), logOrderTax(), getTaxReport(). GET/POST/PUT/DELETE /api/tax-rates for admin management. GET /api/reports/tax with CSV export. TaxRatesPage admin UI with rates management and tax reporting tabs. Cambodia VAT (10%) as default rate. Bilingual translations (EN/KH)."
     },
     {
       "id": "US-085",
@@ -1338,8 +1338,8 @@
         "Build passes: bun run build"
       ],
       "priority": 85,
-      "passes": false,
-      "notes": "USD/KHR already supported, expand to more"
+      "passes": true,
+      "notes": "Implemented ExchangeRate, CurrencyConversionLog, CurrencyConfig Prisma models. Added Currency enum expansion (THB, VND, SGD, MYR, EUR, GBP). lib/currency-service.ts with exchange rate management, conversion, auto-detection. GET/POST /api/currency endpoint for rates, detection, config, conversion. CurrencySelector component with pill/compact/full variants and useCurrencyDetection hook. Updated shop-app.tsx with currency auto-detection and persistence. Checkout page shows conversion fees and settlement currency info. Bilingual translations (EN/KH)."
     },
     {
       "id": "US-086",

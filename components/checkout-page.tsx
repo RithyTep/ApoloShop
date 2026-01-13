@@ -47,12 +47,15 @@ interface ShippingAddress {
 
 interface CheckoutPageProps {
   cart: CartItem[]
-  currency: "USD" | "KHR"
+  currency: string // Supports all Currency enum values
   language: "EN" | "KH"
   onBackToShop: () => void
   onOrderComplete?: () => void
   onUpdateQuantity?: (id: string, quantity: number) => void
   onRemoveItem?: (id: string) => void
+  baseCurrency?: string // Shop's settlement currency (default USD)
+  conversionFeePercent?: number // Conversion fee percentage (e.g., 0.02 = 2%)
+  showConversionInfo?: boolean // Show exchange rate and fee info
 }
 
 // Payment method icons mapping
@@ -84,6 +87,9 @@ export function CheckoutPage({
   onOrderComplete,
   onUpdateQuantity,
   onRemoveItem,
+  baseCurrency = "USD",
+  conversionFeePercent = 0,
+  showConversionInfo = false,
 }: CheckoutPageProps) {
   // Contact info state
   const [fullName, setFullName] = useState("")
@@ -138,6 +144,30 @@ export function CheckoutPage({
   const finalTotal = Math.max(0, subtotal - discountAmount)
   const t = translations[language === "EN" ? "en" : "kh"]
   const tc = t.checkout
+  const tCurrency = t.currency
+
+  // Currency conversion state
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null)
+  const [rateSource, setRateSource] = useState<string>("default")
+
+  // Fetch exchange rate when currency differs from base
+  useEffect(() => {
+    if (currency !== baseCurrency && showConversionInfo) {
+      fetch(`/api/currency?action=rate&from=${baseCurrency}&to=${currency}`)
+        .then(res => res.json())
+        .then(data => {
+          setExchangeRate(data.rate)
+          setRateSource(data.source)
+        })
+        .catch(() => {})
+    }
+  }, [currency, baseCurrency, showConversionInfo])
+
+  // Calculate conversion fee
+  const conversionFeeAmount = currency !== baseCurrency && conversionFeePercent > 0
+    ? finalTotal * conversionFeePercent
+    : 0
+  const totalWithFee = finalTotal + conversionFeeAmount
 
   // Check for saved addresses when phone number is entered
   const checkSavedAddresses = useCallback(async () => {
@@ -391,9 +421,46 @@ export function CheckoutPage({
     setPaymentResponse(null)
   }
 
-  // Format price for display
-  const formatPrice = (price: number) => {
-    return currency === "USD" ? `$${price.toFixed(2)}` : `${Math.round(price * 4000)}៛`
+  // Currency info for formatting
+  const currencySymbols: Record<string, { symbol: string; position: "before" | "after"; decimals: number }> = {
+    USD: { symbol: "$", position: "before", decimals: 2 },
+    KHR: { symbol: "៛", position: "after", decimals: 0 },
+    THB: { symbol: "฿", position: "before", decimals: 2 },
+    VND: { symbol: "₫", position: "after", decimals: 0 },
+    SGD: { symbol: "S$", position: "before", decimals: 2 },
+    MYR: { symbol: "RM", position: "before", decimals: 2 },
+    EUR: { symbol: "€", position: "before", decimals: 2 },
+    GBP: { symbol: "£", position: "before", decimals: 2 },
+  }
+
+  // Default exchange rates (1 USD = X) for fallback
+  const defaultRates: Record<string, number> = {
+    USD: 1, KHR: 4000, THB: 35, VND: 24500, SGD: 1.35, MYR: 4.7, EUR: 0.92, GBP: 0.79
+  }
+
+  // Format price for display in selected currency
+  const formatPrice = (priceInBase: number) => {
+    // Convert from base currency if needed
+    const rate = exchangeRate || defaultRates[currency] || 1
+    const converted = currency === baseCurrency ? priceInBase : priceInBase * rate
+
+    const info = currencySymbols[currency] || { symbol: currency, position: "before", decimals: 2 }
+    const formatted = info.decimals === 0
+      ? Math.round(converted).toLocaleString()
+      : converted.toLocaleString(undefined, { minimumFractionDigits: info.decimals, maximumFractionDigits: info.decimals })
+
+    return info.position === "before"
+      ? `${info.symbol}${formatted}`
+      : `${formatted}${info.symbol}`
+  }
+
+  // Format price in base currency (for settlement display)
+  const formatBaseCurrencyPrice = (price: number) => {
+    const info = currencySymbols[baseCurrency] || { symbol: "$", position: "before", decimals: 2 }
+    const formatted = price.toLocaleString(undefined, { minimumFractionDigits: info.decimals, maximumFractionDigits: info.decimals })
+    return info.position === "before"
+      ? `${info.symbol}${formatted}`
+      : `${formatted}${info.symbol}`
   }
 
   // Handle coupon apply
@@ -1044,12 +1111,38 @@ export function CheckoutPage({
                 <span className="text-success font-medium">{tc.freeShipping}</span>
               </div>
 
+              {/* Conversion fee - only show if currency differs from base and fee is enabled */}
+              {showConversionInfo && currency !== baseCurrency && conversionFeePercent > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    {tCurrency?.conversionFee || "Conversion fee"} ({(conversionFeePercent * 100).toFixed(1)}%)
+                  </span>
+                  <span className="text-muted-foreground font-medium">
+                    {formatPrice(conversionFeeAmount)}
+                  </span>
+                </div>
+              )}
+
               <Separator />
 
               <div className="flex justify-between text-lg font-bold">
                 <span className="text-foreground">{tc.total}</span>
-                <span className="text-primary">{formatPrice(finalTotal)}</span>
+                <span className="text-primary">{formatPrice(totalWithFee)}</span>
               </div>
+
+              {/* Exchange rate info - show when currency differs from base */}
+              {showConversionInfo && currency !== baseCurrency && exchangeRate && (
+                <div className="text-xs text-muted-foreground mt-2 p-2 bg-muted/50 rounded">
+                  <div className="flex items-center gap-1">
+                    <span>{tCurrency?.exchangeRate || "Exchange rate"}:</span>
+                    <span className="font-medium">1 {baseCurrency} = {exchangeRate.toFixed(currency === "KHR" || currency === "VND" ? 0 : 2)} {currency}</span>
+                  </div>
+                  <div className="mt-1">
+                    <span>{tCurrency?.settlementCurrency || "Settlement"}:</span>
+                    <span className="font-medium ml-1">{formatBaseCurrencyPrice(finalTotal)}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Trust Badges */}

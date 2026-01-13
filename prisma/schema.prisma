@@ -461,6 +461,12 @@ enum OrderChannel {
 enum Currency {
   USD
   KHR
+  THB  // Thai Baht
+  VND  // Vietnamese Dong
+  SGD  // Singapore Dollar
+  MYR  // Malaysian Ringgit
+  EUR  // Euro
+  GBP  // British Pound
 
   @@schema("apolo")
 }
@@ -2967,5 +2973,94 @@ model TaxLog {
   @@index([createdAt])
   @@index([country])
   @@map("tax_logs")
+  @@schema("apolo")
+}
+
+// ============================================
+// MULTI-CURRENCY SUPPORT
+// ============================================
+
+// Exchange rates for multi-currency support
+model ExchangeRate {
+  id              String    @id @default(cuid())
+  baseCurrency    Currency  @default(USD) @map("base_currency")
+  targetCurrency  Currency  @map("target_currency")
+  rate            Decimal   @db.Decimal(18, 8) // Exchange rate (1 base = X target)
+  inverseRate     Decimal   @db.Decimal(18, 8) @map("inverse_rate") // 1 target = X base
+  // Conversion fee settings
+  conversionFee   Decimal   @default(0) @db.Decimal(5, 4) @map("conversion_fee") // Fee as decimal (0.02 = 2%)
+  // Source and freshness
+  source          String    @default("manual") // "manual", "openexchangerates", "fixer", etc.
+  fetchedAt       DateTime  @default(now()) @map("fetched_at") // When rate was fetched
+  expiresAt       DateTime? @map("expires_at") // When rate expires (for caching)
+  // Status
+  isActive        Boolean   @default(true) @map("is_active")
+  // Timestamps
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@unique([baseCurrency, targetCurrency])
+  @@index([baseCurrency])
+  @@index([targetCurrency])
+  @@index([isActive])
+  @@index([fetchedAt])
+  @@map("exchange_rates")
+  @@schema("apolo")
+}
+
+// Log of currency conversions for orders (audit trail)
+model CurrencyConversionLog {
+  id              String    @id @default(cuid())
+  orderId         String?   @map("order_id")
+  // Conversion details
+  fromCurrency    Currency  @map("from_currency")
+  toCurrency      Currency  @map("to_currency")
+  originalAmount  Decimal   @map("original_amount") @db.Decimal(18, 2)
+  convertedAmount Decimal   @map("converted_amount") @db.Decimal(18, 2)
+  exchangeRate    Decimal   @map("exchange_rate") @db.Decimal(18, 8) // Rate used
+  conversionFee   Decimal   @default(0) @map("conversion_fee") @db.Decimal(18, 2) // Fee amount
+  feePercentage   Decimal   @default(0) @map("fee_percentage") @db.Decimal(5, 4) // Fee % applied
+  // Settlement
+  settlementCurrency Currency @default(USD) @map("settlement_currency") // Shop's base currency
+  settlementAmount Decimal  @map("settlement_amount") @db.Decimal(18, 2)
+  // Metadata
+  customerCountry String?   @map("customer_country") // ISO country code
+  detectedCurrency Currency? @map("detected_currency") // Auto-detected currency
+  // Timestamps
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@index([fromCurrency])
+  @@index([toCurrency])
+  @@index([createdAt])
+  @@map("currency_conversion_logs")
+  @@schema("apolo")
+}
+
+// Currency configuration for shops
+model CurrencyConfig {
+  id              String    @id @default(cuid())
+  clientId        String?   @map("client_id") @unique
+  // Base currency (shop settles in this currency)
+  baseCurrency    Currency  @default(USD) @map("base_currency")
+  // Enabled currencies for display
+  enabledCurrencies Json    @default("[]") @map("enabled_currencies") // Array of Currency codes
+  // Auto-detection settings
+  autoDetectEnabled Boolean @default(true) @map("auto_detect_enabled")
+  defaultCurrency Currency @default(USD) @map("default_currency") // Fallback when detection fails
+  // Fee settings
+  conversionFeeEnabled Boolean @default(false) @map("conversion_fee_enabled")
+  conversionFeePercent Decimal @default(0) @db.Decimal(5, 4) @map("conversion_fee_percent")
+  displayConversionFee Boolean @default(true) @map("display_conversion_fee") // Show fee to customer
+  // Rate update settings
+  rateUpdateFrequency String @default("daily") @map("rate_update_frequency") // "manual", "hourly", "daily"
+  rateApiProvider String? @map("rate_api_provider") // "openexchangerates", "fixer", etc.
+  rateApiKey String? @map("rate_api_key") // Encrypted API key
+  // Timestamps
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([baseCurrency])
+  @@map("currency_configs")
   @@schema("apolo")
 }

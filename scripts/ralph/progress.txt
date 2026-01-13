@@ -2615,3 +2615,70 @@ Project: ApoloShop - Product Search Feature
   - Admin notes and rejection reason are separate fields for clear communication
   - Return eligibility check: order.status === "COMPLETED" - can be extended with date limits
 ---
+
+## 2026-01-13 - US-084
+- **Implemented**: Tax calculation engine with location-based rates
+- **Files changed**:
+  - `prisma/schema.prisma` (added TaxRate, TaxLog models, TaxType, TaxPricingMode enums)
+  - `lib/tax-service.ts` (new file - tax calculation service)
+  - `app/api/tax-rates/route.ts` (new file - GET/POST/PUT/DELETE tax rates)
+  - `app/api/reports/tax/route.ts` (new file - tax reporting with CSV export)
+  - `lib/api-hooks.ts` (added TaxRate types and hooks: useTaxRates, useCreateTaxRate, useUpdateTaxRate, useDeleteTaxRate, useTaxReport)
+  - `components/pages/tax-rates-page.tsx` (new file - admin tax management UI)
+  - `components/sidebar.tsx` (added tax-rates nav item with Receipt icon)
+  - `components/admin-dashboard.tsx` (added TaxRatesPage import and case)
+  - `lib/i18n.ts` (added tax translations for EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **TaxRate model**: country, countryName, region, regionName, name, rate (decimal 0.10 = 10%), taxType, categoryId, pricingMode, isDefault, isActive, effectiveFrom/To, description
+  - **TaxLog model**: Audit trail for tax applied to orders - orderId, taxRateId, taxName, taxRateValue, taxType, pricingMode, country, region, subtotal/taxAmount (USD/KHR)
+  - **TaxType enum**: VAT, SALES_TAX, GST, CUSTOM
+  - **TaxPricingMode enum**: EXCLUSIVE (tax added on top), INCLUSIVE (tax included in price)
+  - **Tax calculation service**: getTaxRate() with priority lookup (category-specific > region > country > default), calculateTax() with exclusive/inclusive math, calculateTaxBreakdown() for multi-category orders
+  - **Default rates**: Cambodia VAT 10%, Thailand 7%, Vietnam 10%, Singapore GST 9%, Malaysia SST 6%
+  - **Admin UI**: Tax Rates tab with CRUD operations, Tax Report tab with date range filter, summary cards, by-country/by-type breakdowns
+  - **CSV export**: Download tax logs for accounting with all relevant fields
+  - **API endpoints**: GET/POST/PUT/DELETE /api/tax-rates, GET /api/reports/tax (with ?format=csv option)
+  - **Bilingual support**: Full EN/KH translations for all tax UI text
+- **Learnings for future iterations**:
+  - Tax rate lookup uses priority: category-specific rate > region+country > country default > fallback defaults
+  - TaxPricingMode determines calculation: EXCLUSIVE adds tax, INCLUSIVE extracts tax from price
+  - Prisma Decimal needs Number() conversion for arithmetic operations
+  - TaxLog stores snapshot of tax details at time of order for audit compliance (even if rate changes later)
+  - Unique constraint on [country, region, categoryId] prevents duplicate rates
+  - effectiveFrom/effectiveTo enable scheduled rate changes (e.g., VAT increase from future date)
+  - Exchange rate constant (4000 KHR/USD) used for KHR amounts
+---
+
+## 2026-01-13 - US-085
+- **Implemented**: Multi-currency checkout with auto-detection and conversion fees
+- **Files changed**:
+  - `prisma/schema.prisma` (added ExchangeRate, CurrencyConversionLog, CurrencyConfig models; expanded Currency enum)
+  - `lib/currency-service.ts` (new file - currency management service)
+  - `app/api/currency/route.ts` (new file - currency API endpoint)
+  - `components/currency-selector.tsx` (new file - CurrencySelector component and useCurrencyDetection hook)
+  - `components/header.tsx` (modified - integrated CurrencySelector with multi-currency support)
+  - `components/shop-app.tsx` (modified - added currency detection, persistence, and enabled currencies)
+  - `components/checkout-page.tsx` (modified - added conversion fee display and settlement currency info)
+  - `lib/i18n.ts` (added currency translations for EN/KH)
+- **Features**:
+  - **ExchangeRate model**: baseCurrency, targetCurrency, rate, inverseRate, conversionFee, source, fetchedAt, expiresAt
+  - **CurrencyConversionLog model**: Audit trail for currency conversions with order/customer info
+  - **CurrencyConfig model**: Per-shop currency settings (base currency, enabled currencies, fee settings, rate provider)
+  - **Currency enum expansion**: Added THB (Thai Baht), VND (Vietnamese Dong), SGD (Singapore Dollar), MYR (Malaysian Ringgit), EUR (Euro), GBP (British Pound)
+  - **Currency service**: CURRENCY_INFO with symbols/names/decimals, COUNTRY_CURRENCY_MAP for auto-detection, default exchange rates, convertCurrency(), formatPrice()
+  - **Auto-detection**: Browser timezone-based detection, Cloudflare/Vercel IP country headers, fallback to default
+  - **API endpoints**: GET /api/currency?action=rates|detect|convert|rate|config, POST for save_config, update_rates, set_rate
+  - **CurrencySelector component**: Three variants (pill, compact, full) with exchange rate display and detection badge
+  - **useCurrencyDetection hook**: Auto-detects currency on page load, respects stored preference
+  - **Checkout integration**: Shows conversion fee percentage, exchange rate info, settlement amount in base currency
+  - **Persistence**: Currency preference saved to localStorage, synced across sessions
+  - **Bilingual support**: Full EN/KH translations for currency UI text
+- **Learnings for future iterations**:
+  - Currency detection uses priority: explicit param > CF/Vercel headers > timezone > default
+  - Exchange rates stored with inverseRate for bidirectional conversion efficiency
+  - CurrencyConfig allows per-shop customization while maintaining system defaults
+  - Conversion fees calculated as percentage of total, displayed separately from exchange rate
+  - Settlement currency (base) is what shop receives; display currency is what customer sees
+  - useCurrencyDetection only auto-sets currency if no stored preference exists
+---

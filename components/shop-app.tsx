@@ -37,6 +37,8 @@ import {
   cartItemToGA4Item,
 } from "@/lib/ga4"
 import { type Language, detectBrowserLanguage, getTranslation, getDirection } from "@/lib/i18n"
+import { useCurrencyDetection } from "./currency-selector"
+import type { Currency } from "@prisma/client"
 
 export interface CartItem {
   id: string
@@ -49,16 +51,65 @@ export interface CartItem {
 
 type Page = "shop" | "checkout"
 
-// Local storage key for language preference
+// Local storage keys for preferences
 const LANGUAGE_STORAGE_KEY = "apolo_language"
+const CURRENCY_STORAGE_KEY = "apolo_currency"
+
+// Default enabled currencies (can be overridden by shop config)
+const DEFAULT_ENABLED_CURRENCIES: Currency[] = ["USD", "KHR"]
 
 export function ShopApp() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState<Page>("shop")
   const [language, setLanguage] = useState<Language>("en")
-  const [currency, setCurrency] = useState<"USD" | "KHR">("USD")
+  const [currency, setCurrency] = useState<Currency>("USD")
   const [hasDetectedLanguage, setHasDetectedLanguage] = useState(false)
+  const [hasDetectedCurrency, setHasDetectedCurrency] = useState(false)
+  const [enabledCurrencies, setEnabledCurrencies] = useState<Currency[]>(DEFAULT_ENABLED_CURRENCIES)
+  const [detectedCurrency, setDetectedCurrency] = useState<Currency | null>(null)
+
+  // Currency auto-detection hook
+  const { detected: currencyDetection, isDetecting: isDetectingCurrency } = useCurrencyDetection(
+    (detectedCurr, country) => {
+      // Only set if no stored preference
+      if (!hasDetectedCurrency) {
+        const stored = localStorage.getItem(CURRENCY_STORAGE_KEY) as Currency | null
+        if (!stored) {
+          setCurrency(detectedCurr)
+        }
+        setDetectedCurrency(detectedCurr)
+      }
+    }
+  )
+
+  // Load currency config from API
+  useEffect(() => {
+    fetch("/api/currency?action=config")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.config?.enabledCurrencies) {
+          setEnabledCurrencies(data.config.enabledCurrencies)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  // Check stored currency preference
+  useEffect(() => {
+    if (hasDetectedCurrency) return
+    const storedCurrency = localStorage.getItem(CURRENCY_STORAGE_KEY) as Currency | null
+    if (storedCurrency && enabledCurrencies.includes(storedCurrency)) {
+      setCurrency(storedCurrency)
+    }
+    setHasDetectedCurrency(true)
+  }, [hasDetectedCurrency, enabledCurrencies])
+
+  // Persist currency preference
+  const handleCurrencyChange = useCallback((newCurrency: Currency) => {
+    setCurrency(newCurrency)
+    localStorage.setItem(CURRENCY_STORAGE_KEY, newCurrency)
+  }, [])
 
   // Auto-detect browser language on initial load
   useEffect(() => {
@@ -228,7 +279,10 @@ export function ShopApp() {
         onLanguageChange={handleLanguageChange}
         showAllLanguages={true} // Enable multi-language dropdown
         currency={currency}
-        onCurrencyChange={setCurrency}
+        onCurrencyChange={handleCurrencyChange}
+        enabledCurrencies={enabledCurrencies}
+        showMultiCurrency={enabledCurrencies.length > 2}
+        detectedCurrency={detectedCurrency}
         shopName={config?.theme?.shopName || clientThemeData?.client?.name}
         logoUrl={effectiveLogoUrl}
         primaryColor={config?.theme?.primaryColor || clientTheme?.primaryColor}
