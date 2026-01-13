@@ -14,6 +14,7 @@ import { useRecentlyViewed } from "@/lib/use-recently-viewed"
 import { RecentlyViewed } from "@/components/recently-viewed"
 import { ProductRecommendations } from "@/components/product-recommendations"
 import { ProductReviews } from "@/components/product-reviews"
+import { ProductQA } from "@/components/product-qa"
 import { StarRating } from "@/components/star-rating"
 import { VariantSelector, ProductVariant } from "@/components/variant-selector"
 import { ProductSocialProof } from "@/components/social-proof"
@@ -426,6 +427,9 @@ export function ProductDetailClient({ product: initialProduct, language: initial
 
         {/* Product Reviews */}
         <ProductReviews productId={productId} language={language} />
+
+        {/* Product Q&A */}
+        <ProductQA productId={productId} language={language} />
       </main>
     </div>
   )

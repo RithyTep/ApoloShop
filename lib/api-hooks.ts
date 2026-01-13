@@ -5854,3 +5854,247 @@ export function useTaxReport(startDate?: string, endDate?: string) {
     queryFn: () => fetchAPI<TaxReport>(`/api/reports/tax?${params.toString()}`),
   });
 }
+
+// ============================================
+// PRODUCT Q&A
+// ============================================
+
+// Types
+export interface ProductQuestion {
+  id: string;
+  question: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  askerName: string;
+  askerEmail?: string;
+  customerId?: string;
+  product?: {
+    id: string;
+    nameEn: string;
+    nameKh: string;
+    imageUrl?: string;
+  };
+  answerCount: number;
+  answers: ProductAnswer[];
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ProductAnswer {
+  id: string;
+  answer: string;
+  isOfficial: boolean;
+  responderName: string;
+  helpfulVotes: number;
+  unhelpfulVotes: number;
+  createdAt: string;
+}
+
+export interface ProductQuestionsResponse {
+  productId: string;
+  questions: ProductQuestion[];
+  pagination: {
+    total: number;
+    offset: number;
+    limit: number;
+    hasMore: boolean;
+  };
+}
+
+export interface AdminQuestionsResponse {
+  questions: ProductQuestion[];
+  statusCounts: {
+    PENDING: number;
+    APPROVED: number;
+    REJECTED: number;
+  };
+  pagination: {
+    total: number;
+    offset: number;
+    limit: number;
+    hasMore: boolean;
+  };
+}
+
+/**
+ * Hook to fetch questions for a specific product
+ */
+export function useProductQuestions(productId: string, options?: { limit?: number; offset?: number }) {
+  const params = new URLSearchParams();
+  if (options?.limit) params.set("limit", options.limit.toString());
+  if (options?.offset) params.set("offset", options.offset.toString());
+
+  return useQuery({
+    queryKey: ["product-questions", productId, options],
+    queryFn: () =>
+      fetchAPI<ProductQuestionsResponse>(
+        `/api/products/${productId}/questions?${params.toString()}`
+      ),
+    enabled: !!productId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+}
+
+/**
+ * Hook to create a new question for a product
+ */
+export function useCreateQuestion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      productId,
+      question,
+      customerId,
+      guestName,
+      guestEmail,
+    }: {
+      productId: string;
+      question: string;
+      customerId?: string;
+      guestName?: string;
+      guestEmail?: string;
+    }) =>
+      fetchAPI<{ message: string; question: ProductQuestion }>(
+        `/api/products/${productId}/questions`,
+        {
+          method: "POST",
+          body: JSON.stringify({ question, customerId, guestName, guestEmail }),
+        }
+      ),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["product-questions", variables.productId],
+      });
+    },
+  });
+}
+
+/**
+ * Hook to create an answer to a question
+ */
+export function useCreateAnswer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      questionId,
+      answer,
+      customerId,
+      guestName,
+      isOfficial,
+    }: {
+      questionId: string;
+      answer: string;
+      customerId?: string;
+      guestName?: string;
+      isOfficial?: boolean;
+    }) =>
+      fetchAPI<{ message: string; answer: ProductAnswer }>(
+        `/api/questions/${questionId}/answers`,
+        {
+          method: "POST",
+          body: JSON.stringify({ answer, customerId, guestName, isOfficial }),
+        }
+      ),
+    onSuccess: () => {
+      // Invalidate all question queries to refresh answer counts
+      queryClient.invalidateQueries({ queryKey: ["product-questions"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-questions"] });
+    },
+  });
+}
+
+/**
+ * Hook to vote on an answer
+ */
+export function useVoteAnswer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      answerId,
+      isHelpful,
+      customerId,
+    }: {
+      answerId: string;
+      isHelpful: boolean;
+      customerId?: string;
+    }) =>
+      fetchAPI<{
+        message: string;
+        helpfulVotes: number;
+        unhelpfulVotes: number;
+        userVote: boolean | null;
+      }>(`/api/answers/${answerId}/vote`, {
+        method: "POST",
+        body: JSON.stringify({ isHelpful, customerId }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["product-questions"] });
+    },
+  });
+}
+
+/**
+ * Hook to fetch all questions (admin)
+ */
+export function useAdminQuestions(options?: {
+  limit?: number;
+  offset?: number;
+  status?: "PENDING" | "APPROVED" | "REJECTED";
+  productId?: string;
+}) {
+  const params = new URLSearchParams();
+  if (options?.limit) params.set("limit", options.limit.toString());
+  if (options?.offset) params.set("offset", options.offset.toString());
+  if (options?.status) params.set("status", options.status);
+  if (options?.productId) params.set("productId", options.productId);
+
+  return useQuery({
+    queryKey: ["admin-questions", options],
+    queryFn: () =>
+      fetchAPI<AdminQuestionsResponse>(`/api/questions?${params.toString()}`),
+    staleTime: 30 * 1000, // 30 seconds
+  });
+}
+
+/**
+ * Hook to update question status (admin moderation)
+ */
+export function useUpdateQuestionStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      questionId,
+      status,
+    }: {
+      questionId: string;
+      status: "PENDING" | "APPROVED" | "REJECTED";
+    }) =>
+      fetchAPI<{ message: string; question: ProductQuestion }>(
+        `/api/questions/${questionId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ status }),
+        }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-questions"] });
+      queryClient.invalidateQueries({ queryKey: ["product-questions"] });
+    },
+  });
+}
+
+/**
+ * Hook to delete a question (admin)
+ */
+export function useDeleteQuestion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (questionId: string) =>
+      fetchAPI<{ message: string }>(`/api/questions/${questionId}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-questions"] });
+      queryClient.invalidateQueries({ queryKey: ["product-questions"] });
+    },
+  });
+}

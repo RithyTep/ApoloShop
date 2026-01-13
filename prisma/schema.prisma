@@ -318,6 +318,7 @@ model Product {
   variants      ProductVariant[]
   productSubscriptions ProductSubscription[]
   stockNotifications   StockNotification[]
+  questions     ProductQuestion[]
 
   @@index([clientId])
   @@index([categoryId])
@@ -413,6 +414,9 @@ model Customer {
   referralsReceived       Referral[]  @relation("RefereeCustomer")
   // Product subscriptions
   productSubscriptions    ProductSubscription[]
+  // Product Q&A
+  questions               ProductQuestion[]
+  answers                 ProductAnswer[]
 
   @@index([clientId])
   @@index([phone])
@@ -3197,5 +3201,94 @@ model StockNotification {
   @@index([notified])
   @@index([customerId])
   @@map("stock_notifications")
+  @@schema("apolo")
+}
+
+// ============================================
+// PRODUCT Q&A
+// ============================================
+
+// Questions asked about products
+model ProductQuestion {
+  id         String   @id @default(cuid())
+  productId  String   @map("product_id")
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  // Question details
+  question   String   @db.Text
+  // Author (either registered customer or guest)
+  customerId String?  @map("customer_id")
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  guestName  String?  @map("guest_name") // For guest questions
+  guestEmail String?  @map("guest_email") // To notify when answered
+  // Moderation
+  status     QuestionStatus @default(PENDING)
+  // Timestamps
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  answers    ProductAnswer[]
+
+  @@index([productId])
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("product_questions")
+  @@schema("apolo")
+}
+
+// Answers to product questions
+model ProductAnswer {
+  id          String   @id @default(cuid())
+  questionId  String   @map("question_id")
+  question    ProductQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  // Answer details
+  answer      String   @db.Text
+  // Author (either admin/seller, registered customer, or guest)
+  isOfficial  Boolean  @default(false) @map("is_official") // True if answered by admin/seller
+  customerId  String?  @map("customer_id")
+  customer    Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  guestName   String?  @map("guest_name") // For guest answers
+  // Voting
+  helpfulVotes   Int   @default(0) @map("helpful_votes")
+  unhelpfulVotes Int   @default(0) @map("unhelpful_votes")
+  // Timestamps
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  votes       AnswerVote[]
+
+  @@index([questionId])
+  @@index([customerId])
+  @@index([isOfficial])
+  @@index([helpfulVotes])
+  @@map("product_answers")
+  @@schema("apolo")
+}
+
+// Track individual votes on answers to prevent duplicates
+model AnswerVote {
+  id        String   @id @default(cuid())
+  answerId  String   @map("answer_id")
+  answer    ProductAnswer @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  // Voter identification (IP-based for guests, customerId for registered)
+  customerId String? @map("customer_id")
+  ipAddress  String? @map("ip_address") // For guest voting
+  // Vote type
+  isHelpful  Boolean @map("is_helpful") // true = helpful, false = unhelpful
+  // Timestamps
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([answerId, customerId]) // One vote per customer per answer
+  @@unique([answerId, ipAddress]) // One vote per IP per answer (for guests)
+  @@index([answerId])
+  @@index([customerId])
+  @@map("answer_votes")
+  @@schema("apolo")
+}
+
+enum QuestionStatus {
+  PENDING   // Awaiting moderation
+  APPROVED  // Visible on product page
+  REJECTED  // Not displayed
   @@schema("apolo")
 }
