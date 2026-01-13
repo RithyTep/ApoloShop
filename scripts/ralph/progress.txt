@@ -3061,3 +3061,31 @@ Project: ApoloShop - Product Search Feature
   - Performance tracking enables ROI measurement per post and product
   - Social commerce channels (IG, FB, TikTok) share similar patterns - consider shared abstraction
 ---
+
+## 2026-01-13 - US-098
+- **Implemented**: Facebook Shop integration for social commerce
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added FacebookPage, FacebookProduct, FacebookOrder, FacebookConversation, FacebookMessage models and enums)
+  - `app/api/facebook/route.ts` (new file - comprehensive API endpoint)
+  - `components/pages/facebook-shop-page.tsx` (new file - admin dashboard UI)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **FacebookPage model**: Page connection with OAuth tokens, Commerce Manager/catalog IDs, messenger settings, follower count
+  - **FacebookProduct model**: Product catalog sync with FB catalog IDs, sync status, performance metrics (impressions, clicks, addToCart, purchases, revenue)
+  - **FacebookOrder model**: Orders from Facebook Shop/Messenger with buyer info, items, totals, channel tracking, import status
+  - **FacebookConversation model**: Messenger threads with participant info, status (OPEN/CLOSED/PENDING/SPAM), unread count, tags, customer linking
+  - **FacebookMessage model**: Individual messages with sender info, isFromPage flag, text/attachments, read status
+  - **API endpoints**: GET (pages, products, orders, conversations, messages, analytics), POST (connect, sync_products, import_order, convert_order, send_message, create_conversation), PATCH (update_page, update_product_sync, update_product_metrics, update_conversation), DELETE (disconnect_page, remove_page, unsync_product, close_conversation)
+  - **FacebookShopPage UI**: 5-tab interface (Overview, Products, Orders, Messenger, Settings) with page summary cards, performance metrics, order channel breakdown, real-time messenger with message composer
+  - **Performance analytics**: Total impressions, clicks, purchases, revenue, orders by channel, top products, conversation stats
+  - **Messenger support**: Conversation list with unread badges, message thread view, send message functionality, conversation status management
+  - **Order import**: Support for both Facebook Shop and Messenger orders with channel tracking
+- **Learnings for future iterations**:
+  - Facebook Commerce Manager setup required for catalog sync
+  - Messenger integration uses Page Access Token and PSID for users
+  - Orders can come from multiple channels (facebook_shop, messenger)
+  - ConversationStatus enum (OPEN, CLOSED, PENDING, SPAM) helps organize customer support
+  - Customer linking allows associating Messenger users with existing shop customers
+  - Message composer enables direct customer engagement from admin dashboard
+  - Reused patterns from Instagram integration (product sync, order import, analytics) - validates shared abstraction approach
+---

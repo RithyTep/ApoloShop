@@ -1546,8 +1546,8 @@
         "Build passes: bun run build"
       ],
       "priority": 98,
-      "passes": false,
-      "notes": "Facebook is primary platform in Cambodia"
+      "passes": true,
+      "notes": "Implemented FacebookPage/Product/Order/Conversation/Message models, /api/facebook endpoint with connect/sync/orders/messenger actions, FacebookShopPage admin UI with tabs for overview/products/orders/messenger/settings"
     },
     {
       "id": "US-099",
