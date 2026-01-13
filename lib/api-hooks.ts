@@ -6587,3 +6587,486 @@ export function useDeleteBlogTag() {
     },
   });
 }
+
+// ============================================
+// INFLUENCER MARKETING
+// ============================================
+
+export type InfluencerTier = "STANDARD" | "BRONZE" | "SILVER" | "GOLD" | "PLATINUM";
+export type CommissionType = "PERCENTAGE" | "FIXED";
+export type PayoutMethod = "BANK_TRANSFER" | "PAYPAL" | "WING" | "ABA_BANK" | "CASH";
+export type InfluencerSaleStatus = "PENDING" | "APPROVED" | "REJECTED" | "PAID";
+export type PayoutStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
+
+export interface Influencer {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  socialPlatforms?: Record<string, string>;
+  affiliateCode: string;
+  affiliateLink?: string;
+  commissionRate: number;
+  commissionType: CommissionType;
+  fixedCommission: number;
+  tier: InfluencerTier;
+  isActive: boolean;
+  isVerified: boolean;
+  payoutMethod: PayoutMethod;
+  payoutDetails?: Record<string, string>;
+  minPayoutAmount: number;
+  totalSales: number;
+  totalCommission: number;
+  totalOrders: number;
+  pendingPayout: number;
+  notes?: string;
+  joinedAt: string;
+}
+
+export interface InfluencerSale {
+  id: string;
+  orderId: string;
+  orderNumber: string;
+  orderTotal: number;
+  commissionRate: number;
+  commissionAmount: number;
+  source: string | null;
+  status: InfluencerSaleStatus;
+  saleDate: string;
+  customer?: {
+    name: string;
+  };
+}
+
+export interface InfluencerPayout {
+  id: string;
+  amount: number;
+  currency: string;
+  periodStart: string;
+  periodEnd: string;
+  salesCount: number;
+  totalSales: number;
+  status: PayoutStatus;
+  payoutMethod: PayoutMethod;
+  payoutReference: string | null;
+  paidAt: string | null;
+}
+
+export interface InfluencerStats {
+  totalSales: number;
+  totalCommission: number;
+  totalOrders: number;
+  pendingPayout: number;
+  pendingSales: number;
+  approvedSales: number;
+  thisMonthSales: number;
+  thisMonthCommission: number;
+  conversionRate: number;
+}
+
+export interface InfluencerDashboard {
+  totalInfluencers: number;
+  activeInfluencers: number;
+  totalSales: number;
+  totalCommission: number;
+  pendingPayouts: number;
+  pendingPayoutAmount: number;
+  thisMonthSales: number;
+  thisMonthCommission: number;
+  topInfluencers: Array<{
+    id: string;
+    name: string;
+    affiliateCode: string;
+    totalSales: number;
+    totalCommission: number;
+  }>;
+}
+
+export interface InfluencersResponse {
+  influencers: Influencer[];
+  pagination: {
+    page: number;
+    limit: number;
+    totalCount: number;
+    totalPages: number;
+  };
+  config: {
+    tiers: string[];
+    defaultCommissionRates: Record<string, number>;
+  };
+}
+
+export interface InfluencerSalesResponse {
+  sales: InfluencerSale[];
+  pagination: {
+    page: number;
+    limit: number;
+    totalCount: number;
+    totalPages: number;
+  };
+}
+
+export interface InfluencerPayoutsResponse {
+  payouts: InfluencerPayout[];
+  pagination: {
+    page: number;
+    limit: number;
+    totalCount: number;
+    totalPages: number;
+  };
+}
+
+export interface InfluencerPayoutReport {
+  influencerName: string;
+  email: string;
+  affiliateCode: string;
+  period: { start: string; end: string };
+  sales: Array<{
+    orderNumber: string;
+    orderTotal: number;
+    commissionAmount: number;
+    saleDate: string;
+  }>;
+  summary: {
+    salesCount: number;
+    totalSales: number;
+    totalCommission: number;
+  };
+  payoutMethod: PayoutMethod;
+  payoutDetails: Record<string, string> | null;
+}
+
+export interface InfluencersParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  tier?: InfluencerTier;
+  isActive?: boolean;
+  sortBy?: "name" | "totalSales" | "totalCommission" | "joinedAt";
+  sortOrder?: "asc" | "desc";
+}
+
+/**
+ * Hook to fetch influencers list
+ */
+export function useInfluencers(params: InfluencersParams = {}) {
+  const queryString = new URLSearchParams();
+  if (params.page) queryString.set("page", String(params.page));
+  if (params.limit) queryString.set("limit", String(params.limit));
+  if (params.search) queryString.set("search", params.search);
+  if (params.tier) queryString.set("tier", params.tier);
+  if (params.isActive !== undefined) queryString.set("isActive", String(params.isActive));
+  if (params.sortBy) queryString.set("sortBy", params.sortBy);
+  if (params.sortOrder) queryString.set("sortOrder", params.sortOrder);
+
+  return useQuery({
+    queryKey: ["influencers", params],
+    queryFn: () =>
+      fetchAPI<InfluencersResponse>(`/api/influencers?${queryString.toString()}`),
+    staleTime: 30000,
+  });
+}
+
+/**
+ * Hook to fetch influencer dashboard summary
+ */
+export function useInfluencerDashboard() {
+  return useQuery({
+    queryKey: ["influencer-dashboard"],
+    queryFn: () =>
+      fetchAPI<InfluencerDashboard>(`/api/influencers?action=dashboard`),
+    staleTime: 60000,
+  });
+}
+
+/**
+ * Hook to fetch influencer details
+ */
+export function useInfluencerDetail(id: string | null) {
+  return useQuery({
+    queryKey: ["influencer-detail", id],
+    queryFn: () => fetchAPI<Influencer>(`/api/influencers?id=${id}`),
+    enabled: !!id,
+  });
+}
+
+/**
+ * Hook to fetch influencer stats
+ */
+export function useInfluencerStats(id: string | null) {
+  return useQuery({
+    queryKey: ["influencer-stats", id],
+    queryFn: () =>
+      fetchAPI<InfluencerStats>(`/api/influencers?action=stats&id=${id}`),
+    enabled: !!id,
+    staleTime: 60000,
+  });
+}
+
+/**
+ * Hook to fetch influencer sales
+ */
+export function useInfluencerSales(
+  id: string | null,
+  params: {
+    page?: number;
+    limit?: number;
+    status?: InfluencerSaleStatus;
+    startDate?: string;
+    endDate?: string;
+  } = {}
+) {
+  const queryString = new URLSearchParams();
+  queryString.set("action", "sales");
+  if (id) queryString.set("id", id);
+  if (params.page) queryString.set("page", String(params.page));
+  if (params.limit) queryString.set("limit", String(params.limit));
+  if (params.status) queryString.set("status", params.status);
+  if (params.startDate) queryString.set("startDate", params.startDate);
+  if (params.endDate) queryString.set("endDate", params.endDate);
+
+  return useQuery({
+    queryKey: ["influencer-sales", id, params],
+    queryFn: () =>
+      fetchAPI<InfluencerSalesResponse>(`/api/influencers?${queryString.toString()}`),
+    enabled: !!id,
+  });
+}
+
+/**
+ * Hook to fetch influencer payouts
+ */
+export function useInfluencerPayouts(
+  id: string | null,
+  params: { page?: number; limit?: number; status?: PayoutStatus } = {}
+) {
+  const queryString = new URLSearchParams();
+  queryString.set("action", "payouts");
+  if (id) queryString.set("id", id);
+  if (params.page) queryString.set("page", String(params.page));
+  if (params.limit) queryString.set("limit", String(params.limit));
+  if (params.status) queryString.set("status", params.status);
+
+  return useQuery({
+    queryKey: ["influencer-payouts", id, params],
+    queryFn: () =>
+      fetchAPI<InfluencerPayoutsResponse>(`/api/influencers?${queryString.toString()}`),
+    enabled: !!id,
+  });
+}
+
+/**
+ * Hook to generate payout report
+ */
+export function useInfluencerPayoutReport(
+  id: string | null,
+  startDate: string | null,
+  endDate: string | null
+) {
+  return useQuery({
+    queryKey: ["influencer-payout-report", id, startDate, endDate],
+    queryFn: () =>
+      fetchAPI<InfluencerPayoutReport>(
+        `/api/influencers?action=payoutReport&id=${id}&startDate=${startDate}&endDate=${endDate}`
+      ),
+    enabled: !!id && !!startDate && !!endDate,
+  });
+}
+
+/**
+ * Hook to create influencer
+ */
+export function useCreateInfluencer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      name: string;
+      email: string;
+      phone?: string;
+      socialPlatforms?: Record<string, string>;
+      commissionRate?: number;
+      commissionType?: CommissionType;
+      tier?: InfluencerTier;
+      payoutMethod?: PayoutMethod;
+      payoutDetails?: Record<string, string>;
+      notes?: string;
+    }) =>
+      fetchAPI<{ success: boolean; id: string; affiliateCode: string }>(
+        "/api/influencers",
+        {
+          method: "POST",
+          body: JSON.stringify({ action: "create", ...data }),
+        }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["influencers"] });
+      queryClient.invalidateQueries({ queryKey: ["influencer-dashboard"] });
+    },
+  });
+}
+
+/**
+ * Hook to update influencer
+ */
+export function useUpdateInfluencer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<Influencer> & { id: string }) =>
+      fetchAPI<{ success: boolean }>("/api/influencers", {
+        method: "POST",
+        body: JSON.stringify({ action: "update", ...data }),
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["influencers"] });
+      queryClient.invalidateQueries({ queryKey: ["influencer-detail", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["influencer-dashboard"] });
+    },
+  });
+}
+
+/**
+ * Hook to delete (deactivate) influencer
+ */
+export function useDeleteInfluencer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchAPI<{ success: boolean }>(`/api/influencers?id=${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["influencers"] });
+      queryClient.invalidateQueries({ queryKey: ["influencer-dashboard"] });
+    },
+  });
+}
+
+/**
+ * Hook to record influencer sale
+ */
+export function useRecordInfluencerSale() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      influencerId: string;
+      orderId: string;
+      orderTotal: number;
+      affiliateCode: string;
+      source?: string;
+    }) =>
+      fetchAPI<{ success: boolean; saleId: string }>("/api/influencers", {
+        method: "POST",
+        body: JSON.stringify({ action: "recordSale", ...data }),
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["influencer-sales", variables.influencerId] });
+      queryClient.invalidateQueries({ queryKey: ["influencer-stats", variables.influencerId] });
+      queryClient.invalidateQueries({ queryKey: ["influencer-dashboard"] });
+    },
+  });
+}
+
+/**
+ * Hook to approve influencer sale
+ */
+export function useApproveInfluencerSale() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (saleId: string) =>
+      fetchAPI<{ success: boolean }>("/api/influencers", {
+        method: "POST",
+        body: JSON.stringify({ action: "approveSale", saleId }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["influencer-sales"] });
+      queryClient.invalidateQueries({ queryKey: ["influencer-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["influencer-dashboard"] });
+    },
+  });
+}
+
+/**
+ * Hook to reject influencer sale
+ */
+export function useRejectInfluencerSale() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (saleId: string) =>
+      fetchAPI<{ success: boolean }>("/api/influencers", {
+        method: "POST",
+        body: JSON.stringify({ action: "rejectSale", saleId }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["influencer-sales"] });
+      queryClient.invalidateQueries({ queryKey: ["influencer-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["influencer-dashboard"] });
+    },
+  });
+}
+
+/**
+ * Hook to create payout
+ */
+export function useCreateInfluencerPayout() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      influencerId: string;
+      periodStart: string;
+      periodEnd: string;
+    }) =>
+      fetchAPI<{ success: boolean; payoutId: string }>("/api/influencers", {
+        method: "POST",
+        body: JSON.stringify({ action: "createPayout", ...data }),
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["influencer-payouts", variables.influencerId] });
+      queryClient.invalidateQueries({ queryKey: ["influencer-sales", variables.influencerId] });
+      queryClient.invalidateQueries({ queryKey: ["influencer-stats", variables.influencerId] });
+      queryClient.invalidateQueries({ queryKey: ["influencer-dashboard"] });
+    },
+  });
+}
+
+/**
+ * Hook to process payout
+ */
+export function useProcessInfluencerPayout() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      payoutId: string;
+      payoutReference?: string;
+      paidBy?: string;
+      notes?: string;
+    }) =>
+      fetchAPI<{ success: boolean }>("/api/influencers", {
+        method: "POST",
+        body: JSON.stringify({ action: "processPayout", ...data }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["influencer-payouts"] });
+      queryClient.invalidateQueries({ queryKey: ["influencer-sales"] });
+      queryClient.invalidateQueries({ queryKey: ["influencer-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["influencer-dashboard"] });
+    },
+  });
+}
+
+/**
+ * Hook to validate affiliate code
+ */
+export function useValidateAffiliateCode(code: string | null) {
+  return useQuery({
+    queryKey: ["validate-affiliate-code", code],
+    queryFn: () =>
+      fetchAPI<{
+        valid: boolean;
+        error?: string;
+        influencerId?: string;
+        commissionRate?: number;
+        commissionType?: CommissionType;
+      }>(`/api/influencers?action=validate&code=${code}`),
+    enabled: !!code && code.length >= 4,
+  });
+}

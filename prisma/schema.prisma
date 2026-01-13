@@ -526,6 +526,7 @@ model Order {
   instagramOrders InstagramOrder[]
   facebookOrders  FacebookOrder[]
   tiktokOrders    TikTokOrder[]
+  influencerSale  InfluencerSale?
 
   // Order editing fields
   isEditable      Boolean   @default(true) @map("is_editable") // Can be edited before shipping
@@ -4634,6 +4635,175 @@ enum TikTokLiveStatus {
   LIVE
   ENDED
   CANCELLED
+
+  @@schema("apolo")
+}
+
+// ============================================
+// INFLUENCER MARKETING
+// ============================================
+
+// Influencer/affiliate accounts for tracking sales and commissions
+model Influencer {
+  id               String   @id @default(cuid())
+  // Basic info
+  name             String   // Influencer's display name
+  email            String   @unique // Contact email
+  phone            String?  // Contact phone
+  // Social profiles
+  socialPlatforms  Json?    @map("social_platforms") // { instagram: "@handle", tiktok: "@handle", ... }
+  // Affiliate tracking
+  affiliateCode    String   @unique @map("affiliate_code") // Unique code for tracking (e.g., "ANNA10")
+  affiliateLink    String?  @map("affiliate_link") // Custom tracking link
+  // Commission settings
+  commissionRate   Decimal  @default(10) @map("commission_rate") @db.Decimal(5, 2) // Percentage (e.g., 10.00%)
+  commissionType   CommissionType @default(PERCENTAGE) @map("commission_type")
+  fixedCommission  Decimal  @default(0) @map("fixed_commission") @db.Decimal(10, 2) // For FIXED type
+  // Tier/level for graduated commission
+  tier             InfluencerTier @default(STANDARD)
+  // Status
+  isActive         Boolean  @default(true) @map("is_active")
+  isVerified       Boolean  @default(false) @map("is_verified")
+  // Payout info
+  payoutMethod     PayoutMethod @default(BANK_TRANSFER) @map("payout_method")
+  payoutDetails    Json?    @map("payout_details") // Bank account, PayPal, etc.
+  minPayoutAmount  Decimal  @default(50) @map("min_payout_amount") @db.Decimal(10, 2)
+  // Stats (denormalized for quick access)
+  totalSales       Decimal  @default(0) @map("total_sales") @db.Decimal(15, 2)
+  totalCommission  Decimal  @default(0) @map("total_commission") @db.Decimal(15, 2)
+  totalOrders      Int      @default(0) @map("total_orders")
+  pendingPayout    Decimal  @default(0) @map("pending_payout") @db.Decimal(15, 2)
+  // Notes
+  notes            String?  @db.Text
+  // Timestamps
+  joinedAt         DateTime @default(now()) @map("joined_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  sales            InfluencerSale[]
+  payouts          InfluencerPayout[]
+
+  @@index([affiliateCode])
+  @@index([email])
+  @@index([isActive])
+  @@index([tier])
+  @@map("influencers")
+  @@schema("apolo")
+}
+
+enum CommissionType {
+  PERCENTAGE  // Commission as % of sale
+  FIXED       // Fixed amount per sale
+
+  @@schema("apolo")
+}
+
+enum InfluencerTier {
+  STANDARD    // Base tier (default commission)
+  BRONZE      // Small boost
+  SILVER      // Medium boost
+  GOLD        // High commission tier
+  PLATINUM    // Top tier partners
+
+  @@schema("apolo")
+}
+
+enum PayoutMethod {
+  BANK_TRANSFER
+  PAYPAL
+  WING          // Wing (Cambodia)
+  ABA_BANK      // ABA Bank (Cambodia)
+  CASH          // Manual cash payout
+
+  @@schema("apolo")
+}
+
+// Track individual sales attributed to influencers
+model InfluencerSale {
+  id              String   @id @default(cuid())
+  // Relations
+  influencerId    String   @map("influencer_id")
+  influencer      Influencer @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  orderId         String   @map("order_id")
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  // Sale details
+  orderTotal      Decimal  @map("order_total") @db.Decimal(15, 2) // Total order amount
+  commissionRate  Decimal  @map("commission_rate") @db.Decimal(5, 2) // Rate at time of sale
+  commissionAmount Decimal @map("commission_amount") @db.Decimal(10, 2) // Calculated commission
+  // Attribution
+  affiliateCode   String   @map("affiliate_code") // Code used (for historical reference)
+  source          String?  // Where the sale came from (instagram, tiktok, website, etc.)
+  // Status
+  status          InfluencerSaleStatus @default(PENDING)
+  // Payout reference
+  payoutId        String?  @map("payout_id")
+  payout          InfluencerPayout? @relation(fields: [payoutId], references: [id])
+  // Timestamps
+  saleDate        DateTime @default(now()) @map("sale_date")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@unique([orderId]) // One sale record per order
+  @@index([influencerId])
+  @@index([orderId])
+  @@index([affiliateCode])
+  @@index([status])
+  @@index([saleDate])
+  @@map("influencer_sales")
+  @@schema("apolo")
+}
+
+enum InfluencerSaleStatus {
+  PENDING     // Sale recorded, awaiting order completion
+  APPROVED    // Order completed, commission approved
+  REJECTED    // Sale rejected (order cancelled/returned)
+  PAID        // Commission paid out
+
+  @@schema("apolo")
+}
+
+// Track payouts to influencers
+model InfluencerPayout {
+  id              String   @id @default(cuid())
+  // Relations
+  influencerId    String   @map("influencer_id")
+  influencer      Influencer @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  // Payout details
+  amount          Decimal  @db.Decimal(15, 2) // Total payout amount
+  currency        String   @default("USD") // USD or KHR
+  // Period covered
+  periodStart     DateTime @map("period_start")
+  periodEnd       DateTime @map("period_end")
+  // Included sales
+  salesCount      Int      @default(0) @map("sales_count")
+  totalSales      Decimal  @default(0) @map("total_sales") @db.Decimal(15, 2) // Total sales amount
+  // Status
+  status          PayoutStatus @default(PENDING)
+  // Payment info
+  payoutMethod    PayoutMethod @map("payout_method")
+  payoutReference String?  @map("payout_reference") // Transaction ID, check number, etc.
+  paidAt          DateTime? @map("paid_at")
+  paidBy          String?  @map("paid_by") // Admin who processed payout
+  // Notes
+  notes           String?  @db.Text
+  // Timestamps
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  sales           InfluencerSale[]
+
+  @@index([influencerId])
+  @@index([status])
+  @@index([periodStart, periodEnd])
+  @@map("influencer_payouts")
+  @@schema("apolo")
+}
+
+enum PayoutStatus {
+  PENDING     // Payout created, awaiting processing
+  PROCESSING  // Payment being processed
+  COMPLETED   // Payment sent
+  FAILED      // Payment failed
 
   @@schema("apolo")
 }
