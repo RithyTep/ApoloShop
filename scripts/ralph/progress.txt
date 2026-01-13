@@ -2552,3 +2552,32 @@ Project: ApoloShop - Product Search Feature
   - Clipboard API (navigator.clipboard.writeText) requires async/await and try/catch for browser compatibility
   - Share links encode URLs and messages properly with encodeURIComponent
 ---
+
+## 2026-01-13 - US-082
+- **Implemented**: Social proof widgets for increased trust and conversions
+- **Files changed**:
+  - `prisma/schema.prisma` (added SocialProofConfig model)
+  - `app/api/social-proof/route.ts` (new file - API endpoint)
+  - `components/social-proof.tsx` (new file - all social proof components)
+  - `lib/i18n.ts` (added socialProof translations for EN/KH)
+  - `components/shop-app.tsx` (integrated SocialProofNotification)
+  - `components/checkout-page.tsx` (integrated TrustStrip)
+  - `components/product-detail-client.tsx` (integrated ProductSocialProof)
+- **Features**:
+  - **SocialProofConfig model**: Configurable settings for all social proof features (display timing, viewer count ranges, enabled badges, notification position)
+  - **Recent purchase notifications**: Popup component showing "X purchased Y" with product image, cycling through recent orders with configurable delay and duration
+  - **Currently viewing count**: Shows simulated viewer count on product pages (configurable min/max range)
+  - **Items sold counter**: Displays total sold count for products on detail pages
+  - **Trust badges**: TrustBadges component with secure checkout, money-back guarantee, fast delivery icons
+  - **TrustStrip**: Compact trust strip for checkout page showing secure payment, fast delivery, quality guarantee
+  - **API endpoint**: GET /api/social-proof returns config, recent purchases, product stats; POST updates config
+  - **Privacy**: Customer names anonymized ("John D." format) in notifications
+  - **Bilingual**: Full EN/KH translation support
+- **Learnings for future iterations**:
+  - Social proof notifications need careful positioning to avoid interfering with other fixed elements
+  - Viewer count simulation should use configurable ranges to feel realistic
+  - Customer name anonymization is important for privacy compliance
+  - Trust badges work best when positioned near payment/checkout actions
+  - API should return both config and data in single call for efficiency
+  - Non-blocking pattern: notifications can be dismissed without affecting other functionality
+---

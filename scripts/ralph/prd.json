@@ -1290,8 +1290,8 @@
         "Build passes: bun run build"
       ],
       "priority": 82,
-      "passes": false,
-      "notes": "Psychological triggers to boost conversions"
+      "passes": true,
+      "notes": "Implemented SocialProofConfig Prisma model, /api/social-proof endpoint for recent purchases and product stats, SocialProofNotification popup with cycling notifications, ProductSocialProof (viewers/sold count), TrustBadges and TrustStrip components, bilingual translations (EN/KH), integrated in ShopApp, checkout page, and product detail page"
     },
     {
       "id": "US-083",
