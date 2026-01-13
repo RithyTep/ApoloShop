@@ -2397,3 +2397,69 @@ model WebhookDeliveryLog {
   @@map("webhook_delivery_logs")
   @@schema("apolo")
 }
+
+// ============================================
+// GIFT CARDS
+// ============================================
+
+enum GiftCardStatus {
+  ACTIVE     // Card can be used
+  REDEEMED   // Fully redeemed (zero balance)
+  EXPIRED    // Past expiration date
+  CANCELLED  // Manually cancelled by admin
+
+  @@schema("apolo")
+}
+
+model GiftCard {
+  id              String          @id @default(cuid())
+  code            String          @unique // 16-char code like XXXX-XXXX-XXXX-XXXX
+  initialBalance  Decimal         @map("initial_balance") @db.Decimal(10, 2) // Original purchased amount
+  currentBalance  Decimal         @map("current_balance") @db.Decimal(10, 2) // Remaining balance
+  currency        Currency        @default(USD)
+  status          GiftCardStatus  @default(ACTIVE)
+  // Purchaser info
+  purchaserId     String?         @map("purchaser_id") // Customer who bought the card (null for admin-created)
+  purchaserEmail  String?         @map("purchaser_email")
+  // Recipient info
+  recipientEmail  String          @map("recipient_email")
+  recipientName   String?         @map("recipient_name")
+  personalMessage String?         @map("personal_message") @db.Text // Gift message
+  // Delivery tracking
+  emailSentAt     DateTime?       @map("email_sent_at") // When gift card email was sent
+  // Validity
+  expiresAt       DateTime?       @map("expires_at") // Optional expiration date
+  // Metadata
+  createdBy       String?         @map("created_by") // Admin user ID if admin-created
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  transactions    GiftCardTransaction[]
+
+  @@index([code])
+  @@index([status])
+  @@index([recipientEmail])
+  @@index([purchaserId])
+  @@index([expiresAt])
+  @@map("gift_cards")
+  @@schema("apolo")
+}
+
+// Track gift card usage
+model GiftCardTransaction {
+  id           String    @id @default(cuid())
+  giftCardId   String    @map("gift_card_id")
+  giftCard     GiftCard  @relation(fields: [giftCardId], references: [id], onDelete: Cascade)
+  type         String    // "purchase" | "redemption" | "refund" | "admin_adjustment"
+  amount       Decimal   @db.Decimal(10, 2) // Positive for credit, negative for debit
+  balanceAfter Decimal   @map("balance_after") @db.Decimal(10, 2) // Balance after transaction
+  orderId      String?   @map("order_id") // Associated order if redemption
+  note         String?   @db.Text // Admin notes or description
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@index([giftCardId])
+  @@index([orderId])
+  @@index([createdAt])
+  @@map("gift_card_transactions")
+  @@schema("apolo")
+}
