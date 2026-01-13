@@ -396,6 +396,7 @@ model Customer {
   socialAccounts          SocialAccount[]
   emailVerifyTokens       EmailVerifyToken[]
   shippingAddresses       ShippingAddress[]
+  segmentMemberships      CustomerSegmentMembership[]
 
   @@index([clientId])
   @@index([phone])
@@ -2461,5 +2462,79 @@ model GiftCardTransaction {
   @@index([orderId])
   @@index([createdAt])
   @@map("gift_card_transactions")
+  @@schema("apolo")
+}
+
+// ============================================
+// CUSTOMER SEGMENTATION
+// ============================================
+
+enum SegmentType {
+  AUTO      // System-generated based on RFM
+  CUSTOM    // Admin-created with filter rules
+
+  @@schema("apolo")
+}
+
+model CustomerSegment {
+  id          String      @id @default(cuid())
+  name        String      // Segment name: "VIP", "At Risk", "New", etc.
+  nameKh      String?     @map("name_kh") // Khmer translation
+  description String?     @db.Text
+  type        SegmentType @default(AUTO)
+  // RFM thresholds for AUTO segments
+  rfmConfig   Json?       @map("rfm_config") // { recencyDays, frequencyMin, monetaryMin }
+  // Custom filter rules for CUSTOM segments
+  filterRules Json?       @map("filter_rules") // Array of { field, operator, value }
+  // Visual styling
+  color       String      @default("#3b82f6") // Badge color for UI
+  icon        String?     // Optional icon name
+  // Segment stats (cached, updated periodically)
+  customerCount Int       @default(0) @map("customer_count")
+  totalRevenue  Decimal   @default(0) @map("total_revenue") @db.Decimal(12, 2)
+  lastCalculatedAt DateTime? @map("last_calculated_at")
+  // Management
+  isActive    Boolean     @default(true) @map("is_active")
+  sortOrder   Int         @default(0) @map("sort_order")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  memberships CustomerSegmentMembership[]
+
+  @@unique([name])
+  @@index([type])
+  @@index([isActive])
+  @@index([sortOrder])
+  @@map("customer_segments")
+  @@schema("apolo")
+}
+
+// Junction table for customer-segment membership with RFM scores
+model CustomerSegmentMembership {
+  id           String          @id @default(cuid())
+  customerId   String          @map("customer_id")
+  customer     Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  segmentId    String          @map("segment_id")
+  segment      CustomerSegment @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+  // RFM scores at time of assignment
+  recencyScore   Int?          @map("recency_score")   // 1-5 scale
+  frequencyScore Int?          @map("frequency_score") // 1-5 scale
+  monetaryScore  Int?          @map("monetary_score")  // 1-5 scale
+  rfmTotal       Int?          @map("rfm_total")       // Sum of R+F+M (3-15)
+  // Additional metrics
+  lastOrderDays  Int?          @map("last_order_days") // Days since last order
+  totalOrders    Int?          @map("total_orders")    // Lifetime order count
+  totalSpent     Decimal?      @map("total_spent") @db.Decimal(12, 2) // Lifetime spend
+  // Membership tracking
+  assignedAt   DateTime        @default(now()) @map("assigned_at")
+  assignedBy   String?         @map("assigned_by") // "system" or admin user ID
+  expiresAt    DateTime?       @map("expires_at")  // For time-limited memberships
+
+  @@unique([customerId, segmentId])
+  @@index([customerId])
+  @@index([segmentId])
+  @@index([rfmTotal])
+  @@index([assignedAt])
+  @@map("customer_segment_memberships")
   @@schema("apolo")
 }

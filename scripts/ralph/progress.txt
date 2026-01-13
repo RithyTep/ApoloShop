@@ -2404,3 +2404,57 @@ Project: ApoloShop - Product Search Feature
   - Status automatically changes to REDEEMED when balance reaches 0
   - Input formatting in UI auto-adds dashes for better UX (XXXX-XXXX-XXXX-XXXX)
 ---
+
+## 2026-01-13 - US-077
+- **Implemented**: Abandoned cart recovery with discount support and admin dashboard
+- **Files changed**:
+  - `app/api/abandoned-carts/route.ts` (new file - GET list/analytics, POST actions)
+  - `lib/abandoned-cart-service.ts` (new file - enhanced recovery with discounts)
+  - `components/pages/abandoned-carts-page.tsx` (new file - admin dashboard)
+  - `components/sidebar.tsx` (modified - added abandoned-carts nav item)
+  - `components/admin-dashboard.tsx` (modified - added AbandonedCartsPage case)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Existing infrastructure**: AbandonedCart model and processAbandonedCarts() from US-056 already tracked carts
+  - **API endpoint**: GET /api/abandoned-carts with pagination, status filter, and rich analytics
+  - **Analytics include**: recoveryRate, totalRecovered, recoveredValue, potentialRevenueLost, emailFunnel, dailyTrend, statusBreakdown
+  - **Discount support**: Email 1 (no discount), Email 2 (5% off), Email 3 (10% off)
+  - **Auto-generated coupons**: RECOVER-{cartId} codes with expiry, max 1 use
+  - **Admin actions**: send_recovery_email (with optional discount%), mark_recovered, mark_unrecoverable
+  - **Dashboard tabs**: Cart List (table with filters), Analytics (charts), Email Funnel (visualization)
+  - **Charts**: Daily trend (AreaChart), Status breakdown (PieChart), Value by status (BarChart), Funnel (custom)
+- **Learnings for future iterations**:
+  - US-056 already implemented core abandoned cart tracking, this story enhanced with discounts and dashboard
+  - sendRecoveryEmailWithDiscount() wraps sendMarketingEmail() with discount HTML and coupon creation
+  - Coupon model already existed from US-053, reused via prisma.coupon.upsert()
+  - Status flow: ACTIVE -> ABANDONED -> EMAIL_1_SENT -> EMAIL_2_SENT -> EMAIL_3_SENT -> RECOVERED/UNRECOVERABLE
+  - Recovery rate = totalRecovered / totalAbandoned * 100
+  - Sidebar NavItem type must be updated in both sidebar.tsx and admin-dashboard.tsx
+---
+
+## 2026-01-13 - US-078
+- **Implemented**: Customer segmentation with RFM analysis
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added CustomerSegment, CustomerSegmentMembership models, SegmentType enum)
+  - `app/api/segments/route.ts` (new file - CRUD + RFM calculation endpoints)
+  - `components/pages/customer-segments-page.tsx` (new file - admin dashboard)
+  - `components/sidebar.tsx` (modified - added customer-segments nav item)
+  - `components/admin-dashboard.tsx` (modified - added CustomerSegmentsPage case)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **CustomerSegment model**: name, nameKh, description, type (AUTO/CUSTOM), rfmConfig, filterRules, color, icon, customerCount, totalRevenue
+  - **CustomerSegmentMembership model**: Links customers to segments with RFM scores (recency, frequency, monetary), lastOrderDays, totalOrders, totalSpent
+  - **Auto-segments**: VIP, Active, New, At Risk, Churned, Inactive - automatically assigned based on RFM scores
+  - **RFM scoring (1-5 scale)**: Recency (days since last order), Frequency (order count), Monetary (total spend in USD)
+  - **API actions**: seed_default_segments, calculate_rfm (single or all customers), assign_customer, remove_customer
+  - **Trends endpoint**: GET /api/segments?action=trends&days=30 for segment size over time
+  - **Dashboard features**: Stats cards (segments, customers, coverage), segment list table, distribution pie chart, revenue by segment bar chart, RFM scoring guide
+  - **Segment CRUD**: Create/edit/delete segments with color picker, type selection, bilingual names
+  - **Member details**: View segment members with their individual RFM scores
+- **Learnings for future iterations**:
+  - RFM quintile thresholds: R(7/30/60/90 days), F(10/5/3/2 orders), M($500/200/100/50)
+  - Segment assignment via upsert to handle re-calculation without duplicates
+  - Use Prisma.DbNull for clearing optional JSON fields
+  - Customer relation added: segmentMemberships CustomerSegmentMembership[]
+  - Icons stored as string names (crown, activity, user-plus, etc.) and mapped to Lucide components
+---

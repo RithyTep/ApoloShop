@@ -1210,8 +1210,8 @@
         "Build passes: bun run build"
       ],
       "priority": 77,
-      "passes": false,
-      "notes": "Recovers 5-15% of abandoned carts typically"
+      "passes": true,
+      "notes": "Implemented /api/abandoned-carts with analytics, abandoned-cart-service.ts with email discounts (5% email 2, 10% email 3), AbandonedCartsPage admin dashboard with recovery rate, email funnel visualization, manual recovery email with custom discounts"
     },
     {
       "id": "US-078",
@@ -1226,8 +1226,8 @@
         "Build passes: bun run build"
       ],
       "priority": 78,
-      "passes": false,
-      "notes": "Personalized marketing increases engagement"
+      "passes": true,
+      "notes": "Implemented CustomerSegment and CustomerSegmentMembership Prisma models, /api/segments API with CRUD + RFM calculation, CustomerSegmentsPage admin dashboard with distribution charts, RFM scoring guide (1-5 scale), auto-segments (VIP, Active, New, At Risk, Churned, Inactive), segment trends over time via trends endpoint"
     },
     {
       "id": "US-079",
