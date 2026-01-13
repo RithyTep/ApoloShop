@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { pushInventoryToPOS } from "@/lib/pos-integration"
+import { checkAndSendBackInStockNotifications } from "@/lib/notification-service"
 
 const inventoryUpdateSchema = z.object({
   productId: z.string().min(1),
@@ -97,6 +98,13 @@ export async function PUT(request: NextRequest) {
 
     const { productId, quantity, minLevel, reorderPoint, reorderQty, supplierId } = result.data
 
+    // Get current inventory quantity for back-in-stock notification check
+    const currentInventory = await prisma.inventory.findUnique({
+      where: { productId },
+      select: { quantity: true },
+    })
+    const previousQuantity = currentInventory?.quantity ?? 0
+
     const updateData: Record<string, unknown> = {
       quantity,
       lastUpdated: new Date(),
@@ -122,6 +130,12 @@ export async function PUT(request: NextRequest) {
         product: true,
         supplier: { select: { id: true, name: true } },
       },
+    })
+
+    // Check if product was restocked and send back-in-stock notifications
+    // Fire and forget - runs in background
+    checkAndSendBackInStockNotifications(productId, previousQuantity, quantity).catch((err) => {
+      console.error(`[Inventory] Failed to check back-in-stock notifications:`, err)
     })
 
     // Push inventory update to connected POS systems (real-time sync)

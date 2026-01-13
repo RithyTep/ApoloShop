@@ -37,6 +37,7 @@ import {
   FlaskConical,
   RotateCcw,
   Receipt,
+  Bell,
   type LucideIcon,
 } from "lucide-react"
 import { useState } from "react"
@@ -60,6 +61,7 @@ type NavItem =
   | "backlog"
   | "reviews"
   | "returns"
+  | "stock-notifications"
   | "super-admin"
   | "audit-logs"
   | "role-permissions"
@@ -128,6 +130,7 @@ export function Sidebar({ activeNav, setActiveNav, orderCount = 0, lowStockCount
         { id: "products", label: "Products", icon: Package },
         { id: "categories", label: "Categories", icon: FolderTree },
         { id: "inventory", label: "Inventory", icon: Boxes, alert: lowStockCount > 0 },
+        { id: "stock-notifications", label: "Stock Alerts", icon: Bell },
       ],
     },
     {

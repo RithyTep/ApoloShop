@@ -416,3 +416,123 @@ export async function updateNotificationPreference(
     update: updates,
   })
 }
+
+// ============================================
+// BACK-IN-STOCK NOTIFICATIONS
+// ============================================
+
+export interface BackInStockProduct {
+  id: string
+  nameEn: string
+  nameKh: string
+  slug?: string | null
+  imageUrl?: string | null
+}
+
+/**
+ * Send back-in-stock notification emails to subscribed customers
+ * Called when product inventory is updated and becomes available
+ */
+export async function sendBackInStockNotifications(
+  product: BackInStockProduct
+): Promise<{ sent: number; failed: number }> {
+  const results = { sent: 0, failed: 0 }
+
+  try {
+    // Get all pending (not yet notified) subscribers for this product
+    const subscribers = await prisma.stockNotification.findMany({
+      where: {
+        productId: product.id,
+        notified: false,
+      },
+    })
+
+    if (subscribers.length === 0) {
+      console.log(`[BackInStock] No subscribers for product ${product.id}`)
+      return results
+    }
+
+    console.log(`[BackInStock] Sending notifications to ${subscribers.length} subscribers for ${product.nameEn}`)
+
+    // Get shop URL for the product link
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL || "http://localhost:3000"
+    const productUrl = product.slug
+      ? `${baseUrl}/shop/product/${product.slug}`
+      : `${baseUrl}/shop/product/${product.id}`
+
+    // Process each subscriber
+    for (const subscriber of subscribers) {
+      const subject = `Good news! ${product.nameEn} is back in stock!`
+      const message = `
+Great news! The product you were waiting for is now available:
+
+${product.nameEn}
+
+Shop now: ${productUrl}
+
+If you no longer wish to receive these notifications, you can unsubscribe from your notification preferences.
+      `.trim()
+
+      // Send email notification
+      const result = await sendEmailNotification(subscriber.email, subject, message)
+
+      if (result.success) {
+        // Mark as notified
+        await prisma.stockNotification.update({
+          where: { id: subscriber.id },
+          data: {
+            notified: true,
+            notifiedAt: new Date(),
+          },
+        })
+        results.sent++
+      } else {
+        console.error(`[BackInStock] Failed to notify ${subscriber.email}:`, result.error)
+        results.failed++
+      }
+    }
+
+    console.log(`[BackInStock] Notifications complete: ${results.sent} sent, ${results.failed} failed`)
+  } catch (error) {
+    console.error("[BackInStock] Error sending notifications:", error)
+  }
+
+  return results
+}
+
+/**
+ * Check if product has back-in-stock subscribers and trigger notifications
+ * This should be called when inventory quantity changes from 0 to > 0
+ */
+export async function checkAndSendBackInStockNotifications(
+  productId: string,
+  previousQuantity: number,
+  newQuantity: number
+): Promise<void> {
+  // Only send notifications when restocking (0 -> positive)
+  if (previousQuantity > 0 || newQuantity <= 0) {
+    return
+  }
+
+  // Get product details
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    select: {
+      id: true,
+      nameEn: true,
+      nameKh: true,
+      slug: true,
+      imageUrl: true,
+    },
+  })
+
+  if (!product) {
+    console.warn(`[BackInStock] Product not found: ${productId}`)
+    return
+  }
+
+  // Fire and forget - send notifications in background
+  sendBackInStockNotifications(product).catch((err) => {
+    console.error(`[BackInStock] Failed to send notifications for ${productId}:`, err)
+  })
+}

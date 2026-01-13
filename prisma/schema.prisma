@@ -317,6 +317,7 @@ model Product {
   reviews       Review[]
   variants      ProductVariant[]
   productSubscriptions ProductSubscription[]
+  stockNotifications   StockNotification[]
 
   @@index([clientId])
   @@index([categoryId])
@@ -3168,5 +3169,33 @@ model SubscriptionDelivery {
   @@index([scheduledAt])
   @@index([status])
   @@map("subscription_deliveries")
+  @@schema("apolo")
+}
+
+// ============================================
+// STOCK NOTIFICATIONS
+// ============================================
+
+// Back-in-stock notification requests
+model StockNotification {
+  id        String    @id @default(cuid())
+  productId String    @map("product_id")
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  email     String
+  // Status tracking
+  notified  Boolean   @default(false)
+  notifiedAt DateTime? @map("notified_at")
+  // Customer tracking (optional - can be linked to existing customer)
+  customerId String?  @map("customer_id")
+  // Timestamps
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@unique([productId, email]) // One notification request per email per product
+  @@index([productId])
+  @@index([email])
+  @@index([notified])
+  @@index([customerId])
+  @@map("stock_notifications")
   @@schema("apolo")
 }

@@ -18,6 +18,7 @@ import { StarRating } from "@/components/star-rating"
 import { VariantSelector, ProductVariant } from "@/components/variant-selector"
 import { ProductSocialProof } from "@/components/social-proof"
 import { PreOrderInfo, PreOrderBadge } from "@/components/pre-order-countdown"
+import { StockNotifyButton } from "@/components/stock-notify-button"
 
 interface ProductWithVariants extends Product {
   _reviewStats?: { averageRating: number; totalReviews: number }
@@ -386,6 +387,15 @@ export function ProductDetailClient({ product: initialProduct, language: initial
                     ? (language === "EN" ? "Add to Cart" : "បន្ថែមទៅកន្រ្តក")
                     : (language === "EN" ? "Out of Stock" : "អស់ស្តុក")}
             </Button>
+
+            {/* Back in Stock Notification - Show when out of stock */}
+            {!inStock && !variantSelectionRequired && !product.isPreOrder && (
+              <StockNotifyButton
+                productId={product.id}
+                language={language}
+                className="mt-4"
+              />
+            )}
 
             {/* Total */}
             {canAddToCart && quantity > 1 && !variantSelectionRequired && (
