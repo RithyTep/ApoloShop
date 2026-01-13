@@ -2734,3 +2734,37 @@ Project: ApoloShop - Product Search Feature
   - Product interface fields are optional (?) to maintain backwards compatibility
   - Ring highlight (ring-2 ring-blue-500/50) provides visual distinction on product cards
 ---
+
+## 2026-01-13 - US-088
+- **Implemented**: Back-in-stock notifications for out-of-stock products
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added StockNotification model)
+  - `app/api/stock-notifications/route.ts` (new file - GET/POST/DELETE endpoints)
+  - `components/stock-notify-button.tsx` (new file - notify me button component)
+  - `components/product-detail-client.tsx` (modified - integrated StockNotifyButton)
+  - `lib/notification-service.ts` (modified - added back-in-stock notification functions)
+  - `app/api/inventory/route.ts` (modified - trigger notifications on restock)
+  - `components/pages/stock-notifications-page.tsx` (new file - admin dashboard)
+  - `components/sidebar.tsx` (modified - added stock-notifications nav item)
+  - `components/admin-dashboard.tsx` (modified - added StockNotificationsPage case)
+  - `lib/i18n.ts` (modified - added stockNotifications translations for EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **StockNotification model**: productId, email, notified (Boolean), notifiedAt (DateTime?), customerId (optional)
+  - **Unique constraint**: One notification per product-email combination
+  - **API endpoints**: GET (admin view + subscription check), POST (subscribe), DELETE (unsubscribe)
+  - **StockNotifyButton**: Email input form on out-of-stock products with validation
+  - **Auto-notification**: checkAndSendBackInStockNotifications() called when inventory quantity goes from 0 to > 0
+  - **Email content**: Product name, shop URL, unsubscribe note
+  - **Admin dashboard**: Summary stats (pending/notified/total), filterable table, pagination
+  - **Re-subscription**: Users can re-subscribe after being notified if product goes out of stock again
+  - **Bilingual support**: Full EN/KH translations for button, form, admin UI
+- **Learnings for future iterations**:
+  - Use productId_email composite unique constraint for efficient duplicate checking
+  - Fire-and-forget pattern for notification sending to avoid blocking inventory updates
+  - localStorage used for client-side subscription state persistence
+  - Only show notify button when: !inStock && !variantSelectionRequired && !product.isPreOrder
+  - Inventory route needs to capture previous quantity before update to detect restocking (0 -> positive)
+  - sendBackInStockNotifications() marks each notification as sent after successful email
+  - Admin page uses useState + useCallback for data fetching (no React Query needed for simple admin views)
+---

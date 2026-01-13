@@ -1386,8 +1386,8 @@
         "Build passes: bun run build"
       ],
       "priority": 88,
-      "passes": false,
-      "notes": "Capture demand for out-of-stock items"
+      "passes": true,
+      "notes": "Implemented StockNotification model with productId/email/notified/notifiedAt. Created StockNotifyButton component shown on out-of-stock products. Auto-email via checkAndSendBackInStockNotifications() when inventory restocked. Admin StockNotificationsPage with filters and stats. Unsubscribe via DELETE /api/stock-notifications. Bilingual support (EN/KH)."
     },
     {
       "id": "US-089",
