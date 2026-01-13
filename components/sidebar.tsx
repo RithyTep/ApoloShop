@@ -30,6 +30,7 @@ import {
   MapPin,
   TrendingUp,
   Store,
+  Calculator,
   type LucideIcon,
 } from "lucide-react"
 import { useState } from "react"
@@ -64,6 +65,7 @@ type NavItem =
   | "order-tracking"
   | "analytics"
   | "pos-integration"
+  | "accounting"
 
 interface SidebarProps {
   activeNav: NavItem
@@ -131,6 +133,7 @@ export function Sidebar({ activeNav, setActiveNav, orderCount = 0, lowStockCount
         { id: "users", label: "Users", icon: UserCog },
         { id: "role-permissions", label: "Role Permissions", icon: ShieldCheck },
         { id: "payments", label: "Payments", icon: CreditCard },
+        { id: "accounting", label: "Accounting", icon: Calculator },
         { id: "pos-integration", label: "POS Integration", icon: Store },
         { id: "reports", label: "Reports", icon: BarChart3 },
         { id: "analytics", label: "Analytics", icon: TrendingUp },
