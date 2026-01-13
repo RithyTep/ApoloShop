@@ -2268,3 +2268,82 @@ Project: ApoloShop - Product Search Feature
   - Product mappings allow selective sync per product (syncInventory, syncPrice flags)
   - Sales data is denormalized with items JSON for quick analytics queries
 ---
+
+## 2026-01-13 - US-073
+- **Implemented**: Accounting software export functionality
+- **Files changed**:
+  - `lib/accounting-export.ts` (new file - export utilities)
+  - `app/api/accounting/export/route.ts` (new file - API endpoint)
+  - `components/pages/accounting-page.tsx` (new file - admin UI)
+  - `components/sidebar.tsx` (modified - added accounting nav item)
+  - `components/admin-dashboard.tsx` (modified - added accounting page)
+  - `lib/i18n.ts` (modified - added accounting translations EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **QuickBooks IIF Export**: Generate IIF format for direct QuickBooks import with sales receipts and line items
+  - **Excel Export**: Multi-sheet workbook with Sales, Daily Summary, and Monthly Summary sheets
+  - **CSV Export**: Plain CSV format for local accountants
+  - **Tax Report**: Cambodia 10% VAT breakdown by category with taxable/exempt sales
+  - **Revenue Summaries**: Daily/monthly summaries with payment and channel breakdowns
+  - **Invoice HTML Generation**: Professional invoice layout with seller/buyer info, items table, totals, payment status
+  - **Admin UI**: Quick stats (today/month sales, orders, VAT), date range picker, export cards, invoice table, tax tab
+  - **Bilingual**: Full EN/KH translations for all UI elements
+- **API Endpoint**: GET /api/accounting/export
+  - `?format=quickbooks` - QuickBooks IIF file
+  - `?format=excel` - Multi-sheet Excel file
+  - `?format=csv` - Plain CSV
+  - `?format=tax` - Tax report Excel
+  - `?format=summary&period=daily|monthly` - Revenue summary JSON
+  - `?format=invoice&orderId=xxx` - Invoice HTML for single order
+- **Learnings for future iterations**:
+  - QuickBooks IIF format uses tab-separated values with !TRNS/!SPL/!ENDTRNS structure
+  - XLSX library supports multiple sheets via `XLSX.utils.book_append_sheet()`
+  - Cambodia VAT is 10% - calculate as `total / 1.1` for taxable amount
+  - Invoice HTML can be opened in browser and printed to PDF natively
+  - useSalesReport and useOrders hooks from api-hooks.ts provide data for the UI
+---
+
+## 2026-01-13 - US-074
+- **Implemented**: Webhook system for event-driven integrations
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added Webhook, WebhookDeliveryLog models, WebhookEvent/WebhookDeliveryStatus enums)
+  - `lib/webhook-service.ts` (new file - webhook delivery with HMAC signatures)
+  - `app/api/webhooks/route.ts` (new file - GET/POST/PUT/DELETE endpoints)
+  - `app/api/webhooks/[id]/route.ts` (new file - GET details, POST test)
+  - `app/api/webhooks/[id]/retry/route.ts` (new file - POST retry failed delivery)
+  - `components/pages/webhooks-page.tsx` (new file - admin UI)
+  - `components/admin-dashboard.tsx` (modified - added webhooks page)
+  - `components/sidebar.tsx` (modified - added webhooks nav item with Webhook icon)
+  - `lib/api-hooks.ts` (modified - added webhook hooks and types)
+  - `lib/i18n.ts` (modified - added webhooks translations EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Webhook Model**: id, name, url, events[], secret, isActive, headers (custom), stats (success/failure counts)
+  - **WebhookDeliveryLog Model**: Tracks each delivery attempt with status, httpStatus, response, errorMessage, timing
+  - **Events Supported**: ORDER_CREATED, ORDER_UPDATED, PRODUCT_UPDATED, CUSTOMER_CREATED
+  - **HMAC-SHA256 Signatures**: `X-Webhook-Signature` header with `sha256=...` format for payload verification
+  - **Retry Mechanism**: 3 attempts with exponential backoff (1min, 5min, 15min delays)
+  - **Admin UI**: Create/edit/delete webhooks, toggle active status, test button, view delivery logs
+  - **Secret Management**: Auto-generated 64-char hex secret, masked in API responses, full secret shown only on create
+  - **Bilingual**: Full EN/KH translations for UI and delivery status
+- **API Endpoints**:
+  - `GET /api/webhooks` - List webhooks with pagination
+  - `POST /api/webhooks` - Create webhook (returns full secret once)
+  - `PUT /api/webhooks` - Update webhook (optional regenerateSecret flag)
+  - `DELETE /api/webhooks?id=xxx` - Delete webhook
+  - `GET /api/webhooks/[id]` - Get webhook details with stats and delivery logs
+  - `POST /api/webhooks/[id]` - Send test webhook
+  - `POST /api/webhooks/[id]/retry` - Retry failed delivery
+- **Helper Functions**:
+  - `triggerWebhooks(event, data, clientId?)` - Trigger all matching webhooks
+  - `onOrderCreated(order)` / `onOrderUpdated(order)` - Event-specific helpers
+  - `onProductUpdated(product)` / `onCustomerCreated(customer)` - Event-specific helpers
+- **Learnings for future iterations**:
+  - HMAC signature uses `createHmac('sha256', secret).update(payload).digest('hex')`
+  - Timing-safe comparison needed for signature verification to prevent timing attacks
+  - Webhook secrets should be 32+ bytes (64 hex chars) for security
+  - Fire-and-forget pattern: don't await webhook delivery in main request flow
+  - Use AbortController with setTimeout for request timeouts
+  - Truncate response body to prevent huge payloads in logs (1000 char limit)
+  - Custom headers stored as JSON allow flexible integration with various services
+---

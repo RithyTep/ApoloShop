@@ -1146,8 +1146,8 @@
         "Build passes: bun run build"
       ],
       "priority": 73,
-      "passes": false,
-      "notes": "Simplifies bookkeeping for shop owners"
+      "passes": true,
+      "notes": "Implemented lib/accounting-export.ts with QuickBooks IIF, Excel (multi-sheet with Sales/Daily Summary/Monthly Summary), CSV, tax report with Cambodia 10% VAT, and invoice HTML generation. API at /api/accounting/export with format param (quickbooks/excel/csv/tax/summary/invoice). Admin AccountingPage with quick stats, date range selector, export cards, invoice table, and tax report tab. Bilingual translations (EN/KH)."
     },
     {
       "id": "US-074",
@@ -1162,8 +1162,8 @@
         "Build passes: bun run build"
       ],
       "priority": 74,
-      "passes": false,
-      "notes": "Enables custom integrations without code changes"
+      "passes": true,
+      "notes": "Implemented Webhook/WebhookDeliveryLog models, webhook-service.ts with HMAC-SHA256 signatures, delivery with 3-attempt retry mechanism (1min/5min/15min delays), /api/webhooks CRUD endpoints, /api/webhooks/[id] for details and testing, WebhooksPage admin with create/edit/delete/test UI, bilingual translations (EN/KH)"
     },
     {
       "id": "US-075",
