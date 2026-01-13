@@ -2202,3 +2202,34 @@ Project: ApoloShop - Product Search Feature
   - prefers-reduced-motion and prefers-contrast for user preferences
   - Decorative images get aria-hidden="true" and empty alt=""
 ---
+
+## 2026-01-13 - US-071
+- **Implemented**: Multi-language expansion with Thai, Vietnamese, Chinese support
+- **Files changed**:
+  - `components/language-switcher.tsx` (new file) - LanguageSwitcher dropdown and LanguagePillToggle components
+  - `lib/i18n.ts` (modified) - Added Language type expansion, LANGUAGE_CONFIG, Thai/Vietnamese/Chinese translations, browser detection
+  - `components/header.tsx` (modified) - Updated to use new Language type, integrated LanguageSwitcher
+  - `components/shop-app.tsx` (modified) - Added browser language detection, localStorage persistence, handleLanguageChange
+  - `components/search-dropdown.tsx` (modified) - Updated Language type from "EN"|"KH" to new Language
+  - `components/shop/store-status.tsx` (modified) - Updated to use new Language type
+  - `components/shop/announcement-banner.tsx` (modified) - Updated to use new Language type
+  - `components/shop/shop-client-wrapper.tsx` (modified) - Added auto-detection, updated Language type
+  - `components/pages/settings-page.tsx` (modified) - Added Language Settings card in admin
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **LanguageSwitcher component**: Dropdown with flags, native names, check mark for current selection
+  - **5 supported languages**: English (en), Khmer (kh), Thai (th), Vietnamese (vi), Chinese (zh)
+  - **LANGUAGE_CONFIG**: Code, name, nativeName, flag emoji, direction (ltr/rtl), locale
+  - **Complete translations**: Thai, Vietnamese, Chinese translations for all major sections (orderStatus, search, accessibility, loyalty, flashSale, chat, help, tracking, stockAlerts)
+  - **Browser auto-detection**: detectBrowserLanguage() maps browser language codes to supported languages
+  - **Language persistence**: localStorage stores preference with key "apolo_language"
+  - **RTL infrastructure**: RTL_LANGUAGES array (empty for now), getDirection() function, document.dir update
+  - **Admin settings**: Language Settings card with enabled languages toggle, default language select, auto-detect switch
+- **Learnings for future iterations**:
+  - Language type changed from uppercase "EN"/"KH" to lowercase "en"/"kh"/"th"/"vi"/"zh" for consistency with ISO codes
+  - getTranslation(lang) helper provides type-safe translation access with fallback to English
+  - Product names only exist in EN/KH, so other languages fall back to English for product display
+  - Branding custom messages (customNoResultsMessage) only support en/kh keys
+  - RTL support is infrastructure-only for now (empty RTL_LANGUAGES array), ready for Arabic/Hebrew when needed
+  - Admin settings use nested "language" key: { defaultLanguage, enabledLanguages, autoDetect }
+---

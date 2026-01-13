@@ -1114,8 +1114,8 @@
         "Build passes: bun run build"
       ],
       "priority": 71,
-      "passes": false,
-      "notes": "Expand to regional Southeast Asian markets"
+      "passes": true,
+      "notes": "Implemented LanguageSwitcher dropdown component, added Thai/Vietnamese/Chinese translations to lib/i18n.ts, Language Settings section in admin Settings page with enabled languages selection, browser language auto-detection with localStorage persistence, RTL infrastructure (RTL_LANGUAGES array, getDirection function). Updated Language type from 'en'|'kh' to include 'th'|'vi'|'zh'."
     },
     {
       "id": "US-072",
