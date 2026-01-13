@@ -303,6 +303,11 @@ model Product {
   // Variant configuration (defines which variant types this product supports)
   hasVariants   Boolean   @default(false) @map("has_variants")
   variantTypes  Json?     @map("variant_types") // Array of variant type names: ["size", "color", "material"]
+  // Pre-order configuration
+  isPreOrder         Boolean   @default(false) @map("is_pre_order")
+  preOrderReleaseDate DateTime? @map("pre_order_release_date") // Date when product will be available
+  preOrderDepositPercent Int?   @map("pre_order_deposit_percent") // % deposit required (null = full payment)
+  preOrderMaxQuantity Int?      @map("pre_order_max_quantity") // Max quantity per pre-order (null = unlimited)
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
@@ -318,6 +323,7 @@ model Product {
   @@index([sku])
   @@index([isActive])
   @@index([slug])
+  @@index([isPreOrder])
   @@map("products")
   @@schema("apolo")
 }

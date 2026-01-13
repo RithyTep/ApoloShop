@@ -19,6 +19,11 @@ export interface Product {
   isActive: boolean;
   category?: Category;
   inventory?: Inventory;
+  // Pre-order fields
+  isPreOrder?: boolean;
+  preOrderReleaseDate?: string; // ISO date string
+  preOrderDepositPercent?: number; // % deposit required (null = full payment)
+  preOrderMaxQuantity?: number; // Max quantity per pre-order (null = unlimited)
 }
 
 export interface Category {

@@ -12,6 +12,7 @@ import { WishlistButton } from "@/components/wishlist-button"
 import { ProductQuickView, QuickViewButton } from "@/components/product-quick-view"
 import { StarRating } from "@/components/star-rating"
 import { FlashSaleBadge, FlashSaleCountdown, FlashSalePrice } from "@/components/flash-sale-countdown"
+import { PreOrderBadge, PreOrderCountdown } from "@/components/pre-order-countdown"
 
 interface ProductGridProps {
   onAddToCart: (id: string, name: string, price: number, image: string) => void
@@ -232,7 +233,8 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
                   key={product.id}
                   className={cn(
                     "bg-card border border-border flex flex-col group animate-in fade-in-0 slide-in-from-bottom-2",
-                    hasFlashSale && "ring-2 ring-orange-500/50"
+                    hasFlashSale && "ring-2 ring-orange-500/50",
+                    product.isPreOrder && !hasFlashSale && "ring-2 ring-blue-500/50"
                   )}
                   style={{ animationDelay: `${index * 30}ms`, animationDuration: "300ms" }}
                   role="article"
@@ -253,6 +255,14 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
                       <FlashSaleBadge
                         discountPercentage={flashSale.discount.percentage}
                         language={language}
+                        className="absolute top-2 left-2 z-10"
+                      />
+                    )}
+                    {/* Pre-order Badge */}
+                    {product.isPreOrder && !hasFlashSale && (
+                      <PreOrderBadge
+                        language={language}
+                        depositPercent={product.preOrderDepositPercent}
                         className="absolute top-2 left-2 z-10"
                       />
                     )}
@@ -299,6 +309,18 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
                       </div>
                     )}
 
+                    {/* Pre-order Countdown */}
+                    {product.isPreOrder && product.preOrderReleaseDate && !hasFlashSale && (
+                      <div className="mb-2">
+                        <PreOrderCountdown
+                          releaseDate={product.preOrderReleaseDate}
+                          language={language}
+                          variant="compact"
+                          className="justify-start"
+                        />
+                      </div>
+                    )}
+
                     {/* Price */}
                     {hasFlashSale ? (
                       <div className="mb-3">
@@ -321,33 +343,47 @@ export function ProductGrid({ onAddToCart, currency, language }: ProductGridProp
                     {/* Stock Badge */}
                     <div className="mb-3">
                       <Badge
-                        variant={inStock ? "default" : "outline"}
+                        variant={inStock || product.isPreOrder ? "default" : "outline"}
                         className={`text-xs sm:text-sm ${
-                          inStock ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                          product.isPreOrder
+                            ? "bg-blue-600 text-white"
+                            : inStock
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-muted-foreground"
                         }`}
                       >
-                        {language === "EN"
-                          ? inStock
-                            ? "In Stock"
-                            : "Out of Stock"
-                          : inStock
-                            ? "មាននៅក្នុងស្តុក"
-                            : "អស់ស្តុក"}
+                        {product.isPreOrder
+                          ? (language === "EN" ? "Pre-order" : "បញ្ជាទិញមុន")
+                          : language === "EN"
+                            ? inStock
+                              ? "In Stock"
+                              : "Out of Stock"
+                            : inStock
+                              ? "មាននៅក្នុងស្តុក"
+                              : "អស់ស្តុក"}
                       </Badge>
                     </div>
 
                     {/* Add to Cart Button */}
                     <Button
                       onClick={() => onAddToCart(product.id, product.nameEn, Number(displayPriceUsd), product.imageUrl || "")}
-                      disabled={!inStock}
+                      disabled={!inStock && !product.isPreOrder}
                       className={cn(
                         "w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-auto transition-transform active:scale-95 focus:ring-2 focus:ring-ring focus:ring-offset-2",
-                        hasFlashSale && "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                        hasFlashSale && "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600",
+                        product.isPreOrder && !hasFlashSale && "bg-blue-600 hover:bg-blue-700"
                       )}
-                      aria-label={language === "EN" ? `Add ${productName} to cart` : `បន្ថែម${productName}ទៅរទេះ`}
+                      aria-label={product.isPreOrder
+                        ? (language === "EN" ? `Pre-order ${productName}` : `បញ្ជាទិញមុន${productName}`)
+                        : (language === "EN" ? `Add ${productName} to cart` : `បន្ថែម${productName}ទៅរទេះ`)
+                      }
                     >
                       <ShoppingCart size={16} aria-hidden="true" />
-                      <span className="text-sm sm:text-base">{language === "EN" ? "Add to Cart" : "បន្ថែមទៅរទុក"}</span>
+                      <span className="text-sm sm:text-base">
+                        {product.isPreOrder
+                          ? (language === "EN" ? "Pre-order" : "បញ្ជាទិញមុន")
+                          : (language === "EN" ? "Add to Cart" : "បន្ថែមទៅរទុក")}
+                      </span>
                     </Button>
                   </div>
                 </li>

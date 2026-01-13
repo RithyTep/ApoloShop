@@ -17,6 +17,7 @@ import { ProductReviews } from "@/components/product-reviews"
 import { StarRating } from "@/components/star-rating"
 import { VariantSelector, ProductVariant } from "@/components/variant-selector"
 import { ProductSocialProof } from "@/components/social-proof"
+import { PreOrderInfo, PreOrderBadge } from "@/components/pre-order-countdown"
 
 interface ProductWithVariants extends Product {
   _reviewStats?: { averageRating: number; totalReviews: number }
@@ -101,6 +102,9 @@ export function ProductDetailClient({ product: initialProduct, language: initial
           priceKhr: itemPriceKhr,
           imageUrl: itemImageUrl,
           quantity,
+          // Pre-order tracking
+          isPreOrder: product.isPreOrder,
+          preOrderReleaseDate: product.preOrderReleaseDate,
         })
       }
 
@@ -142,6 +146,14 @@ export function ProductDetailClient({ product: initialProduct, language: initial
 
   // Check if variant selection is required
   const variantSelectionRequired = hasVariants && !selectedVariant
+
+  // Determine maximum quantity (considering pre-order limits)
+  const maxQuantity = product.isPreOrder && product.preOrderMaxQuantity
+    ? Math.min(currentStock, product.preOrderMaxQuantity)
+    : currentStock
+
+  // Pre-orders can be placed even without stock (they're for upcoming products)
+  const canAddToCart = product.isPreOrder || inStock
 
   // Use client-fetched reviews if available, fallback to SSR stats
   const reviewStats = reviewsData?.stats || product._reviewStats
@@ -235,12 +247,20 @@ export function ProductDetailClient({ product: initialProduct, language: initial
 
           {/* Product Info */}
           <div className="space-y-6">
-            {/* Category Badge */}
-            {product.category && (
-              <Badge variant="outline" className="text-sm">
-                {getName(product.category.nameEn, product.category.nameKh)}
-              </Badge>
-            )}
+            {/* Category Badge and Pre-order Badge */}
+            <div className="flex flex-wrap items-center gap-2">
+              {product.category && (
+                <Badge variant="outline" className="text-sm">
+                  {getName(product.category.nameEn, product.category.nameKh)}
+                </Badge>
+              )}
+              {product.isPreOrder && (
+                <PreOrderBadge
+                  language={language}
+                  depositPercent={product.preOrderDepositPercent}
+                />
+              )}
+            </div>
 
             {/* Name */}
             <h1 className="text-3xl md:text-4xl font-bold text-foreground">
@@ -270,6 +290,18 @@ export function ProductDetailClient({ product: initialProduct, language: initial
               productId={product.id}
               language={language}
             />
+
+            {/* Pre-order Info */}
+            {product.isPreOrder && product.preOrderReleaseDate && (
+              <PreOrderInfo
+                releaseDate={product.preOrderReleaseDate}
+                depositPercent={product.preOrderDepositPercent}
+                maxQuantity={product.preOrderMaxQuantity}
+                language={language}
+                currency={currency}
+                price={{ usd: currentPriceUsd, khr: currentPriceKhr }}
+              />
+            )}
 
             {/* Description */}
             {getDescription(product.descriptionEn, product.descriptionKh) && (
@@ -328,7 +360,7 @@ export function ProductDetailClient({ product: initialProduct, language: initial
                 <button
                   onClick={() => setQuantity(quantity + 1)}
                   className="p-2 hover:bg-muted transition-colors"
-                  disabled={variantSelectionRequired || quantity >= currentStock}
+                  disabled={variantSelectionRequired || quantity >= maxQuantity}
                 >
                   <Plus size={16} />
                 </button>
@@ -338,19 +370,25 @@ export function ProductDetailClient({ product: initialProduct, language: initial
             {/* Add to Cart Button */}
             <Button
               onClick={handleAddToCart}
-              disabled={!inStock || variantSelectionRequired}
-              className="w-full h-14 text-lg bg-primary text-primary-foreground hover:bg-primary/90"
+              disabled={!canAddToCart || variantSelectionRequired}
+              className={`w-full h-14 text-lg ${
+                product.isPreOrder
+                  ? "bg-blue-600 hover:bg-blue-700 text-white"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90"
+              }`}
             >
               <ShoppingCart className="mr-2 h-5 w-5" />
               {variantSelectionRequired
                 ? (language === "EN" ? "Select Options" : "ជ្រើសរើសជម្រើស")
-                : inStock
-                  ? (language === "EN" ? "Add to Cart" : "បន្ថែមទៅកន្រ្តក")
-                  : (language === "EN" ? "Out of Stock" : "អស់ស្តុក")}
+                : product.isPreOrder
+                  ? (language === "EN" ? "Pre-order Now" : "បញ្ជាទិញមុន")
+                  : canAddToCart
+                    ? (language === "EN" ? "Add to Cart" : "បន្ថែមទៅកន្រ្តក")
+                    : (language === "EN" ? "Out of Stock" : "អស់ស្តុក")}
             </Button>
 
             {/* Total */}
-            {inStock && quantity > 1 && !variantSelectionRequired && (
+            {canAddToCart && quantity > 1 && !variantSelectionRequired && (
               <div className="text-center text-muted-foreground">
                 Total: <span className="font-bold text-foreground">
                   {formatPrice(currentPriceUsd * quantity, currentPriceKhr * quantity)}

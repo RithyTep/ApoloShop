@@ -106,6 +106,21 @@ export const translations = {
       hurry: "Hurry up!",
       save: "Save",
     },
+    // Pre-order
+    preOrder: {
+      title: "Pre-order",
+      badge: "Pre-order",
+      releasesIn: "Releases in",
+      availableOn: "Available on",
+      released: "Now Available!",
+      depositRequired: "Deposit required",
+      maxPerOrder: "Max per order",
+      preOrderNow: "Pre-order Now",
+      days: "d",
+      hours: "h",
+      minutes: "m",
+      seconds: "s",
+    },
     // Social Proof
     socialProof: {
       purchased: "purchased",
@@ -1492,6 +1507,21 @@ export const translations = {
       off: "បញ្ចុះ",
       hurry: "ប្រញាប់ឡើង!",
       save: "សន្សំ",
+    },
+    // Pre-order
+    preOrder: {
+      title: "បញ្ជាទិញមុន",
+      badge: "បញ្ជាទិញមុន",
+      releasesIn: "ចេញផ្សាយក្នុង",
+      availableOn: "មានចាប់ផ្តើមពី",
+      released: "មានលក់ហើយ!",
+      depositRequired: "ប្រាក់កក់",
+      maxPerOrder: "អតិបរមាក្នុងមួយការបញ្ជាទិញ",
+      preOrderNow: "បញ្ជាទិញមុន",
+      days: "ថ្ងៃ",
+      hours: "ម៉ោង",
+      minutes: "នាទី",
+      seconds: "វិនាទី",
     },
     // Social Proof
     socialProof: {
