@@ -759,6 +759,7 @@ model Client {
   subscription Subscription?
   posProviders POSProvider[]
   webhooks     Webhook[]
+  bundles      Bundle[]
 
   @@index([slug])
   @@index([domain])
@@ -1247,6 +1248,69 @@ model FlashSale {
   @@index([status])
   @@index([isFeatured])
   @@map("flash_sales")
+  @@schema("apolo")
+}
+
+// ============================================
+// PRODUCT BUNDLES
+// ============================================
+
+enum BundleDiscountType {
+  PERCENTAGE  // Percentage off total bundle price
+  FIXED       // Fixed amount off total bundle price
+
+  @@schema("apolo")
+}
+
+model Bundle {
+  id            String             @id @default(cuid())
+  clientId      String?            @map("client_id")
+  client        Client?            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  nameEn        String             @map("name_en")
+  nameKh        String             @map("name_kh")
+  slug          String?            @unique // SEO-friendly URL slug
+  descriptionEn String?            @map("description_en") @db.Text
+  descriptionKh String?            @map("description_kh") @db.Text
+  imageUrl      String?            @map("image_url")
+  // Discount configuration
+  discountType  BundleDiscountType @default(PERCENTAGE) @map("discount_type")
+  discountValue Decimal            @map("discount_value") @db.Decimal(10, 2) // Percentage (0-100) or fixed amount in USD
+  // Status
+  isActive      Boolean            @default(true) @map("is_active")
+  // Featured/promoted
+  isFeatured    Boolean            @default(false) @map("is_featured")
+  // Stock management - bundle is available if all products have stock
+  // Optional: limit bundle purchases
+  maxPurchases  Int?               @map("max_purchases") // Max times bundle can be purchased (null = unlimited)
+  purchaseCount Int                @default(0) @map("purchase_count") // Times this bundle has been purchased
+  // Timestamps
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  items         BundleItem[]
+
+  @@index([clientId])
+  @@index([isActive])
+  @@index([isFeatured])
+  @@index([slug])
+  @@map("bundles")
+  @@schema("apolo")
+}
+
+model BundleItem {
+  id        String  @id @default(cuid())
+  bundleId  String  @map("bundle_id")
+  bundle    Bundle  @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  productId String  @map("product_id")
+  quantity  Int     @default(1) // How many of this product in the bundle
+  // Optional: override individual item pricing (usually null, uses product price)
+  // Sort order for display
+  sortOrder Int     @default(0) @map("sort_order")
+
+  @@unique([bundleId, productId])
+  @@index([bundleId])
+  @@index([productId])
+  @@map("bundle_items")
   @@schema("apolo")
 }
 

@@ -5025,3 +5025,222 @@ export function useRetryWebhookDelivery() {
     },
   });
 }
+
+// ============================================
+// PRODUCT BUNDLES
+// ============================================
+
+export interface BundleProduct {
+  id: string;
+  nameEn: string;
+  nameKh: string;
+  priceUsd: number;
+  priceKhr: number;
+  imageUrl: string | null;
+  isActive?: boolean;
+  category?: Category;
+  inventory?: Inventory | null;
+}
+
+export interface BundleItem {
+  id: string;
+  productId: string;
+  quantity: number;
+  sortOrder: number;
+  product: BundleProduct | null;
+}
+
+export interface BundlePricing {
+  originalPriceUsd: number;
+  originalPriceKhr: number;
+  bundlePriceUsd: number;
+  bundlePriceKhr: number;
+  savingsUsd: number;
+  savingsKhr: number;
+  savingsPercent: number;
+}
+
+export interface Bundle {
+  id: string;
+  nameEn: string;
+  nameKh: string;
+  slug?: string | null;
+  descriptionEn?: string | null;
+  descriptionKh?: string | null;
+  imageUrl?: string | null;
+  discountType: "PERCENTAGE" | "FIXED";
+  discountValue: number;
+  isActive: boolean;
+  isFeatured: boolean;
+  maxPurchases?: number | null;
+  purchaseCount: number;
+  items: BundleItem[];
+  pricing: BundlePricing;
+  isInStock: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BundlesResponse {
+  bundles: Bundle[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface BundleResponse {
+  bundle: Bundle;
+}
+
+export interface BundleSuggestion {
+  product: BundleProduct & { inventory?: Inventory | null };
+  coOccurrenceCount: number;
+  source: "order_history" | "category";
+}
+
+export interface BundleSuggestionsResponse {
+  suggestions: BundleSuggestion[];
+  mainProduct: BundleProduct;
+  suggestedBundle?: {
+    products: BundleProduct[];
+    originalPriceUsd: number;
+    originalPriceKhr: number;
+    bundlePriceUsd: number;
+    bundlePriceKhr: number;
+    savingsUsd: number;
+    savingsPercent: number;
+  };
+}
+
+/**
+ * Hook to fetch all bundles with filters
+ */
+export function useBundles(options?: {
+  active?: boolean;
+  featured?: boolean;
+  productId?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const { active, featured, productId, page = 1, limit = 20 } = options || {};
+
+  const params = new URLSearchParams();
+  if (active) params.set("active", "true");
+  if (featured) params.set("featured", "true");
+  if (productId) params.set("productId", productId);
+  params.set("page", page.toString());
+  params.set("limit", limit.toString());
+
+  return useQuery({
+    queryKey: ["bundles", { active, featured, productId, page, limit }],
+    queryFn: () => fetchAPI<BundlesResponse>(`/api/bundles?${params.toString()}`),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+/**
+ * Hook to fetch a single bundle by ID or slug
+ */
+export function useBundle(idOrSlug: string | null, bySlug = false) {
+  return useQuery({
+    queryKey: ["bundle", idOrSlug, bySlug],
+    queryFn: () => {
+      const param = bySlug ? "slug" : "id";
+      return fetchAPI<BundleResponse>(`/api/bundles?${param}=${idOrSlug}`);
+    },
+    enabled: !!idOrSlug,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/**
+ * Hook to fetch bundle suggestions ("frequently bought together")
+ */
+export function useBundleSuggestions(productId: string | null, limit = 3) {
+  return useQuery({
+    queryKey: ["bundle-suggestions", productId, limit],
+    queryFn: () =>
+      fetchAPI<BundleSuggestionsResponse>(
+        `/api/bundles/suggestions?productId=${productId}&limit=${limit}`
+      ),
+    enabled: !!productId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export interface CreateBundleInput {
+  nameEn: string;
+  nameKh: string;
+  slug?: string;
+  descriptionEn?: string;
+  descriptionKh?: string;
+  imageUrl?: string;
+  discountType?: "PERCENTAGE" | "FIXED";
+  discountValue: number;
+  isActive?: boolean;
+  isFeatured?: boolean;
+  maxPurchases?: number;
+  items: { productId: string; quantity?: number; sortOrder?: number }[];
+  clientId?: string;
+}
+
+export interface UpdateBundleInput extends Partial<CreateBundleInput> {
+  id: string;
+}
+
+/**
+ * Hook to create a new bundle
+ */
+export function useCreateBundle() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateBundleInput) =>
+      fetchAPI<{ bundle: Bundle }>("/api/bundles", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bundles"] });
+    },
+  });
+}
+
+/**
+ * Hook to update a bundle
+ */
+export function useUpdateBundle() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateBundleInput) =>
+      fetchAPI<{ bundle: Bundle }>("/api/bundles", {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["bundles"] });
+      queryClient.invalidateQueries({ queryKey: ["bundle", variables.id] });
+    },
+  });
+}
+
+/**
+ * Hook to delete a bundle
+ */
+export function useDeleteBundle() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (bundleId: string) =>
+      fetchAPI<{ success: boolean }>(`/api/bundles?id=${bundleId}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bundles"] });
+    },
+  });
+}
