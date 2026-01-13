@@ -20,6 +20,7 @@ import { VariantSelector, ProductVariant } from "@/components/variant-selector"
 import { ProductSocialProof } from "@/components/social-proof"
 import { PreOrderInfo, PreOrderBadge } from "@/components/pre-order-countdown"
 import { StockNotifyButton } from "@/components/stock-notify-button"
+import { DeliveryEstimate } from "@/components/delivery-estimate"
 
 interface ProductWithVariants extends Product {
   _reviewStats?: { averageRating: number; totalReviews: number }
@@ -313,6 +314,12 @@ export function ProductDetailClient({ product: initialProduct, language: initial
                 </p>
               </div>
             )}
+
+            {/* Delivery Estimate */}
+            <DeliveryEstimate
+              language={language}
+              showAllOptions={true}
+            />
 
             {/* Variant Selector */}
             {hasVariants && product.variantTypes && product.variants && (
