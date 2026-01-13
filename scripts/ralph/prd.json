@@ -1370,8 +1370,8 @@
         "Build passes: bun run build"
       ],
       "priority": 87,
-      "passes": false,
-      "notes": "Generate early revenue for new products"
+      "passes": true,
+      "notes": "Implemented isPreOrder, preOrderReleaseDate, preOrderDepositPercent, preOrderMaxQuantity fields. Created pre-order-countdown.tsx with countdown timer, badges, and info display. Updated product-detail-client.tsx and product-grid.tsx to show pre-order UI. Added bilingual translations (EN/KH)."
     },
     {
       "id": "US-088",

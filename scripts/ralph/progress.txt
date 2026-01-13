@@ -2706,3 +2706,31 @@ Project: ApoloShop - Product Search Feature
   - Subscription delivery tracking allows for order history and skip records
   - Build passes without database sync (Prisma schema validates, runtime DB sync separate)
 ---
+
+## 2026-01-13 - US-087
+- **Implemented**: Pre-order functionality for upcoming products
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added pre-order fields to Product model)
+  - `lib/api-hooks.ts` (modified - added pre-order fields to Product interface)
+  - `components/pre-order-countdown.tsx` (new file - countdown component, badge, info display)
+  - `components/product-detail-client.tsx` (modified - pre-order UI integration)
+  - `components/product-grid.tsx` (modified - pre-order badges and countdown on cards)
+  - `lib/i18n.ts` (modified - added preOrder translations for EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Prisma fields**: isPreOrder (Boolean), preOrderReleaseDate (DateTime?), preOrderDepositPercent (Int?), preOrderMaxQuantity (Int?)
+  - **PreOrderCountdown**: Countdown timer to release date with days/hours/minutes/seconds
+  - **PreOrderBadge**: Compact badge showing "Pre-order" with optional deposit percentage
+  - **PreOrderInfo**: Detailed info card with release date, countdown, deposit %, max quantity
+  - **Product detail integration**: Pre-order badge next to category, info card after price, blue "Pre-order Now" button
+  - **Product grid integration**: Pre-order badge, countdown, blue ring highlight, "Pre-order" stock badge
+  - **Cart tracking**: isPreOrder and preOrderReleaseDate stored with cart items
+  - **Quantity limits**: maxQuantity respects preOrderMaxQuantity limit
+  - **Bilingual support**: Full EN/KH translations for all pre-order UI
+- **Learnings for future iterations**:
+  - Pre-order products can be added to cart regardless of stock (they're for upcoming products)
+  - Used blue color theme (bg-blue-600) to distinguish pre-orders from flash sales (orange)
+  - PreOrderInfo component shows deposit amount calculated from price when depositPercent is set
+  - Product interface fields are optional (?) to maintain backwards compatibility
+  - Ring highlight (ring-2 ring-blue-500/50) provides visual distinction on product cards
+---
