@@ -2496,3 +2496,59 @@ Project: ApoloShop - Product Search Feature
   - Soft delete for experiments with data (mark as COMPLETED instead)
   - FlaskConical icon from lucide-react for A/B testing sidebar item
 ---
+
+## 2026-01-13 - US-080
+- **Implemented**: Store locator for multi-location businesses
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added StoreLocation model)
+  - `app/api/stores/route.ts` (new file - CRUD API with distance calculation)
+  - `components/store-locator.tsx` (new file - StoreLocator component)
+  - `lib/i18n.ts` (modified - added storeLocator translations for EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **StoreLocation model**: name, nameKh, address, addressKh, lat, lng, phone, email, hours (JSON), hoursNote, description, imageUrl, isActive, isPrimary, sortOrder
+  - **API endpoint** `/api/stores`: GET (list with optional ?lat=&lng= for distance), POST, PUT, DELETE
+  - **Haversine distance calculation**: Calculates distance between customer and stores in km
+  - **Nearest store detection**: API returns `nearest` store when customer coordinates provided
+  - **StoreLocator component**: Map view placeholder, store cards with click selection
+  - **Open/closed status**: Real-time calculation based on current day/time and store hours
+  - **Contact actions**: Click-to-call (tel:), email (mailto:), Google Maps directions links
+  - **Bilingual support**: All text uses translations from lib/i18n.ts (EN/KH)
+  - **Geolocation**: Uses browser navigator.geolocation API to find user location
+- **Learnings for future iterations**:
+  - Prisma Decimal types need conversion to Number for JSON serialization
+  - Haversine formula uses Earth radius 6371km for distance calculation
+  - Operating hours stored as JSON object keyed by lowercase day names
+  - Google Maps embed requires API key; fallback to direct link when not configured
+  - Store hours check needs to handle timezone differences (currently uses browser local time)
+---
+
+## 2026-01-13 - US-081
+- **Implemented**: Referral program with unique codes and rewards
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added Referral, ReferralCode models, ReferralStatus enum)
+  - `lib/referral.ts` (new file - referral service with code generation and rewards)
+  - `app/api/referrals/route.ts` (new file - GET/POST endpoint for referral operations)
+  - `lib/api-hooks.ts` (modified - added referral hooks and types)
+  - `components/referral-dashboard.tsx` (new file - ReferralDashboard component)
+  - `lib/i18n.ts` (modified - added referral translations for EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Referral model**: referrerId, refereeId, code, status (PENDING/COMPLETED/EXPIRED/CANCELLED), referrerReward, refereeReward, rewardType, orderId, timestamps
+  - **ReferralCode model**: Per-customer unique code, timesUsed, totalEarned tracking
+  - **Code generation**: FRIEND-XXXXXX format with alphanumeric characters (avoids confusing 0/O/I/l)
+  - **Rewards**: $5 to referrer when friend completes first order, $5 discount to referee
+  - **Validation**: Prevents self-referral, existing customer referral, expired codes, monthly limits
+  - **API endpoint** `/api/referrals`: GET (code info, stats, validate), POST (apply, complete, updateReferee)
+  - **ReferralDashboard component**: Stats grid, share buttons (Telegram, Facebook, copy link), referral history
+  - **Share links**: Pre-formatted messages with referral code for Telegram and Facebook sharing
+  - **React Query hooks**: useReferralInfo, useValidateReferralCode, useApplyReferral, useCompleteReferral
+  - **Bilingual support**: Full EN/KH translations for all UI text and status labels
+- **Learnings for future iterations**:
+  - Use named Prisma relations for multiple references to same model (@relation("ReferrerCustomer"), @relation("RefereeCustomer"))
+  - Referral expiration (30 days) uses expiresAt field set at creation
+  - Monthly referral limit (50) prevents abuse while allowing generous sharing
+  - generateRandomCode uses chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789" to avoid confusing characters
+  - Clipboard API (navigator.clipboard.writeText) requires async/await and try/catch for browser compatibility
+  - Share links encode URLs and messages properly with encodeURIComponent
+---

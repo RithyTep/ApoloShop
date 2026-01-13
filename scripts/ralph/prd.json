@@ -1274,8 +1274,8 @@
         "Build passes: bun run build"
       ],
       "priority": 81,
-      "passes": false,
-      "notes": "Word-of-mouth marketing with incentives"
+      "passes": true,
+      "notes": "Implemented Referral/ReferralCode Prisma models, /api/referrals endpoint with apply/complete/validate actions, lib/referral.ts service with rewards and shareable links (Telegram, Facebook), ReferralDashboard component with stats/history/sharing, React Query hooks, bilingual translations (EN/KH)"
     },
     {
       "id": "US-082",
