@@ -2727,14 +2727,21 @@ model StoreLocation {
   isActive    Boolean  @default(true) @map("is_active")
   isPrimary   Boolean  @default(false) @map("is_primary") // Mark main/flagship store
   sortOrder   Int      @default(0) @map("sort_order")
+  // Store pickup feature
+  pickupEnabled Boolean @default(false) @map("pickup_enabled") // Whether this store offers pickup
   // Timestamps
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations for store pickup
+  pickups     StorePickup[]
+  timeSlots   PickupTimeSlot[]
 
   @@index([isActive])
   @@index([isPrimary])
   @@index([sortOrder])
   @@index([lat, lng])
+  @@index([pickupEnabled])
   @@map("store_locations")
   @@schema("apolo")
 }
@@ -3609,5 +3616,112 @@ model ShipmentStatusHistory {
   @@index([status])
   @@index([createdAt])
   @@map("shipment_status_history")
+  @@schema("apolo")
+}
+
+// ============================================
+// STORE PICKUP (BOPIS - Buy Online, Pickup In-Store)
+// ============================================
+
+enum PickupStatus {
+  PENDING         // Order placed, pickup not confirmed
+  CONFIRMED       // Pickup time confirmed
+  PREPARING       // Store is preparing the order
+  READY           // Ready for customer pickup
+  PICKED_UP       // Customer has collected the order
+  CANCELLED       // Pickup was cancelled
+  EXPIRED         // Pickup time passed without collection
+
+  @@schema("apolo")
+}
+
+// Store pickup order - links an order to a store for pickup
+model StorePickup {
+  id              String        @id @default(cuid())
+  orderId         String        @unique @map("order_id") // One pickup per order
+  storeId         String        @map("store_id")
+  store           StoreLocation @relation(fields: [storeId], references: [id])
+  // Pickup timing
+  scheduledDate   DateTime      @map("scheduled_date") // Date of pickup
+  timeSlotId      String?       @map("time_slot_id")
+  timeSlot        PickupTimeSlot? @relation(fields: [timeSlotId], references: [id])
+  // Status tracking
+  status          PickupStatus  @default(PENDING)
+  statusChangedAt DateTime?     @map("status_changed_at")
+  // QR verification
+  verificationCode String       @unique @map("verification_code") // Short code for in-store verification
+  qrCodeData      String?       @map("qr_code_data") // Full QR code data (can include order details)
+  verifiedAt      DateTime?     @map("verified_at") // When QR was scanned/verified
+  verifiedBy      String?       @map("verified_by") // Staff member who verified
+  // Customer info snapshot
+  customerName    String        @map("customer_name")
+  customerPhone   String?       @map("customer_phone")
+  customerEmail   String?       @map("customer_email")
+  // Notes
+  customerNotes   String?       @map("customer_notes") @db.Text // Special pickup instructions
+  staffNotes      String?       @map("staff_notes") @db.Text // Internal notes
+  // Notifications
+  reminderSent    Boolean       @default(false) @map("reminder_sent")
+  readyNotificationSent Boolean @default(false) @map("ready_notification_sent")
+  // Timestamps
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  // Status history
+  statusHistory   PickupStatusHistory[]
+
+  @@index([orderId])
+  @@index([storeId])
+  @@index([status])
+  @@index([scheduledDate])
+  @@index([verificationCode])
+  @@map("store_pickups")
+  @@schema("apolo")
+}
+
+// Available time slots for pickup at each store
+model PickupTimeSlot {
+  id              String        @id @default(cuid())
+  storeId         String        @map("store_id")
+  store           StoreLocation @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  // Day of week (0 = Sunday, 1 = Monday, etc.) or null for specific date
+  dayOfWeek       Int?          @map("day_of_week") // 0-6 for recurring slots
+  specificDate    DateTime?     @map("specific_date") // For one-time slots (holidays, special events)
+  // Time range
+  startTime       String        @map("start_time") // Format: "09:00"
+  endTime         String        @map("end_time")   // Format: "10:00"
+  // Capacity
+  maxPickups      Int           @default(10) @map("max_pickups") // Max orders per slot
+  // Status
+  isActive        Boolean       @default(true) @map("is_active")
+  // Timestamps
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  pickups         StorePickup[]
+
+  @@index([storeId])
+  @@index([dayOfWeek])
+  @@index([specificDate])
+  @@index([isActive])
+  @@map("pickup_time_slots")
+  @@schema("apolo")
+}
+
+// Status history for pickup orders
+model PickupStatusHistory {
+  id              String        @id @default(cuid())
+  pickupId        String        @map("pickup_id")
+  pickup          StorePickup   @relation(fields: [pickupId], references: [id], onDelete: Cascade)
+  status          PickupStatus
+  notes           String?       @db.Text
+  changedBy       String?       @map("changed_by") // User/staff who changed status
+  notificationSent Boolean      @default(false) @map("notification_sent")
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  @@index([pickupId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("pickup_status_history")
   @@schema("apolo")
 }
