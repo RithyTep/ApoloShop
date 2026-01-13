@@ -3292,3 +3292,145 @@ enum QuestionStatus {
   REJECTED  // Not displayed
   @@schema("apolo")
 }
+
+// ============================================
+// SIZE GUIDE & FIT FINDER (US-091)
+// ============================================
+
+// Size chart that can be linked to products or categories
+model SizeChart {
+  id          String   @id @default(cuid())
+  nameEn      String   @map("name_en") // e.g., "Women's Clothing"
+  nameKh      String   @map("name_kh")
+  brandEn     String?  @map("brand_en") // Optional brand name for comparison
+  brandKh     String?  @map("brand_kh")
+  // Chart type for different product types
+  chartType   SizeChartType @default(CLOTHING) @map("chart_type")
+  // Measurement unit
+  unit        MeasurementUnit @default(CM)
+  // Size definitions as JSON array
+  // [{ size: "S", measurements: { chest: 88, waist: 68, hips: 94 } }, ...]
+  sizes       Json
+  // Which measurements are included (for display)
+  // ["chest", "waist", "hips", "length", "shoulder"]
+  measurementTypes Json @map("measurement_types")
+  // Optional image showing how to measure
+  measurementGuideImage String? @map("measurement_guide_image")
+  // Fit type (for fit recommendations)
+  fitType     FitType @default(REGULAR)
+  // Relations
+  categoryId  String? @map("category_id")
+  productId   String? @map("product_id")
+  // Active status
+  isActive    Boolean @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([categoryId])
+  @@index([productId])
+  @@index([chartType])
+  @@index([isActive])
+  @@map("size_charts")
+  @@schema("apolo")
+}
+
+// Customer size profile for storing their measurements
+model SizeProfile {
+  id          String   @id @default(cuid())
+  customerId  String?  @map("customer_id")
+  guestId     String?  @map("guest_id") // For guest users (stored in localStorage on client)
+  // Personal info for fit recommendations
+  gender      Gender?
+  height      Decimal? @db.Decimal(5, 2) // in cm
+  weight      Decimal? @db.Decimal(5, 2) // in kg
+  age         Int?
+  // Body measurements (all in cm)
+  chest       Decimal? @db.Decimal(5, 2)
+  waist       Decimal? @db.Decimal(5, 2)
+  hips        Decimal? @db.Decimal(5, 2)
+  inseam      Decimal? @db.Decimal(5, 2) // leg length
+  shoulder    Decimal? @db.Decimal(5, 2)
+  armLength   Decimal? @map("arm_length") @db.Decimal(5, 2)
+  footLength  Decimal? @map("foot_length") @db.Decimal(5, 2) // in cm
+  footWidth   Decimal? @map("foot_width") @db.Decimal(5, 2) // in cm
+  // Fit preferences
+  preferredFit FitType @default(REGULAR) @map("preferred_fit")
+  // Saved sizes per category/brand
+  // { "tops": "M", "bottoms": "L", "shoes": "42", "brand:Nike:shoes": "43" }
+  savedSizes  Json?    @map("saved_sizes")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([customerId])
+  @@unique([guestId])
+  @@index([customerId])
+  @@index([guestId])
+  @@map("size_profiles")
+  @@schema("apolo")
+}
+
+// Store fit quiz responses for analytics and recommendations
+model FitQuizResponse {
+  id              String   @id @default(cuid())
+  customerId      String?  @map("customer_id")
+  guestId         String?  @map("guest_id")
+  productId       String?  @map("product_id") // Product being sized
+  sizeChartId     String?  @map("size_chart_id") // Size chart used
+  // Quiz answers stored as JSON
+  // { "height": 170, "weight": 65, "bodyType": "athletic", "fitPreference": "regular" }
+  answers         Json
+  // Recommended size from quiz
+  recommendedSize String   @map("recommended_size")
+  // User feedback (did they buy this size? did it fit?)
+  purchasedSize   String?  @map("purchased_size") // What they actually bought
+  fitFeedback     FitFeedback? @map("fit_feedback") // How it fit
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([customerId])
+  @@index([guestId])
+  @@index([productId])
+  @@index([sizeChartId])
+  @@index([recommendedSize])
+  @@map("fit_quiz_responses")
+  @@schema("apolo")
+}
+
+enum SizeChartType {
+  CLOTHING      // General clothing (tops, bottoms)
+  SHOES         // Footwear
+  ACCESSORIES   // Bags, hats, etc.
+  JEWELRY       // Rings, bracelets
+  KIDS          // Children's sizes
+  @@schema("apolo")
+}
+
+enum MeasurementUnit {
+  CM            // Centimeters
+  INCH          // Inches
+  @@schema("apolo")
+}
+
+enum FitType {
+  SLIM          // Fitted/tight
+  REGULAR       // Standard fit
+  RELAXED       // Loose/comfortable
+  OVERSIZED     // Extra loose/baggy
+  @@schema("apolo")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  UNISEX
+  @@schema("apolo")
+}
+
+enum FitFeedback {
+  TOO_SMALL     // Size was too small
+  SLIGHTLY_SMALL // Slightly tight
+  PERFECT       // Just right
+  SLIGHTLY_LARGE // Slightly loose
+  TOO_LARGE     // Size was too large
+  @@schema("apolo")
+}
