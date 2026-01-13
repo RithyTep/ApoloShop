@@ -1466,8 +1466,8 @@
         "Build passes: bun run build"
       ],
       "priority": 93,
-      "passes": false,
-      "notes": "Reduces cancellations from buyer's remorse"
+      "passes": true,
+      "notes": "Implemented GET/POST/DELETE /api/orders/edit endpoint, OrderEditor component with tabs (items/address/history), quantity changes, item additions/cancellations, address changes, total recalculation with refund flagging, 24-hour edit window, bilingual translations (EN/KH)"
     },
     {
       "id": "US-094",

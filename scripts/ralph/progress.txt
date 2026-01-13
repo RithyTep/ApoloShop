@@ -2900,3 +2900,39 @@ Project: ApoloShop - Product Search Feature
   - Express = minDays <= 2, Free Shipping = rateType === 'FREE'
   - Set type for holidays uses O(1) lookup for isHoliday checks
 ---
+
+## 2026-01-13 - US-093
+- **Implemented**: Order editing functionality for modifications before shipping
+- **Files changed**:
+  - `app/api/orders/edit/route.ts` (new - GET/POST/DELETE order editing API)
+  - `components/order-editor.tsx` (new - OrderEditor component)
+  - `prisma/schema.prisma` (modified - added OrderEdit model, OrderEditType/OrderEditStatus enums, editing fields on Order/OrderItem)
+  - `lib/api-hooks.ts` (modified - added order editing types and hooks)
+  - `lib/i18n.ts` (modified - added orderEdit translations EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **OrderEdit model**: orderId, editType, status, itemId/productId, quantities (previous/new), prices, address changes, totals impact, refund tracking, audit fields
+  - **OrderEditType enum**: QUANTITY_CHANGE, ITEM_ADDED, ITEM_CANCELLED, ADDRESS_CHANGE, TOTALS_RECALC
+  - **OrderEditStatus enum**: PENDING, APPROVED, REJECTED
+  - **Order editing fields**: isEditable, editableUntil, shippingAddress (JSON) on Order model; isCancelled, cancelledAt on OrderItem model
+  - **Edit time window**: 24-hour default window from order creation, can be extended via editableUntil
+  - **Status restriction**: Only NEW and CONFIRMED orders can be edited
+  - **GET /api/orders/edit**: Returns edit history and editability status for an order
+  - **POST /api/orders/edit**: Apply multiple edits in a transaction (quantity changes, add items, cancel items, change address)
+  - **DELETE /api/orders/edit**: Disable editing for an order (lock it)
+  - **Inventory management**: Automatically adjusts inventory when quantities change or items are cancelled/added
+  - **Total recalculation**: Auto-recalculates order totals after edits, creates TOTALS_RECALC edit record
+  - **Refund tracking**: Flags refundRequired when total decreases, calculates refund amount and currency
+  - **OrderEditor component**: Tabbed UI (Items, Address, History), quantity +/- controls, item cancellation with restore, add items dialog, address change dialog
+  - **Pending edits**: Preview changes before applying, calculate total difference client-side
+  - **Visual feedback**: Yellow highlight for pending changes, red for cancelled items, green for new items
+  - **Bilingual support**: Full EN/KH translations for all UI elements
+- **Learnings for future iterations**:
+  - Transaction-based edit processing ensures all-or-nothing application
+  - Edit history provides audit trail for compliance and dispute resolution
+  - Storing previous values (previousQuantity, previousAddress) enables reverting edits
+  - TOTALS_RECALC is auto-generated when price-affecting edits are applied
+  - Setting quantity to 0 is treated as cancellation (auto-converts to ITEM_CANCELLED)
+  - Inventory updates must be bidirectional: reduce on add/increase, increase on cancel/decrease
+  - Client-side difference calculation uses products data for add items (not yet in order)
+---
