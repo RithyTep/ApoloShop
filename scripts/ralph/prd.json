@@ -1194,8 +1194,8 @@
         "Build passes: bun run build"
       ],
       "priority": 76,
-      "passes": false,
-      "notes": "Popular gift option, brings new customers"
+      "passes": true,
+      "notes": "Implemented GiftCard/GiftCardTransaction models, /api/gift-cards (purchase, list, check balance), /api/gift-cards/redeem endpoints, /shop/gift-card balance check page with bilingual support (EN/KH)"
     },
     {
       "id": "US-077",

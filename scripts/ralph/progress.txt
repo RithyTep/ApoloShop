@@ -2376,3 +2376,31 @@ Project: ApoloShop - Product Search Feature
   - Suggested bundle discount is 10% by default
   - BundleItem has unique constraint on [bundleId, productId] to prevent duplicates
 ---
+
+## 2026-01-13 - US-076
+- **Implemented**: Digital gift card purchase and redemption system
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added GiftCard, GiftCardTransaction models, GiftCardStatus enum)
+  - `app/api/gift-cards/route.ts` (new file - purchase and check balance endpoints)
+  - `app/api/gift-cards/redeem/route.ts` (new file - redeem at checkout endpoint)
+  - `app/shop/gift-card/page.tsx` (new file - customer balance check page)
+  - `lib/i18n.ts` (modified - added giftCard translations for EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **GiftCard model**: code (XXXX-XXXX-XXXX-XXXX format), initialBalance, currentBalance, currency, status, purchaserEmail, recipientEmail, recipientName, personalMessage, expiresAt
+  - **GiftCardTransaction model**: tracks all transactions (purchase, redemption, refund, admin_adjustment)
+  - **GiftCardStatus enum**: ACTIVE, REDEEMED, EXPIRED, CANCELLED
+  - **Purchase API**: POST /api/gift-cards with amount validation ($5-$500), email validation, unique code generation
+  - **Check Balance API**: GET /api/gift-cards?code=&checkBalance=true
+  - **Redeem API**: POST /api/gift-cards/redeem with balance validation, partial redemption support
+  - **Validate API**: GET /api/gift-cards/redeem?code= for pre-checkout validation
+  - **Customer Page**: /shop/gift-card with code input formatting, balance display, status badges
+  - **Bilingual**: Full EN/KH translations for all gift card UI elements
+- **Learnings for future iterations**:
+  - Gift card codes use excludable characters (no I, O, 0, 1 to avoid confusion)
+  - Code generation includes retry logic (max 10 attempts) to ensure uniqueness
+  - Transactions record balanceAfter for audit trail
+  - Partial redemption supported: use min(requestedAmount, currentBalance)
+  - Status automatically changes to REDEEMED when balance reaches 0
+  - Input formatting in UI auto-adds dashes for better UX (XXXX-XXXX-XXXX-XXXX)
+---
