@@ -117,17 +117,22 @@ export function StockNotificationsPage() {
   const pagination = data?.pagination
 
   return (
-    <div className="space-y-6">
+    <div className="p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Bell className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold text-foreground">Stock Notification Requests</h1>
-          {summary.pending > 0 && (
-            <Badge variant="secondary" className="ml-2">
-              {summary.pending} Pending
-            </Badge>
-          )}
+        <div>
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            <Bell className="h-7 w-7" />
+            Stock Notification Requests
+          </h1>
+          <p className="text-muted-foreground mt-2 flex items-center gap-2">
+            Manage customer back-in-stock notifications
+            {summary.pending > 0 && (
+              <Badge variant="warning" className="ml-2">
+                {summary.pending} Pending
+              </Badge>
+            )}
+          </p>
         </div>
 
         <Select
@@ -165,10 +170,10 @@ export function StockNotificationsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-500" />
+            <Clock className="h-4 w-4 text-warning" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{summary.pending}</div>
+            <div className="text-2xl font-bold text-warning">{summary.pending}</div>
             <p className="text-xs text-muted-foreground">Waiting for restock</p>
           </CardContent>
         </Card>
@@ -176,17 +181,17 @@ export function StockNotificationsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Notified</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
+            <CheckCircle className="h-4 w-4 text-success" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{summary.notified}</div>
+            <div className="text-2xl font-bold text-success">{summary.notified}</div>
             <p className="text-xs text-muted-foreground">Email sent</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Notifications Table */}
-      <Card>
+      <Card className="p-6">
         {notifications.length === 0 ? (
           <div className="p-12 text-center">
             <BellOff className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -194,7 +199,8 @@ export function StockNotificationsPage() {
           </div>
         ) : (
           <>
-            <Table>
+            <div className="overflow-x-auto">
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Product</TableHead>
@@ -241,12 +247,12 @@ export function StockNotificationsPage() {
                     </TableCell>
                     <TableCell>
                       {notification.notified ? (
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+                        <Badge variant="success">
                           <CheckCircle className="h-3 w-3 mr-1" />
                           Notified
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">
+                        <Badge variant="warning">
                           <Clock className="h-3 w-3 mr-1" />
                           Pending
                         </Badge>
@@ -262,6 +268,7 @@ export function StockNotificationsPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
 
             {/* Pagination */}
             {pagination && pagination.totalPages > 1 && (

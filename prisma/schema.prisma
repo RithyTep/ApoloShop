@@ -4814,3 +4814,69 @@ enum PayoutStatus {
 
   @@schema("apolo")
 }
+
+// ============================================
+// GIFT WRAPPING SERVICE
+// ============================================
+
+// Available gift wrap styles/options
+model GiftWrapStyle {
+  id            String   @id @default(cuid())
+  // Names (bilingual)
+  nameEn        String   @map("name_en")      // "Festive Red", "Elegant Gold"
+  nameKh        String   @map("name_kh")      // Khmer translation
+  // Description (bilingual)
+  descriptionEn String?  @map("description_en") @db.Text
+  descriptionKh String?  @map("description_kh") @db.Text
+  // Pricing
+  priceUsd      Decimal  @map("price_usd") @db.Decimal(10, 2) // Add-on price in USD
+  priceKhr      Int      @map("price_khr")                     // Add-on price in KHR
+  // Visual
+  imageUrl      String?  @map("image_url")    // Preview image of wrap style
+  colorCode     String?  @map("color_code")   // Hex color for display (#FF0000)
+  // Status
+  isActive      Boolean  @default(true) @map("is_active")
+  sortOrder     Int      @default(0) @map("sort_order")
+  // Timestamps
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  giftWraps     GiftWrap[]
+
+  @@index([isActive])
+  @@index([sortOrder])
+  @@map("gift_wrap_styles")
+  @@schema("apolo")
+}
+
+// Gift wrap applied to an order item or shipment
+model GiftWrap {
+  id              String         @id @default(cuid())
+  // Link to order item (optional - for per-item wrapping)
+  orderItemId     String?        @unique @map("order_item_id")
+  // Link to shipment (optional - for whole-shipment wrapping)
+  shipmentId      String?        @unique @map("shipment_id")
+  // Gift wrap style selected
+  styleId         String         @map("style_id")
+  style           GiftWrapStyle  @relation(fields: [styleId], references: [id])
+  // Gift message
+  giftMessage     String?        @map("gift_message") @db.Text
+  senderName      String?        @map("sender_name")    // "From: John"
+  recipientName   String?        @map("recipient_name") // "To: Jane"
+  // Options
+  includeMsgCard  Boolean        @default(true) @map("include_msg_card") // Include printed message card
+  hidePrice       Boolean        @default(false) @map("hide_price")       // Hide item prices on packing slip
+  includeReceipt  Boolean        @default(false) @map("include_receipt")  // Include gift receipt (no prices)
+  // Pricing snapshot (in case style price changes)
+  chargeUsd       Decimal        @map("charge_usd") @db.Decimal(10, 2)
+  chargeKhr       Int            @map("charge_khr")
+  // Timestamps
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  @@index([orderItemId])
+  @@index([shipmentId])
+  @@index([styleId])
+  @@map("gift_wraps")
+  @@schema("apolo")
+}

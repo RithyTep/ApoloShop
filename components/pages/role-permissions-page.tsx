@@ -49,10 +49,10 @@ import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
 
 const roleColors: Record<string, string> = {
-  super_admin: "bg-purple-500/10 text-purple-700 border-purple-200",
-  admin: "bg-blue-500/10 text-blue-700 border-blue-200",
-  manager: "bg-green-500/10 text-green-700 border-green-200",
-  staff: "bg-yellow-500/10 text-yellow-700 border-yellow-200",
+  super_admin: "bg-primary/10 text-primary border-primary/20",
+  admin: "bg-info/10 text-info border-info/20",
+  manager: "bg-success/10 text-success border-success/20",
+  staff: "bg-warning/10 text-warning border-warning/20",
 }
 
 const roleIcons: Record<string, React.ReactNode> = {
@@ -315,12 +315,12 @@ export function RolePermissionsPage() {
       </div>
 
       {/* System Roles Info */}
-      <Card className="p-4 bg-blue-50 border-blue-200">
+      <Card className="p-4 bg-info/10 border-info/20">
         <div className="flex items-start gap-3">
-          <Info className="w-5 h-5 text-blue-600 mt-0.5" />
+          <Info className="w-5 h-5 text-info mt-0.5" />
           <div>
-            <h3 className="font-medium text-blue-900">System Roles</h3>
-            <p className="text-sm text-blue-700 mt-1">
+            <h3 className="font-medium text-foreground">System Roles</h3>
+            <p className="text-sm text-muted-foreground mt-1">
               System roles ({Object.values(SystemRoles).join(", ")}) are predefined and cannot be deleted.
               You can customize their permissions, but cannot rename them.
             </p>
@@ -406,9 +406,9 @@ export function RolePermissionsPage() {
               </div>
 
               {hasChanges && (
-                <div className="mb-4 p-2 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-yellow-600" />
-                  <span className="text-sm text-yellow-700">You have unsaved changes</span>
+                <div className="mb-4 p-2 bg-warning/10 border border-warning/20 rounded-lg flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-warning" />
+                  <span className="text-sm text-warning">You have unsaved changes</span>
                 </div>
               )}
 

@@ -78,11 +78,11 @@ export function ReviewsPage() {
   const getStatusBadge = (status: ReviewStatus) => {
     switch (status) {
       case "PENDING":
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">Pending</Badge>
+        return <Badge variant="warning">Pending</Badge>
       case "APPROVED":
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">Approved</Badge>
+        return <Badge variant="success">Approved</Badge>
       case "REJECTED":
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300">Rejected</Badge>
+        return <Badge variant="destructive">Rejected</Badge>
     }
   }
 
@@ -115,17 +115,22 @@ export function ReviewsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <MessageSquare className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold text-foreground">Reviews Management</h1>
-          {pendingCount > 0 && (
-            <Badge variant="destructive" className="ml-2">
-              {pendingCount} Pending
-            </Badge>
-          )}
+        <div>
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            <MessageSquare className="h-7 w-7" />
+            Reviews Management
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Manage and moderate customer product reviews
+            {pendingCount > 0 && (
+              <Badge variant="destructive" className="ml-2">
+                {pendingCount} Pending
+              </Badge>
+            )}
+          </p>
         </div>
 
         <Select
@@ -152,8 +157,8 @@ export function ReviewsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-yellow-600" />
+            <div className="p-2 bg-warning/10 rounded-lg">
+              <AlertCircle className="h-5 w-5 text-warning" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Pending Review</p>
@@ -163,8 +168,8 @@ export function ReviewsPage() {
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Check className="h-5 w-5 text-green-600" />
+            <div className="p-2 bg-success/10 rounded-lg">
+              <Check className="h-5 w-5 text-success" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Total Reviews</p>
@@ -174,8 +179,8 @@ export function ReviewsPage() {
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Star className="h-5 w-5 text-blue-600" />
+            <div className="p-2 bg-info/10 rounded-lg">
+              <Star className="h-5 w-5 text-info" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Current View</p>
@@ -186,7 +191,7 @@ export function ReviewsPage() {
       </div>
 
       {/* Reviews Table */}
-      <Card>
+      <Card className="p-6">
         {reviews.length === 0 ? (
           <div className="p-12 text-center">
             <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -198,7 +203,8 @@ export function ReviewsPage() {
             </p>
           </div>
         ) : (
-          <Table>
+          <div className="overflow-x-auto">
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Product</TableHead>
@@ -295,6 +301,7 @@ export function ReviewsPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         )}
 
         {/* Pagination */}

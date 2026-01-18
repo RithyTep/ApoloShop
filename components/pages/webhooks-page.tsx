@@ -72,18 +72,18 @@ const WEBHOOK_EVENTS: { value: WebhookEventType; labelKey: keyof typeof translat
 
 // Status badge colors
 const statusColors: Record<string, string> = {
-  SUCCESS: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  FAILED: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-  PENDING: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-  RETRYING: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  SUCCESS: "bg-success/10 text-success border-success/20",
+  FAILED: "bg-destructive/10 text-destructive border-destructive/20",
+  PENDING: "bg-warning/10 text-warning border-warning/20",
+  RETRYING: "bg-info/10 text-info border-info/20",
 }
 
 // Status icons
 const statusIcons: Record<string, React.ReactNode> = {
-  SUCCESS: <CheckCircle2 className="h-4 w-4 text-green-500" />,
-  FAILED: <XCircle className="h-4 w-4 text-red-500" />,
-  PENDING: <Clock className="h-4 w-4 text-yellow-500" />,
-  RETRYING: <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />,
+  SUCCESS: <CheckCircle2 className="h-4 w-4 text-success" />,
+  FAILED: <XCircle className="h-4 w-4 text-destructive" />,
+  PENDING: <Clock className="h-4 w-4 text-warning" />,
+  RETRYING: <RefreshCw className="h-4 w-4 text-info animate-spin" />,
 }
 
 interface WebhooksPageProps {
@@ -240,7 +240,7 @@ export function WebhooksPage({ language = "en" }: WebhooksPageProps) {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center">
-        <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+        <AlertCircle className="h-12 w-12 text-destructive mb-4" />
         <h3 className="text-lg font-medium">Failed to load webhooks</h3>
         <p className="text-muted-foreground">Please try again later</p>
       </div>
@@ -251,15 +251,15 @@ export function WebhooksPage({ language = "en" }: WebhooksPageProps) {
   const pagination = data?.pagination
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <WebhookIcon className="h-6 w-6" />
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+            <WebhookIcon className="h-7 w-7" />
             {t.title}
           </h1>
-          <p className="text-muted-foreground text-sm mt-1">{t.description}</p>
+          <p className="text-muted-foreground mt-2">{t.description}</p>
         </div>
         <Button onClick={handleCreate}>
           <Plus className="h-4 w-4 mr-2" />
@@ -357,7 +357,7 @@ export function WebhooksPage({ language = "en" }: WebhooksPageProps) {
                     size="sm"
                     onClick={() => handleDelete(webhook)}
                   >
-                    <Trash2 className="h-4 w-4 text-red-500" />
+                    <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </div>
               </div>
@@ -541,11 +541,11 @@ export function WebhooksPage({ language = "en" }: WebhooksPageProps) {
                   <div className="text-xs text-muted-foreground">{t.totalDeliveries}</div>
                 </Card>
                 <Card className="p-3 text-center">
-                  <div className="text-2xl font-bold text-green-600">{detailData.stats.successCount}</div>
+                  <div className="text-2xl font-bold text-success">{detailData.stats.successCount}</div>
                   <div className="text-xs text-muted-foreground">{t.successCount}</div>
                 </Card>
                 <Card className="p-3 text-center">
-                  <div className="text-2xl font-bold text-red-600">{detailData.stats.failureCount}</div>
+                  <div className="text-2xl font-bold text-destructive">{detailData.stats.failureCount}</div>
                   <div className="text-xs text-muted-foreground">{t.failureCount}</div>
                 </Card>
                 <Card className="p-3 text-center">
@@ -609,7 +609,7 @@ export function WebhooksPage({ language = "en" }: WebhooksPageProps) {
                             </div>
                           </div>
                           {log.errorMessage && (
-                            <p className="text-sm text-red-500 mt-2">{log.errorMessage}</p>
+                            <p className="text-sm text-destructive mt-2">{log.errorMessage}</p>
                           )}
                           {log.durationMs && (
                             <p className="text-xs text-muted-foreground mt-1">
@@ -638,7 +638,7 @@ export function WebhooksPage({ language = "en" }: WebhooksPageProps) {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive hover:bg-destructive/90"
             >
               {deleteMutation.isPending ? "Deleting..." : "Delete"}
             </AlertDialogAction>

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Printer, Download } from "lucide-react"
 import { useState } from "react"
-import { generateEAN13FromSKU, BarcodeLabelData } from "@/lib/sku-barcode"
+import { generateEAN13FromSKU, BarcodeLabelData } from "@/lib/sku-barcode-utils"
 
 // Barcode rendering using CODE128 pattern (simplified)
 function renderBarcode(value: string, width: number, height: number): string {

@@ -18,7 +18,7 @@ import { useProducts, useCategories, useCreateProduct, useUpdateProduct, useDele
 import { useToast } from "@/components/ui/use-toast"
 import { ProductImportDialog, ProductExportButton } from "@/components/product-import-export"
 import { PrintLabelButton } from "@/components/barcode-label"
-import { generateEAN13FromSKU } from "@/lib/sku-barcode"
+import { generateEAN13FromSKU } from "@/lib/sku-barcode-utils"
 
 export function ProductsPage() {
   const { toast } = useToast()

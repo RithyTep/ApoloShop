@@ -167,13 +167,13 @@ export function PerformancePage() {
   );
 
   const getRatingBadge = (rating: string) => {
-    const colors = {
-      good: "bg-green-100 text-green-800",
-      "needs-improvement": "bg-yellow-100 text-yellow-800",
-      poor: "bg-red-100 text-red-800",
-    };
+    const variants = {
+      good: "success",
+      "needs-improvement": "warning",
+      poor: "destructive",
+    } as const;
     return (
-      <Badge className={colors[rating as keyof typeof colors] || "bg-gray-100"}>
+      <Badge variant={variants[rating as keyof typeof variants] as "success" | "warning" | "destructive" | undefined}>
         {rating}
       </Badge>
     );
@@ -193,25 +193,25 @@ export function PerformancePage() {
         label: "Web Vitals Score",
         value: calculateOverallScore(webVitals),
         icon: Activity,
-        color: "text-blue-600",
+        color: "text-info",
       },
       {
         label: "Avg API Response",
         value: `${Math.round(api?.avgResponseTime || 0)}ms`,
         icon: Server,
-        color: "text-green-600",
+        color: "text-success",
       },
       {
         label: "Avg DB Query",
         value: `${Math.round(database?.avgQueryTime || 0)}ms`,
         icon: Database,
-        color: "text-purple-600",
+        color: "text-primary",
       },
       {
         label: "Unresolved Errors",
         value: errors?.unresolved || 0,
         icon: errors?.unresolved ? AlertTriangle : CheckCircle,
-        color: errors?.unresolved ? "text-red-600" : "text-green-600",
+        color: errors?.unresolved ? "text-destructive" : "text-success",
       },
     ];
 
@@ -592,7 +592,7 @@ export function PerformancePage() {
                   <TableRow key={error.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                        <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0" />
                         <span className="font-medium truncate max-w-[300px]">
                           {error.message}
                         </span>
@@ -639,7 +639,7 @@ export function PerformancePage() {
             </Table>
           ) : (
             <div className="text-center py-8">
-              <CheckCircle className="h-12 w-12 mx-auto text-green-500 mb-4" />
+              <CheckCircle className="h-12 w-12 mx-auto text-success mb-4" />
               <p className="text-muted-foreground">No unresolved errors</p>
             </div>
           )}
@@ -650,7 +650,7 @@ export function PerformancePage() {
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <XCircle className="h-5 w-5 text-red-500" />
+                <XCircle className="h-5 w-5 text-destructive" />
                 Error Details
               </DialogTitle>
               <DialogDescription>
@@ -722,12 +722,12 @@ export function PerformancePage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Performance</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-bold text-foreground">Performance</h1>
+          <p className="text-muted-foreground mt-2">
             Monitor Core Web Vitals, API performance, and errors
           </p>
         </div>

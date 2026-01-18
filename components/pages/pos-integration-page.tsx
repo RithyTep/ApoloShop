@@ -317,7 +317,7 @@ export function POSIntegrationPage({ language = "en" }: POSIntegrationPageProps)
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "connected":
-        return <Badge className="bg-green-500">{t.connected}</Badge>
+        return <Badge variant="success">{t.connected}</Badge>
       case "disconnected":
         return <Badge variant="secondary">{t.disconnected}</Badge>
       case "error":
@@ -330,11 +330,11 @@ export function POSIntegrationPage({ language = "en" }: POSIntegrationPageProps)
   const getSyncStatusBadge = (status: string) => {
     switch (status) {
       case "COMPLETED":
-        return <Badge className="bg-green-500"><Check className="w-3 h-3 mr-1" />{t.completed}</Badge>
+        return <Badge variant="success"><Check className="w-3 h-3 mr-1" />{t.completed}</Badge>
       case "FAILED":
         return <Badge variant="destructive"><X className="w-3 h-3 mr-1" />{t.failed}</Badge>
       case "IN_PROGRESS":
-        return <Badge className="bg-blue-500"><RefreshCw className="w-3 h-3 mr-1 animate-spin" />{t.inProgress}</Badge>
+        return <Badge variant="info"><RefreshCw className="w-3 h-3 mr-1 animate-spin" />{t.inProgress}</Badge>
       case "PENDING":
         return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />{t.pending}</Badge>
       default:
@@ -361,12 +361,12 @@ export function POSIntegrationPage({ language = "en" }: POSIntegrationPageProps)
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-8 space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">{t.title}</h1>
-          <p className="text-muted-foreground">{t.subtitle}</p>
+          <h1 className="text-3xl font-bold text-foreground">{t.title}</h1>
+          <p className="text-muted-foreground mt-2">{t.subtitle}</p>
         </div>
         <Button onClick={openCreateDialog}>
           <Plus className="w-4 h-4 mr-2" />
@@ -402,7 +402,7 @@ export function POSIntegrationPage({ language = "en" }: POSIntegrationPageProps)
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <div className="flex items-center gap-2">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                    provider.type === "SQUARE" ? "bg-black text-white" : "bg-blue-500 text-white"
+                    provider.type === "SQUARE" ? "bg-black text-white" : "bg-info text-white"
                   }`}>
                     {provider.type === "SQUARE" ? "SQ" : "LV"}
                   </div>
@@ -587,7 +587,7 @@ export function POSIntegrationPage({ language = "en" }: POSIntegrationPageProps)
                             <TableCell>
                               {sync.processedItems}/{sync.totalItems}
                               {sync.failedItems > 0 && (
-                                <span className="text-red-500 ml-1">({sync.failedItems} failed)</span>
+                                <span className="text-destructive ml-1">({sync.failedItems} failed)</span>
                               )}
                             </TableCell>
                             <TableCell>{formatDate(sync.startedAt || sync.createdAt)}</TableCell>

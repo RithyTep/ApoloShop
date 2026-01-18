@@ -263,11 +263,11 @@ export function HelpCenterPage() {
     })
   }
 
-  const getStatusVariant = (status: string) => {
+  const getStatusVariant = (status: string): "success" | "warning" | "secondary" | "outline" => {
     switch (status) {
-      case "PUBLISHED": return "default"
-      case "DRAFT": return "secondary"
-      case "ARCHIVED": return "outline"
+      case "PUBLISHED": return "success"
+      case "DRAFT": return "warning"
+      case "ARCHIVED": return "secondary"
       default: return "secondary"
     }
   }
@@ -366,7 +366,7 @@ export function HelpCenterPage() {
                       <TableRow key={article.id} className="border-b border-border hover:bg-muted/50">
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            {article.isFeatured && <Star size={14} className="text-yellow-500 fill-yellow-500" />}
+                            {article.isFeatured && <Star size={14} className="text-warning fill-warning" />}
                             <div>
                               <p className="text-foreground font-medium">{article.titleEn}</p>
                               <p className="text-sm text-muted-foreground">{article.titleKh}</p>
@@ -388,9 +388,9 @@ export function HelpCenterPage() {
                           </div>
                         </TableCell>
                         <TableCell className="text-foreground text-sm">
-                          <span className="text-green-600">{article.helpfulYes}</span>
+                          <span className="text-success">{article.helpfulYes}</span>
                           {" / "}
-                          <span className="text-red-600">{article.helpfulNo}</span>
+                          <span className="text-destructive">{article.helpfulNo}</span>
                         </TableCell>
                         <TableCell className="text-foreground text-sm">
                           {formatDate(article.updatedAt)}
@@ -482,7 +482,7 @@ export function HelpCenterPage() {
                           {category.sortOrder}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={category.isActive ? "default" : "secondary"} className="rounded-sm">
+                          <Badge variant={category.isActive ? "success" : "secondary"} className="rounded-sm">
                             {category.isActive ? "Active" : "Inactive"}
                           </Badge>
                         </TableCell>

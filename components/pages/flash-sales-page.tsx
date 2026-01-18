@@ -91,12 +91,11 @@ interface FlashSale {
   createdAt: string
 }
 
-const statusColors: Record<FlashSale["status"], string> = {
-  SCHEDULED: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
-  ACTIVE:
-    "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
-  ENDED: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
-  CANCELLED: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
+const statusColors: Record<FlashSale["status"], { variant: "info" | "success" | "secondary" | "destructive" }> = {
+  SCHEDULED: { variant: "info" },
+  ACTIVE: { variant: "success" },
+  ENDED: { variant: "secondary" },
+  CANCELLED: { variant: "destructive" },
 }
 
 export function FlashSalesPage() {
@@ -370,16 +369,16 @@ export function FlashSalesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-8 space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-orange-100 p-2 dark:bg-orange-900">
-            <Zap className="h-6 w-6 text-orange-600 dark:text-orange-300" />
+          <div className="rounded-lg bg-warning/10 p-2">
+            <Zap className="h-7 w-7 text-warning" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Flash Sales</h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-3xl font-bold text-foreground">Flash Sales</h1>
+            <p className="text-muted-foreground mt-2">
               Create and manage time-limited deals
             </p>
           </div>
@@ -515,7 +514,7 @@ export function FlashSalesPage() {
                         </TableCell>
                         <TableCell>
                           <div>
-                            <div className="font-medium text-red-600">
+                            <div className="font-medium text-destructive">
                               ${sale.salePriceUsd.toFixed(2)}
                             </div>
                             <div className="text-xs text-muted-foreground line-through">
@@ -525,10 +524,7 @@ export function FlashSalesPage() {
                         </TableCell>
                         <TableCell>
                           {sale.product && (
-                            <Badge
-                              variant="secondary"
-                              className="bg-orange-100 text-orange-700"
-                            >
+                            <Badge variant="warning">
                               -
                               {Math.round(
                                 ((sale.product.priceUsd - sale.salePriceUsd) /
@@ -555,7 +551,7 @@ export function FlashSalesPage() {
                               </div>
                               <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
                                 <div
-                                  className="h-full bg-orange-500"
+                                  className="h-full bg-warning"
                                   style={{
                                     width: `${(sale.soldCount / sale.quantity) * 100}%`,
                                   }}
@@ -569,13 +565,13 @@ export function FlashSalesPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <Badge className={statusColors[sale.status]}>
+                          <Badge variant={statusColors[sale.status].variant}>
                             {sale.status}
                           </Badge>
                           {sale.isFeatured && (
                             <Badge
                               variant="outline"
-                              className="ml-2 border-yellow-500 text-yellow-600"
+                              className="ml-2 border-warning text-warning"
                             >
                               Featured
                             </Badge>
@@ -691,18 +687,26 @@ export function FlashSalesPage() {
                         {day}
                       </div>
                       <div className="mt-1 space-y-0.5">
-                        {daySales.slice(0, 2).map((sale) => (
-                          <div
-                            key={sale.id}
-                            className={`truncate rounded px-1 py-0.5 text-xs ${statusColors[sale.status]}`}
-                            title={sale.product?.nameEn || ""}
-                          >
-                            {sale.product?.nameEn?.slice(0, 15)}
-                            {(sale.product?.nameEn?.length || 0) > 15
-                              ? "..."
-                              : ""}
-                          </div>
-                        ))}
+                        {daySales.slice(0, 2).map((sale) => {
+                          const variantClasses = {
+                            info: "bg-info/10 text-info border-info/20",
+                            success: "bg-success/10 text-success border-success/20",
+                            secondary: "bg-secondary/10 text-secondary-foreground border-secondary/20",
+                            destructive: "bg-destructive/10 text-destructive border-destructive/20",
+                          }
+                          return (
+                            <div
+                              key={sale.id}
+                              className={`truncate rounded border px-1 py-0.5 text-xs ${variantClasses[statusColors[sale.status].variant]}`}
+                              title={sale.product?.nameEn || ""}
+                            >
+                              {sale.product?.nameEn?.slice(0, 15)}
+                              {(sale.product?.nameEn?.length || 0) > 15
+                                ? "..."
+                                : ""}
+                            </div>
+                          )
+                        })}
                         {daySales.length > 2 && (
                           <div className="text-xs text-muted-foreground">
                             +{daySales.length - 2} more
@@ -717,19 +721,19 @@ export function FlashSalesPage() {
               {/* Legend */}
               <div className="mt-4 flex flex-wrap gap-4">
                 <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded bg-green-500" />
+                  <div className="h-3 w-3 rounded bg-success" />
                   <span className="text-sm">Active</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded bg-blue-500" />
+                  <div className="h-3 w-3 rounded bg-info" />
                   <span className="text-sm">Scheduled</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded bg-gray-400" />
+                  <div className="h-3 w-3 rounded bg-secondary" />
                   <span className="text-sm">Ended</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded bg-red-500" />
+                  <div className="h-3 w-3 rounded bg-destructive" />
                   <span className="text-sm">Cancelled</span>
                 </div>
               </div>
@@ -790,7 +794,7 @@ export function FlashSalesPage() {
                 <Label>Discount Preview</Label>
                 <div className="flex h-10 items-center rounded-md bg-muted px-3">
                   {selectedProduct && formData.salePriceUsd ? (
-                    <span className="font-medium text-green-600">
+                    <span className="font-medium text-success">
                       {discountPercentage}% off ($
                       {(
                         selectedProduct.priceUsd -

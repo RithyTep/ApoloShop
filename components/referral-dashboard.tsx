@@ -33,10 +33,10 @@ interface ReferralDashboardProps {
 }
 
 const statusColors: Record<string, string> = {
-  PENDING: "bg-yellow-500",
-  COMPLETED: "bg-green-500",
-  EXPIRED: "bg-gray-500",
-  CANCELLED: "bg-red-500",
+  PENDING: "bg-warning",
+  COMPLETED: "bg-success",
+  EXPIRED: "bg-muted",
+  CANCELLED: "bg-destructive",
 };
 
 const statusIcons: Record<string, typeof Clock> = {
@@ -298,7 +298,7 @@ export function ReferralDashboard({
 
         {/* Monthly Limit */}
         {!stats.canReferMore && (
-          <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-3 text-sm text-yellow-700">
+          <div className="rounded-lg border border-warning/50 bg-warning/10 p-3 text-sm text-warning">
             {referralT.monthlyLimitReached.replace("{limit}", String(config.maxReferralsPerMonth))}
           </div>
         )}

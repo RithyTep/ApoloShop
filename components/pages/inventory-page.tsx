@@ -15,7 +15,7 @@ import { useInventory, useUpdateInventory, InventoryItem } from "@/lib/api-hooks
 import { useToast } from "@/components/ui/use-toast"
 import { BarcodeScanner } from "@/components/barcode-scanner"
 import { PrintPreviewDialog, PrintLabelButton } from "@/components/barcode-label"
-import { BarcodeInfo, generateEAN13FromSKU } from "@/lib/sku-barcode"
+import { BarcodeInfo, generateEAN13FromSKU } from "@/lib/sku-barcode-utils"
 
 export function InventoryPage() {
   const { toast } = useToast()

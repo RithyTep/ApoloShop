@@ -261,13 +261,13 @@ export function ChatPage() {
   const getStatusBadge = (status: ChatSessionStatus) => {
     switch (status) {
       case "ACTIVE":
-        return <Badge className="bg-green-100 text-green-700">Active</Badge>
+        return <Badge variant="success">Active</Badge>
       case "WAITING":
-        return <Badge className="bg-yellow-100 text-yellow-700">Waiting</Badge>
+        return <Badge variant="warning">Waiting</Badge>
       case "RESOLVED":
-        return <Badge className="bg-gray-100 text-gray-700">Resolved</Badge>
+        return <Badge variant="secondary">Resolved</Badge>
       case "OFFLINE":
-        return <Badge className="bg-blue-100 text-blue-700">Offline</Badge>
+        return <Badge variant="info">Offline</Badge>
     }
   }
 
@@ -326,15 +326,20 @@ export function ChatPage() {
   }
 
   return (
-    <div className="p-6 h-screen overflow-hidden">
+    <div className="p-8 h-screen overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <MessageCircle className="h-6 w-6" />
-          <h1 className="text-2xl font-semibold">Live Chat</h1>
-          {unreadCount > 0 && (
-            <Badge variant="destructive">{unreadCount} unread</Badge>
-          )}
+        <div>
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            <MessageCircle className="h-7 w-7" />
+            Live Chat
+          </h1>
+          <p className="text-muted-foreground mt-2 flex items-center gap-2">
+            Real-time customer support and messaging
+            {unreadCount > 0 && (
+              <Badge variant="warning">{unreadCount} unread</Badge>
+            )}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => refetchSessions()}>
@@ -342,7 +347,7 @@ export function ChatPage() {
             Refresh
           </Button>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <div className="w-2 h-2 bg-green-500 rounded-full" />
+            <div className="w-2 h-2 bg-success rounded-full" />
             You are online
           </div>
         </div>

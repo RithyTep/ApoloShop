@@ -264,17 +264,17 @@ export function ReturnsPage() {
   }
 
   const getStatusBadge = (status: ReturnStatus) => {
-    const variants: Record<ReturnStatus, { class: string; label: string }> = {
-      PENDING: { class: "bg-yellow-50 text-yellow-700 border-yellow-300", label: "Pending" },
-      APPROVED: { class: "bg-blue-50 text-blue-700 border-blue-300", label: "Approved" },
-      RECEIVED: { class: "bg-purple-50 text-purple-700 border-purple-300", label: "Received" },
-      REFUNDED: { class: "bg-green-50 text-green-700 border-green-300", label: "Refunded" },
-      REJECTED: { class: "bg-red-50 text-red-700 border-red-300", label: "Rejected" },
-      CANCELLED: { class: "bg-gray-50 text-gray-700 border-gray-300", label: "Cancelled" },
+    const variants: Record<ReturnStatus, { variant: "warning" | "info" | "success" | "destructive" | "secondary"; label: string }> = {
+      PENDING: { variant: "warning", label: "Pending" },
+      APPROVED: { variant: "info", label: "Approved" },
+      RECEIVED: { variant: "info", label: "Received" },
+      REFUNDED: { variant: "success", label: "Refunded" },
+      REJECTED: { variant: "destructive", label: "Rejected" },
+      CANCELLED: { variant: "secondary", label: "Cancelled" },
     }
     const v = variants[status]
     return (
-      <Badge variant="outline" className={v.class}>
+      <Badge variant={v.variant}>
         {v.label}
       </Badge>
     )
@@ -298,19 +298,19 @@ export function ReturnsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <RotateCcw className="h-6 w-6" />
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            <RotateCcw className="h-7 w-7" />
             Returns Management
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mt-2">
             Manage customer return requests and process refunds
           </p>
         </div>
         {pendingCount > 0 && (
-          <Badge variant="destructive" className="text-base px-3 py-1">
+          <Badge variant="warning" className="text-base px-3 py-1">
             {pendingCount} pending
           </Badge>
         )}
@@ -330,36 +330,36 @@ export function ReturnsPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-yellow-600">
+            <CardTitle className="text-sm font-medium text-warning">
               Pending Review
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
+            <div className="text-2xl font-bold text-warning">
               {returns.filter((r) => r.status === "PENDING").length}
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-blue-600">
+            <CardTitle className="text-sm font-medium text-info">
               Awaiting Product
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold text-info">
               {returns.filter((r) => r.status === "APPROVED").length}
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-green-600">
+            <CardTitle className="text-sm font-medium text-success">
               Refunded
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-success">
               {returns.filter((r) => r.status === "REFUNDED").length}
             </div>
           </CardContent>
@@ -367,34 +367,32 @@ export function ReturnsPage() {
       </div>
 
       {/* Filter and Table */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Return Requests</CardTitle>
-            <Select
-              value={statusFilter}
-              onValueChange={(v) => setStatusFilter(v as ReturnStatus | "ALL")}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_FILTERS.map((f) => (
-                  <SelectItem key={f.value} value={f.value}>
-                    {f.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      <Card className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold">Return Requests</h2>
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => setStatusFilter(v as ReturnStatus | "ALL")}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_FILTERS.map((f) => (
+                <SelectItem key={f.value} value={f.value}>
+                  {f.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {returns.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>No return requests found</p>
           </div>
-        </CardHeader>
-        <CardContent>
-          {returns.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No return requests found</p>
-            </div>
-          ) : (
+        ) : (
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -446,7 +444,7 @@ export function ReturnsPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-green-600 hover:text-green-700"
+                              className="text-success hover:text-success hover:bg-success/10"
                               onClick={() => {
                                 setSelectedReturn(ret)
                                 setActionDialog("approve")
@@ -457,7 +455,7 @@ export function ReturnsPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-red-600 hover:text-red-700"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
                               onClick={() => {
                                 setSelectedReturn(ret)
                                 setActionDialog("reject")
@@ -471,7 +469,7 @@ export function ReturnsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-purple-600 hover:text-purple-700"
+                            className="text-info hover:text-info hover:bg-info/10"
                             onClick={() => handleMarkReceived(ret)}
                           >
                             <Package className="h-4 w-4" />
@@ -481,7 +479,7 @@ export function ReturnsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-green-600 hover:text-green-700"
+                            className="text-success hover:text-success hover:bg-success/10"
                             onClick={() => {
                               setSelectedReturn(ret)
                               setRefundAmount(ret.refundAmountUsd?.toString() || "")
@@ -497,33 +495,33 @@ export function ReturnsPage() {
                 ))}
               </TableBody>
             </Table>
-          )}
+          </div>
+        )}
 
-          {/* Pagination */}
-          {pagination && pagination.totalPages > 1 && (
-            <div className="flex justify-center gap-2 mt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
-              >
-                Previous
-              </Button>
-              <span className="py-2 px-4 text-sm">
-                Page {page} of {pagination.totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page === pagination.totalPages}
-                onClick={() => setPage(page + 1)}
-              >
-                Next
-              </Button>
-            </div>
-          )}
-        </CardContent>
+        {/* Pagination */}
+        {pagination && pagination.totalPages > 1 && (
+          <div className="flex justify-center gap-2 mt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === 1}
+              onClick={() => setPage(page - 1)}
+            >
+              Previous
+            </Button>
+            <span className="py-2 px-4 text-sm">
+              Page {page} of {pagination.totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === pagination.totalPages}
+              onClick={() => setPage(page + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        )}
       </Card>
 
       {/* View Return Details Dialog */}
@@ -601,10 +599,10 @@ export function ReturnsPage() {
               )}
               {selectedReturn.rejectionReason && (
                 <div>
-                  <Label className="text-muted-foreground text-red-600">
+                  <Label className="text-destructive">
                     Rejection Reason
                   </Label>
-                  <p className="mt-1 p-3 bg-red-50 text-red-700 rounded-lg">
+                  <p className="mt-1 p-3 bg-destructive/10 text-destructive rounded-lg">
                     {selectedReturn.rejectionReason}
                   </p>
                 </div>
@@ -618,7 +616,7 @@ export function ReturnsPage() {
       <Dialog open={actionDialog === "approve"} onOpenChange={closeActionDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-green-600">
+            <DialogTitle className="flex items-center gap-2 text-success">
               <Check className="h-5 w-5" />
               Approve Return
             </DialogTitle>
@@ -641,7 +639,7 @@ export function ReturnsPage() {
               Cancel
             </Button>
             <Button
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-success hover:bg-success/90 text-success-foreground"
               onClick={handleApprove}
               disabled={updateMutation.isPending}
             >
@@ -655,7 +653,7 @@ export function ReturnsPage() {
       <Dialog open={actionDialog === "reject"} onOpenChange={closeActionDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
+            <DialogTitle className="flex items-center gap-2 text-destructive">
               <X className="h-5 w-5" />
               Reject Return
             </DialogTitle>
@@ -701,7 +699,7 @@ export function ReturnsPage() {
       <Dialog open={actionDialog === "refund"} onOpenChange={closeActionDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-green-600">
+            <DialogTitle className="flex items-center gap-2 text-success">
               <DollarSign className="h-5 w-5" />
               Process Refund
             </DialogTitle>
@@ -756,7 +754,7 @@ export function ReturnsPage() {
               Cancel
             </Button>
             <Button
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-success hover:bg-success/90 text-success-foreground"
               onClick={handleProcessRefund}
               disabled={refundMutation.isPending}
             >

@@ -1594,8 +1594,8 @@
         "Build passes: bun run build"
       ],
       "priority": 101,
-      "passes": false,
-      "notes": "Improves customer experience"
+      "passes": true,
+      "notes": "Implemented CustomerAccountDashboard component with tabbed interface: Order History (with reorder button), Saved Addresses (CRUD with default management), Wishlist preview, Recently Viewed products, Loyalty Points card with tier status. Created /shop/account page route. Bilingual EN/KH support throughout."
     },
     {
       "id": "US-102",
@@ -1610,8 +1610,8 @@
         "Build passes: bun run build"
       ],
       "priority": 102,
-      "passes": false,
-      "notes": "Useful for corporate and gift orders"
+      "passes": true,
+      "notes": "Implemented MultiAddressCheckout component with shipment groups, POST /api/checkout/multi-address for order creation with multiple shipments, gift message per shipment, separate shipping calculation per address, individual tracking numbers. Added isMultiAddress/recipientName/recipientPhone/giftMessage/isGift/hideItemPrices fields to Shipment model. Bilingual translations (EN/KH)."
     },
     {
       "id": "US-103",

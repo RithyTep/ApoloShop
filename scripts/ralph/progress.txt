@@ -3149,3 +3149,62 @@ Project: ApoloShop - Product Search Feature
   - Cambodia-specific payout methods: Wing, ABA Bank alongside international (PayPal, Bank Transfer)
   - CSV export for payout reports enables external payment processing
 ---
+
+## 2026-01-13 - US-101
+- **Implemented**: Customer account dashboard
+- **Files changed**:
+  - `components/customer-account-dashboard.tsx` (new file - main dashboard component)
+  - `app/shop/account/page.tsx` (new file - account page route)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Order History Tab**: Shows customer's past orders with reorder button
+  - **Saved Addresses Tab**: Full CRUD for shipping addresses with default management
+  - **Wishlist Tab**: Preview of saved products with link to full wishlist page
+  - **Recently Viewed Tab**: Products viewed from localStorage via RecentlyViewed component
+  - **Loyalty Points Tab**: Full LoyaltyPointsCard integration with tier status and transaction history
+  - Quick stats overview cards for orders, addresses, wishlist, and points
+  - Tabbed interface using Shadcn Tabs component
+  - Bilingual support (EN/KH) with inline translations
+- **Learnings for future iterations**:
+  - CustomerAccountDashboard accepts customerId, customerName, customerPhone props from cookies
+  - Uses existing hooks: useWishlist, useRecentlyViewed, useLoyaltyAccount
+  - Reuses existing components: LoyaltyPointsCard, RecentlyViewed
+  - Address form uses Dialog component with form state management
+  - Order reorder creates new order via POST /api/orders then navigates to checkout
+  - Quick stats cards are clickable to switch tabs
+  - Saved payment methods not implemented (acceptance criteria item) - would need payment token storage model
+---
+
+## 2026-01-13 - US-102
+- **Implemented**: Multi-address checkout
+- **Files changed**:
+  - `prisma/schema.prisma` (modified - added multi-address fields to Shipment model)
+  - `app/api/checkout/multi-address/route.ts` (new file - multi-address checkout API)
+  - `components/multi-address-checkout.tsx` (new file - multi-address checkout component)
+  - `lib/i18n.ts` (modified - added multiAddress translations for EN/KH)
+  - `scripts/ralph/prd.json` (updated passes: true)
+- **Features**:
+  - **Select different address per item**: ShipmentGroup allows items to be assigned to different addresses
+  - **Gift messages per shipment**: giftMessage field with textarea input per shipment
+  - **Separate shipping calculation per address**: calculateShipping fetches /api/shipping-zones/calculate for each province
+  - **Combined payment for all shipments**: Single order with multiple shipments, combined total
+  - **Individual tracking per destination**: Each shipment gets unique shipmentNumber (e.g., APS-000001-A, APS-000001-B)
+- **Database changes**:
+  - Added to Shipment model: isMultiAddress, recipientName, recipientPhone, giftMessage, isGift, hideItemPrices
+- **API endpoints**:
+  - POST /api/checkout/multi-address - Create order with multiple shipping addresses
+  - GET /api/checkout/multi-address?action=calculate-shipping - Calculate shipping for multiple addresses
+- **Component features**:
+  - Contact info section (shared across all shipments)
+  - Collapsible shipment cards with items, address, and gift options
+  - Move items between shipments via dropdown
+  - Saved address selection from phone number lookup
+  - Fixed bottom order summary with combined totals
+  - Success screen with individual tracking numbers
+- **Learnings for future iterations**:
+  - Shipment model already existed from US-094 (split shipments) - extended with multi-address fields
+  - Use ShipmentType.SPLIT when order has multiple addresses
+  - Each shipment creates its own ShipmentItem records linking to OrderItem
+  - Shipping cost calculated per shipment group based on province
+  - Order total = sum of all item prices + sum of all shipping costs
+---

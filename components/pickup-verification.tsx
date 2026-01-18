@@ -55,14 +55,17 @@ interface PickupVerificationProps {
   language: "EN" | "KH"
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  PENDING: "bg-yellow-100 text-yellow-700",
-  CONFIRMED: "bg-blue-100 text-blue-700",
-  PREPARING: "bg-purple-100 text-purple-700",
-  READY: "bg-green-100 text-green-700",
-  PICKED_UP: "bg-gray-100 text-gray-600",
-  CANCELLED: "bg-red-100 text-red-700",
-  EXPIRED: "bg-orange-100 text-orange-700",
+const getStatusVariant = (status: string): "warning" | "info" | "success" | "secondary" | "destructive" => {
+  const statusMap: Record<string, "warning" | "info" | "success" | "secondary" | "destructive"> = {
+    PENDING: "warning",
+    CONFIRMED: "info",
+    PREPARING: "warning",
+    READY: "success",
+    PICKED_UP: "secondary",
+    CANCELLED: "destructive",
+    EXPIRED: "warning",
+  }
+  return statusMap[status] || "secondary"
 }
 
 export function PickupVerification({ orderId, language }: PickupVerificationProps) {
@@ -178,7 +181,7 @@ export function PickupVerification({ orderId, language }: PickupVerificationProp
             <Store className="h-5 w-5" />
             {tp.orderPickup}
           </CardTitle>
-          <Badge className={STATUS_COLORS[pickup.status] || "bg-gray-100"}>
+          <Badge variant={getStatusVariant(pickup.status)}>
             {statusText}
           </Badge>
         </div>

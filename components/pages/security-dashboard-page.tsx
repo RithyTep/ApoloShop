@@ -92,10 +92,10 @@ const severityColors: Record<string, string> = {
 
 // Security score colors
 function getScoreColor(score: number): string {
-  if (score >= 80) return "text-green-500"
-  if (score >= 60) return "text-yellow-500"
-  if (score >= 40) return "text-orange-500"
-  return "text-red-500"
+  if (score >= 80) return "text-success"
+  if (score >= 60) return "text-warning"
+  if (score >= 40) return "text-warning"
+  return "text-destructive"
 }
 
 function getScoreLabel(score: number): string {
@@ -145,7 +145,7 @@ export function SecurityDashboardPage() {
     return (
       <div className="p-6">
         <Card className="p-6">
-          <div className="flex items-center gap-2 text-red-500">
+          <div className="flex items-center gap-2 text-destructive">
             <AlertCircle className="h-5 w-5" />
             <span>Failed to load security dashboard data</span>
           </div>
@@ -171,12 +171,12 @@ export function SecurityDashboardPage() {
   } = data
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Security Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-3xl font-bold text-foreground">Security Dashboard</h1>
+          <p className="text-muted-foreground mt-2">
             Real-time security monitoring and threat detection
           </p>
         </div>
@@ -226,7 +226,7 @@ export function SecurityDashboardPage() {
           {/* Alerts Summary */}
           {alerts.length > 0 && (
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              <AlertTriangle className="h-5 w-5 text-warning" />
               <span className="text-sm font-medium">
                 {alerts.length} Active Alert{alerts.length !== 1 ? "s" : ""}
               </span>
@@ -244,7 +244,7 @@ export function SecurityDashboardPage() {
               <p className="text-sm text-muted-foreground">Successful Logins</p>
               <p className="text-2xl font-semibold">{summary.loginSuccessCount}</p>
             </div>
-            <CheckCircle className="h-8 w-8 text-green-500 opacity-50" />
+            <CheckCircle className="h-8 w-8 text-success opacity-50" />
           </div>
         </Card>
 
@@ -258,7 +258,7 @@ export function SecurityDashboardPage() {
                 {summary.failedLoginRate}% failure rate
               </p>
             </div>
-            <XCircle className="h-8 w-8 text-red-500 opacity-50" />
+            <XCircle className="h-8 w-8 text-destructive opacity-50" />
           </div>
         </Card>
 
@@ -269,7 +269,7 @@ export function SecurityDashboardPage() {
               <p className="text-sm text-muted-foreground">Active Sessions</p>
               <p className="text-2xl font-semibold">{summary.activeSessions}</p>
             </div>
-            <Users className="h-8 w-8 text-blue-500 opacity-50" />
+            <Users className="h-8 w-8 text-info opacity-50" />
           </div>
         </Card>
 
@@ -280,7 +280,7 @@ export function SecurityDashboardPage() {
               <p className="text-sm text-muted-foreground">Locked Accounts</p>
               <p className="text-2xl font-semibold">{summary.lockedAccountsCount}</p>
             </div>
-            <Lock className="h-8 w-8 text-orange-500 opacity-50" />
+            <Lock className="h-8 w-8 text-warning opacity-50" />
           </div>
         </Card>
       </div>
@@ -289,7 +289,7 @@ export function SecurityDashboardPage() {
       {alerts.length > 0 && (
         <Card className="p-4">
           <h3 className="font-medium mb-3 flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+            <AlertTriangle className="h-4 w-4 text-warning" />
             Security Alerts
           </h3>
           <div className="space-y-2">
@@ -463,7 +463,7 @@ export function SecurityDashboardPage() {
         {/* Suspicious Logins */}
         <Card className="p-4">
           <h3 className="font-medium mb-4 flex items-center gap-2">
-            <ShieldAlert className="h-4 w-4 text-yellow-500" />
+            <ShieldAlert className="h-4 w-4 text-warning" />
             Suspicious Login Activity
             {suspiciousLogins.length > 0 && (
               <Badge variant="destructive" className="ml-2">
@@ -477,7 +477,7 @@ export function SecurityDashboardPage() {
                 {suspiciousLogins.map((login) => (
                   <div
                     key={login.id}
-                    className="p-3 rounded-lg bg-muted/50 border-l-2 border-yellow-500"
+                    className="p-3 rounded-lg bg-muted/50 border-l-2 border-warning"
                   >
                     <div className="flex items-center justify-between">
                       <div>
@@ -544,7 +544,7 @@ export function SecurityDashboardPage() {
                 <TableRow key={attempt.id}>
                   <TableCell>
                     {attempt.success ? (
-                      <Badge variant="default" className="bg-green-500">
+                      <Badge variant="default" className="bg-success">
                         <CheckCircle className="h-3 w-3 mr-1" />
                         Success
                       </Badge>
@@ -570,7 +570,7 @@ export function SecurityDashboardPage() {
       {/* Critical Events */}
       {criticalEvents.length > 0 && (
         <Card className="p-4">
-          <h3 className="font-medium mb-4 flex items-center gap-2 text-red-500">
+          <h3 className="font-medium mb-4 flex items-center gap-2 text-destructive">
             <AlertCircle className="h-4 w-4" />
             Critical Security Events
           </h3>
@@ -578,7 +578,7 @@ export function SecurityDashboardPage() {
             {criticalEvents.map((event) => (
               <div
                 key={event.id}
-                className="flex items-center justify-between p-3 rounded-lg bg-red-500/10 border border-red-500/20"
+                className="flex items-center justify-between p-3 rounded-lg bg-destructive/10 border border-destructive/20"
               >
                 <div>
                   <p className="font-medium text-sm">{event.event.replace(/_/g, " ")}</p>

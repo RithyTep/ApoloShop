@@ -179,12 +179,12 @@ export function BusinessHoursPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Business Hours</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-bold text-foreground">Business Hours</h1>
+          <p className="text-muted-foreground mt-2">
             Set your store's operating hours and holidays
           </p>
         </div>

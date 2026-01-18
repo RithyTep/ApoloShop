@@ -73,14 +73,17 @@ const tierIcons: Record<LoyaltyTier, string> = {
   PLATINUM: "💎",
 }
 
-// Order status badge colors
-const statusColors: Record<string, string> = {
-  NEW: "bg-blue-100 text-blue-700",
-  CONFIRMED: "bg-cyan-100 text-cyan-700",
-  PREPARING: "bg-yellow-100 text-yellow-700",
-  READY: "bg-green-100 text-green-700",
-  COMPLETED: "bg-gray-100 text-gray-700",
-  CANCELLED: "bg-red-100 text-red-700",
+// Order status badge variants
+const getOrderStatusVariant = (status: string): "info" | "warning" | "success" | "secondary" | "destructive" => {
+  const statusMap: Record<string, "info" | "warning" | "success" | "secondary" | "destructive"> = {
+    NEW: "info",
+    CONFIRMED: "info",
+    PREPARING: "warning",
+    READY: "success",
+    COMPLETED: "secondary",
+    CANCELLED: "destructive",
+  }
+  return statusMap[status] || "secondary"
 }
 
 export function CustomerAccountDashboard({
@@ -410,8 +413,8 @@ export function CustomerAccountDashboard({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => setActiveTab("orders")}>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-blue-100">
-              <Package className="h-5 w-5 text-blue-600" />
+            <div className="p-2 rounded-lg bg-info/10">
+              <Package className="h-5 w-5 text-info" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">{accountT.tabs.orders}</p>
@@ -422,8 +425,8 @@ export function CustomerAccountDashboard({
 
         <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => setActiveTab("addresses")}>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-green-100">
-              <MapPin className="h-5 w-5 text-green-600" />
+            <div className="p-2 rounded-lg bg-success/10">
+              <MapPin className="h-5 w-5 text-success" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">{accountT.tabs.addresses}</p>
@@ -434,8 +437,8 @@ export function CustomerAccountDashboard({
 
         <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => setActiveTab("wishlist")}>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-red-100">
-              <Heart className="h-5 w-5 text-red-500" />
+            <div className="p-2 rounded-lg bg-destructive/10">
+              <Heart className="h-5 w-5 text-destructive" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">{accountT.tabs.wishlist}</p>
@@ -446,8 +449,8 @@ export function CustomerAccountDashboard({
 
         <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => setActiveTab("loyalty")}>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-yellow-100">
-              <Award className="h-5 w-5 text-yellow-600" />
+            <div className="p-2 rounded-lg bg-warning/10">
+              <Award className="h-5 w-5 text-warning" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">{accountT.tabs.loyalty}</p>
@@ -530,7 +533,7 @@ export function CustomerAccountDashboard({
                       <div className="flex-1 mb-3 sm:mb-0">
                         <div className="flex items-center gap-3 mb-1">
                           <span className="font-semibold">#{order.orderNumber}</span>
-                          <Badge className={statusColors[order.status]}>
+                          <Badge variant={getOrderStatusVariant(order.status)}>
                             {getStatusText(order.status)}
                           </Badge>
                         </div>

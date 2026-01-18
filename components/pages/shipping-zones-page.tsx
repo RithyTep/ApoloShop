@@ -240,14 +240,14 @@ export function ShippingZonesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-8 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Truck className="h-6 w-6" />
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+            <Truck className="h-7 w-7" />
             Shipping Zones
           </h1>
-          <p className="text-muted-foreground">Configure shipping rates by region for Cambodia</p>
+          <p className="text-muted-foreground mt-2">Configure shipping rates by region for Cambodia</p>
         </div>
         <Button onClick={openCreateDialog}>
           <Plus className="mr-2 h-4 w-4" />
@@ -255,73 +255,75 @@ export function ShippingZonesPage() {
         </Button>
       </div>
 
-      <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Zone Name</TableHead>
-              <TableHead>Regions</TableHead>
-              <TableHead>Rate Type</TableHead>
-              <TableHead>Rate</TableHead>
-              <TableHead>Delivery Time</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {zones.length === 0 ? (
+      <Card className="p-6">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                  No shipping zones configured. Add your first zone to start.
-                </TableCell>
+                <TableHead>Zone Name</TableHead>
+                <TableHead>Regions</TableHead>
+                <TableHead>Rate Type</TableHead>
+                <TableHead>Rate</TableHead>
+                <TableHead>Delivery Time</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ) : (
-              zones.map((zone) => (
-                <TableRow key={zone.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{zone.nameEn}</div>
-                      <div className="text-sm text-muted-foreground">{zone.nameKh}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">
-                        {zone.regions.length} province{zone.regions.length !== 1 ? "s" : ""}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">
-                      {zone.rateType.replace("_", " ")}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="font-medium">{formatRate(zone)}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                      {formatDeliveryTime(zone)}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={zone.isActive ? "default" : "secondary"}>
-                      {zone.isActive ? "Active" : "Inactive"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => openEditDialog(zone)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => setDeleteZone(zone)}>
-                      <Trash className="h-4 w-4" />
-                    </Button>
+            </TableHeader>
+            <TableBody>
+              {zones.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    No shipping zones configured. Add your first zone to start.
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                zones.map((zone) => (
+                  <TableRow key={zone.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{zone.nameEn}</div>
+                        <div className="text-sm text-muted-foreground">{zone.nameKh}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">
+                          {zone.regions.length} province{zone.regions.length !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {zone.rateType.replace("_", " ")}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-medium">{formatRate(zone)}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        {formatDeliveryTime(zone)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={zone.isActive ? "success" : "secondary"}>
+                        {zone.isActive ? "Active" : "Inactive"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(zone)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => setDeleteZone(zone)}>
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </Card>
 
       {/* Create/Edit Dialog */}

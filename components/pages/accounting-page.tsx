@@ -138,22 +138,22 @@ export function AccountingPage({ language = "EN" }: AccountingPageProps) {
   }, [salesData])
 
   return (
-    <div className="space-y-6">
+    <div className="p-8 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Calculator className="h-6 w-6" />
+        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+          <Calculator className="h-7 w-7" />
           {t.title}
         </h1>
-        <p className="text-muted-foreground mt-1">{t.subtitle}</p>
+        <p className="text-muted-foreground mt-2">{t.subtitle}</p>
       </div>
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg dark:bg-green-900">
-              <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+            <div className="p-2 bg-success/10 rounded-lg">
+              <DollarSign className="h-5 w-5 text-success" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">{t.todaySales}</p>
@@ -164,8 +164,8 @@ export function AccountingPage({ language = "EN" }: AccountingPageProps) {
 
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg dark:bg-blue-900">
-              <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <div className="p-2 bg-info/10 rounded-lg">
+              <TrendingUp className="h-5 w-5 text-info" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">{t.thisMonth}</p>
@@ -176,8 +176,8 @@ export function AccountingPage({ language = "EN" }: AccountingPageProps) {
 
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 rounded-lg dark:bg-purple-900">
-              <Receipt className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Receipt className="h-5 w-5 text-primary" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">{t.orders}</p>
@@ -188,8 +188,8 @@ export function AccountingPage({ language = "EN" }: AccountingPageProps) {
 
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-100 rounded-lg dark:bg-orange-900">
-              <Building2 className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+            <div className="p-2 bg-warning/10 rounded-lg">
+              <Building2 className="h-5 w-5 text-warning" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">{t.vatAmount}</p>
@@ -258,8 +258,8 @@ export function AccountingPage({ language = "EN" }: AccountingPageProps) {
             {/* QuickBooks Export */}
             <Card className="p-6">
               <div className="flex items-start gap-4">
-                <div className="p-3 bg-green-100 rounded-lg dark:bg-green-900">
-                  <Building2 className="h-6 w-6 text-green-600 dark:text-green-400" />
+                <div className="p-3 bg-success/10 rounded-lg">
+                  <Building2 className="h-6 w-6 text-success" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold">{t.quickbooks}</h3>
@@ -289,8 +289,8 @@ export function AccountingPage({ language = "EN" }: AccountingPageProps) {
             {/* Excel Export */}
             <Card className="p-6">
               <div className="flex items-start gap-4">
-                <div className="p-3 bg-blue-100 rounded-lg dark:bg-blue-900">
-                  <FileSpreadsheet className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                <div className="p-3 bg-info/10 rounded-lg">
+                  <FileSpreadsheet className="h-6 w-6 text-info" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold">{t.excel}</h3>
@@ -320,8 +320,8 @@ export function AccountingPage({ language = "EN" }: AccountingPageProps) {
             {/* CSV Export */}
             <Card className="p-6">
               <div className="flex items-start gap-4">
-                <div className="p-3 bg-gray-100 rounded-lg dark:bg-gray-800">
-                  <FileText className="h-6 w-6 text-gray-600 dark:text-gray-400" />
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <FileText className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold">{t.csv}</h3>
@@ -351,8 +351,8 @@ export function AccountingPage({ language = "EN" }: AccountingPageProps) {
             {/* Tax Report Export */}
             <Card className="p-6">
               <div className="flex items-start gap-4">
-                <div className="p-3 bg-red-100 rounded-lg dark:bg-red-900">
-                  <Calculator className="h-6 w-6 text-red-600 dark:text-red-400" />
+                <div className="p-3 bg-destructive/10 rounded-lg">
+                  <Calculator className="h-6 w-6 text-destructive" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold">{t.taxReport}</h3>
@@ -382,8 +382,8 @@ export function AccountingPage({ language = "EN" }: AccountingPageProps) {
             {/* Revenue Summary */}
             <Card className="p-6">
               <div className="flex items-start gap-4">
-                <div className="p-3 bg-purple-100 rounded-lg dark:bg-purple-900">
-                  <TrendingUp className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <TrendingUp className="h-6 w-6 text-primary" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold">{t.revenueSummary}</h3>
@@ -453,8 +453,8 @@ export function AccountingPage({ language = "EN" }: AccountingPageProps) {
                           <Badge
                             variant={
                               order.payments?.[0]?.status === "COMPLETED"
-                                ? "default"
-                                : "secondary"
+                                ? "success"
+                                : "warning"
                             }
                           >
                             {order.payments?.[0]?.status || "PENDING"}
@@ -507,7 +507,7 @@ export function AccountingPage({ language = "EN" }: AccountingPageProps) {
                   </div>
                   <div className="p-4 bg-muted rounded-lg">
                     <p className="text-sm text-muted-foreground">{t.vatAmount}</p>
-                    <p className="text-xl font-bold text-red-600">
+                    <p className="text-xl font-bold text-destructive">
                       ${((salesData?.summary?.totalRevenue || 0) * 0.1 / 1.1).toFixed(2)}
                     </p>
                   </div>

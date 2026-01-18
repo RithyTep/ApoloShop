@@ -35,10 +35,10 @@ import {
 import { toast } from "sonner"
 
 const priorityColors: Record<BacklogPriority, string> = {
-  LOW: "bg-slate-500",
-  MEDIUM: "bg-blue-500",
-  HIGH: "bg-orange-500",
-  CRITICAL: "bg-red-500",
+  LOW: "bg-muted-foreground",
+  MEDIUM: "bg-info",
+  HIGH: "bg-warning",
+  CRITICAL: "bg-destructive",
 }
 
 const priorityLabels: Record<BacklogPriority, string> = {
@@ -55,9 +55,9 @@ const statusLabels: Record<BacklogStatus, string> = {
 }
 
 const statusColors: Record<BacklogStatus, string> = {
-  TODO: "bg-slate-100 border-slate-300",
-  IN_PROGRESS: "bg-blue-50 border-blue-300",
-  DONE: "bg-green-50 border-green-300",
+  TODO: "bg-muted border-border",
+  IN_PROGRESS: "bg-info/10 border-info/20",
+  DONE: "bg-success/10 border-success/20",
 }
 
 export function BacklogPage() {
@@ -180,12 +180,12 @@ export function BacklogPage() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Feature Backlog</h1>
-          <p className="text-muted-foreground text-sm">
+          <h1 className="text-3xl font-bold text-foreground">Feature Backlog</h1>
+          <p className="text-muted-foreground mt-2">
             Development environment only - Track feature requirements
           </p>
         </div>
