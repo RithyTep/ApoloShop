@@ -3,19 +3,9 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import {
   Dialog,
   DialogContent,
@@ -45,7 +35,6 @@ import {
   Pencil,
   Trash2,
   RefreshCw,
-  DollarSign,
   TrendingUp,
   PieChart as PieChartIcon,
   Calculator,
@@ -57,15 +46,24 @@ import {
   PieChart,
   Pie,
   Cell,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
   Legend,
 } from "recharts"
+import {
+  AdminPageHeader,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 interface Segment {
   id: string
@@ -332,124 +330,110 @@ export function CustomerSegmentsPage() {
     color: s.color,
   }))
 
+  if (loading) {
+    return (
+      <AdminLoading
+        title="Customer Segmentation"
+        subtitle="Group customers for targeted marketing using RFM analysis"
+        rows={5}
+      />
+    )
+  }
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-8 space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Customer Segmentation</h1>
-          <p className="text-muted-foreground">
-            Group customers for targeted marketing using RFM analysis
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={handleSeedDefaultSegments} variant="outline" size="sm">
-            <Zap className="w-4 h-4 mr-2" />
-            Seed Defaults
-          </Button>
-          <Button
-            onClick={handleCalculateRFM}
-            variant="outline"
-            size="sm"
-            disabled={calculating}
-          >
-            {calculating ? (
-              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Calculator className="w-4 h-4 mr-2" />
-            )}
-            Calculate RFM
-          </Button>
-          <Button onClick={() => openEditDialog()} size="sm">
-            <Plus className="w-4 h-4 mr-2" />
-            New Segment
-          </Button>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Customer Segmentation"
+        subtitle="Group customers for targeted marketing using RFM analysis"
+      >
+        <Button onClick={handleSeedDefaultSegments} variant="outline" size="sm">
+          <Zap className="w-4 h-4 mr-2" />
+          Seed Defaults
+        </Button>
+        <Button
+          onClick={handleCalculateRFM}
+          variant="outline"
+          size="sm"
+          disabled={calculating}
+        >
+          {calculating ? (
+            <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Calculator className="w-4 h-4 mr-2" />
+          )}
+          Calculate RFM
+        </Button>
+        <Button onClick={() => openEditDialog()} size="sm">
+          <Plus className="w-4 h-4 mr-2" />
+          New Segment
+        </Button>
+      </AdminPageHeader>
 
       {/* Stats Cards */}
-      {loading ? (
+      {stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <Skeleton className="h-8 w-24 mb-2" />
-                <Skeleton className="h-4 w-16" />
-              </CardContent>
-            </Card>
-          ))}
+          <AdminDataCard>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Total Segments</p>
+                <p className="text-2xl font-bold">{stats.totalSegments}</p>
+              </div>
+              <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
+                <PieChartIcon className="w-5 h-5 text-blue-600" />
+              </div>
+            </div>
+          </AdminDataCard>
+
+          <AdminDataCard>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Total Customers</p>
+                <p className="text-2xl font-bold">{stats.totalCustomers}</p>
+              </div>
+              <div className="p-3 bg-green-100 dark:bg-green-900 rounded-full">
+                <Users className="w-5 h-5 text-green-600" />
+              </div>
+            </div>
+          </AdminDataCard>
+
+          <AdminDataCard>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Segmented</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {stats.segmentedCustomers}
+                </p>
+              </div>
+              <div className="p-3 bg-green-100 dark:bg-green-900 rounded-full">
+                <TrendingUp className="w-5 h-5 text-green-600" />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {stats.totalCustomers > 0
+                ? Math.round((stats.segmentedCustomers / stats.totalCustomers) * 100)
+                : 0}% coverage
+            </p>
+          </AdminDataCard>
+
+          <AdminDataCard>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Unsegmented</p>
+                <p className="text-2xl font-bold text-yellow-600">
+                  {stats.unsegmentedCustomers}
+                </p>
+              </div>
+              <div className="p-3 bg-yellow-100 dark:bg-yellow-900 rounded-full">
+                <AlertTriangle className="w-5 h-5 text-yellow-600" />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Needs RFM calculation
+            </p>
+          </AdminDataCard>
         </div>
-      ) : stats ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Segments</p>
-                  <p className="text-2xl font-bold">{stats.totalSegments}</p>
-                </div>
-                <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
-                  <PieChartIcon className="w-5 h-5 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Customers</p>
-                  <p className="text-2xl font-bold">{stats.totalCustomers}</p>
-                </div>
-                <div className="p-3 bg-green-100 dark:bg-green-900 rounded-full">
-                  <Users className="w-5 h-5 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Segmented</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {stats.segmentedCustomers}
-                  </p>
-                </div>
-                <div className="p-3 bg-green-100 dark:bg-green-900 rounded-full">
-                  <TrendingUp className="w-5 h-5 text-green-600" />
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                {stats.totalCustomers > 0
-                  ? Math.round((stats.segmentedCustomers / stats.totalCustomers) * 100)
-                  : 0}% coverage
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Unsegmented</p>
-                  <p className="text-2xl font-bold text-yellow-600">
-                    {stats.unsegmentedCustomers}
-                  </p>
-                </div>
-                <div className="p-3 bg-yellow-100 dark:bg-yellow-900 rounded-full">
-                  <AlertTriangle className="w-5 h-5 text-yellow-600" />
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Needs RFM calculation
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
+      )}
 
       <Tabs defaultValue="list" className="space-y-4">
         <TabsList>
@@ -459,124 +443,107 @@ export function CustomerSegmentsPage() {
 
         {/* Segment List Tab */}
         <TabsContent value="list" className="space-y-4">
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Segment</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-center">Customers</TableHead>
-                    <TableHead className="text-right">Total Revenue</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading ? (
-                    [...Array(5)].map((_, i) => (
-                      <TableRow key={i}>
-                        <TableCell colSpan={6}>
-                          <Skeleton className="h-10 w-full" />
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : segments.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        <div className="flex flex-col items-center gap-2">
-                          <Users className="w-8 h-8 text-muted-foreground/50" />
-                          <p>No segments found</p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleSeedDefaultSegments}
+          <AdminDataCard>
+            {segments.length === 0 ? (
+              <div className="text-center py-8">
+                <AdminEmptyState message="No segments found" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSeedDefaultSegments}
+                  className="mt-4"
+                >
+                  Create Default Segments
+                </Button>
+              </div>
+            ) : (
+              <AdminTable>
+                <AdminTableHeader>
+                  <AdminTableHeadRow>
+                    <AdminTableHead>Segment</AdminTableHead>
+                    <AdminTableHead>Type</AdminTableHead>
+                    <AdminTableHead className="text-center">Customers</AdminTableHead>
+                    <AdminTableHead className="text-right">Total Revenue</AdminTableHead>
+                    <AdminTableHead>Status</AdminTableHead>
+                    <AdminTableHead className="text-right">Actions</AdminTableHead>
+                  </AdminTableHeadRow>
+                </AdminTableHeader>
+                <AdminTableBody>
+                  {segments.map((segment) => (
+                    <AdminTableRow key={segment.id}>
+                      <AdminTableCell>
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-white"
+                            style={{ backgroundColor: segment.color }}
                           >
-                            Create Default Segments
+                            {segment.icon && segmentIcons[segment.icon]
+                              ? segmentIcons[segment.icon]
+                              : <Users className="w-4 h-4" />}
+                          </div>
+                          <div>
+                            <p className="font-medium">{segment.name}</p>
+                            {segment.nameKh && (
+                              <p className="text-sm text-muted-foreground">
+                                {segment.nameKh}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        <AdminBadge variant={segment.type === "AUTO" ? "default" : "outline"}>
+                          {segment.type}
+                        </AdminBadge>
+                      </AdminTableCell>
+                      <AdminTableCell className="text-center">
+                        <span className="font-bold">{segment.customerCount}</span>
+                      </AdminTableCell>
+                      <AdminTableCell className="text-right font-medium">
+                        {formatCurrency(segment.totalRevenue)}
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        <AdminBadge variant={segment.isActive ? "default" : "secondary"}>
+                          {segment.isActive ? "Active" : "Inactive"}
+                        </AdminBadge>
+                      </AdminTableCell>
+                      <AdminTableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={async () => {
+                              await fetchSegmentDetails(segment.id)
+                              setShowDetailDialog(true)
+                            }}
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openEditDialog(segment)}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedSegment(segment)
+                              setShowDeleteDialog(true)
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4 text-red-500" />
                           </Button>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    segments.map((segment) => (
-                      <TableRow key={segment.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div
-                              className="w-8 h-8 rounded-full flex items-center justify-center text-white"
-                              style={{ backgroundColor: segment.color }}
-                            >
-                              {segment.icon && segmentIcons[segment.icon]
-                                ? segmentIcons[segment.icon]
-                                : <Users className="w-4 h-4" />}
-                            </div>
-                            <div>
-                              <p className="font-medium">{segment.name}</p>
-                              {segment.nameKh && (
-                                <p className="text-sm text-muted-foreground">
-                                  {segment.nameKh}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={segment.type === "AUTO" ? "default" : "outline"}>
-                            {segment.type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <span className="font-bold">{segment.customerCount}</span>
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {formatCurrency(segment.totalRevenue)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={segment.isActive ? "default" : "secondary"}
-                            className={segment.isActive ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : ""}
-                          >
-                            {segment.isActive ? "Active" : "Inactive"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={async () => {
-                                await fetchSegmentDetails(segment.id)
-                                setShowDetailDialog(true)
-                              }}
-                            >
-                              <ChevronRight className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEditDialog(segment)}
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedSegment(segment)
-                                setShowDeleteDialog(true)
-                              }}
-                            >
-                              <Trash2 className="w-4 h-4 text-red-500" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                      </AdminTableCell>
+                    </AdminTableRow>
+                  ))}
+                </AdminTableBody>
+              </AdminTable>
+            )}
+          </AdminDataCard>
         </TabsContent>
 
         {/* Distribution Tab */}
@@ -611,9 +578,7 @@ export function CustomerSegmentsPage() {
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                    No segment data available
-                  </div>
+                  <AdminEmptyState message="No segment data available" />
                 )}
               </CardContent>
             </Card>
@@ -662,9 +627,7 @@ export function CustomerSegmentsPage() {
                       })}
                   </div>
                 ) : (
-                  <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                    No segment data available
-                  </div>
+                  <AdminEmptyState message="No segment data available" />
                 )}
               </CardContent>
             </Card>
@@ -788,49 +751,49 @@ export function CustomerSegmentsPage() {
                 <div>
                   <h4 className="font-medium mb-2">Members ({selectedSegment.memberships.length})</h4>
                   <div className="border rounded-lg max-h-[300px] overflow-y-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Customer</TableHead>
-                          <TableHead className="text-center">RFM</TableHead>
-                          <TableHead className="text-right">Spent</TableHead>
-                          <TableHead className="text-right">Orders</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
+                    <AdminTable>
+                      <AdminTableHeader>
+                        <AdminTableHeadRow>
+                          <AdminTableHead>Customer</AdminTableHead>
+                          <AdminTableHead className="text-center">RFM</AdminTableHead>
+                          <AdminTableHead className="text-right">Spent</AdminTableHead>
+                          <AdminTableHead className="text-right">Orders</AdminTableHead>
+                        </AdminTableHeadRow>
+                      </AdminTableHeader>
+                      <AdminTableBody>
                         {selectedSegment.memberships.map((m) => (
-                          <TableRow key={m.id}>
-                            <TableCell>
+                          <AdminTableRow key={m.id}>
+                            <AdminTableCell>
                               <div>
                                 <p className="font-medium">{m.customer.name}</p>
                                 <p className="text-sm text-muted-foreground">
                                   {m.customer.email || m.customer.phone}
                                 </p>
                               </div>
-                            </TableCell>
-                            <TableCell className="text-center">
+                            </AdminTableCell>
+                            <AdminTableCell className="text-center">
                               <div className="flex gap-1 justify-center">
-                                <Badge variant="outline" className="text-xs">
+                                <AdminBadge variant="outline">
                                   R:{m.recencyScore || "-"}
-                                </Badge>
-                                <Badge variant="outline" className="text-xs">
+                                </AdminBadge>
+                                <AdminBadge variant="outline">
                                   F:{m.frequencyScore || "-"}
-                                </Badge>
-                                <Badge variant="outline" className="text-xs">
+                                </AdminBadge>
+                                <AdminBadge variant="outline">
                                   M:{m.monetaryScore || "-"}
-                                </Badge>
+                                </AdminBadge>
                               </div>
-                            </TableCell>
-                            <TableCell className="text-right">
+                            </AdminTableCell>
+                            <AdminTableCell className="text-right">
                               {m.totalSpent ? formatCurrency(Number(m.totalSpent)) : "-"}
-                            </TableCell>
-                            <TableCell className="text-right">
+                            </AdminTableCell>
+                            <AdminTableCell className="text-right">
                               {m.totalOrders || 0}
-                            </TableCell>
-                          </TableRow>
+                            </AdminTableCell>
+                          </AdminTableRow>
                         ))}
-                      </TableBody>
-                    </Table>
+                      </AdminTableBody>
+                    </AdminTable>
                   </div>
                 </div>
               )}

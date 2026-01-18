@@ -12,7 +12,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import {
-  MessageCircle,
   Send,
   User,
   Clock,
@@ -24,6 +23,7 @@ import {
   Trash,
   Edit,
 } from "lucide-react"
+import { AdminPageHeader, AdminBadge, AdminLoading } from "@/components/admin"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/components/ui/use-toast"
 import {
@@ -261,13 +261,13 @@ export function ChatPage() {
   const getStatusBadge = (status: ChatSessionStatus) => {
     switch (status) {
       case "ACTIVE":
-        return <Badge variant="success">Active</Badge>
+        return <AdminBadge variant="default">Active</AdminBadge>
       case "WAITING":
-        return <Badge variant="warning">Waiting</Badge>
+        return <AdminBadge variant="outline">Waiting</AdminBadge>
       case "RESOLVED":
-        return <Badge variant="secondary">Resolved</Badge>
+        return <AdminBadge variant="secondary">Resolved</AdminBadge>
       case "OFFLINE":
-        return <Badge variant="info">Offline</Badge>
+        return <AdminBadge variant="secondary">Offline</AdminBadge>
     }
   }
 
@@ -315,42 +315,30 @@ export function ChatPage() {
   // Loading state
   if (sessionsLoading) {
     return (
-      <div className="p-6">
-        <Skeleton className="h-8 w-48 mb-6" />
-        <div className="grid grid-cols-3 gap-6">
-          <Skeleton className="h-[600px]" />
-          <Skeleton className="h-[600px] col-span-2" />
-        </div>
-      </div>
+      <AdminLoading
+        title="Live Chat"
+        subtitle="Real-time customer support and messaging"
+        rows={6}
+      />
     )
   }
 
   return (
     <div className="p-8 h-screen overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-            <MessageCircle className="h-7 w-7" />
-            Live Chat
-          </h1>
-          <p className="text-muted-foreground mt-2 flex items-center gap-2">
-            Real-time customer support and messaging
-            {unreadCount > 0 && (
-              <Badge variant="warning">{unreadCount} unread</Badge>
-            )}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="mb-6">
+        <AdminPageHeader
+          title="Live Chat"
+          subtitle={`Real-time customer support and messaging${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
+        >
           <Button variant="outline" size="sm" onClick={() => refetchSessions()}>
             <RefreshCw size={14} className="mr-1" />
             Refresh
           </Button>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <div className="w-2 h-2 bg-success rounded-full" />
+            <div className="w-2 h-2 bg-green-500 rounded-full" />
             You are online
           </div>
-        </div>
+        </AdminPageHeader>
       </div>
 
       <Tabs defaultValue="chats" className="h-[calc(100%-80px)]">

@@ -1,17 +1,30 @@
 "use client"
 
 import { useState } from "react"
-import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Download, Eye, ChevronRight } from "lucide-react"
+import { Download } from "lucide-react"
 import { useOrders, useUpdateOrderStatus, Order, OrderStatus, OrderChannel } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
+import {
+  AdminPageHeader,
+  AdminFilterCardGrid,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminActionButtons,
+  AdminViewButton,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 const statusOptions: OrderStatus[] = ["NEW", "CONFIRMED", "PREPARING", "READY", "COMPLETED", "CANCELLED"]
 const channelOptions: OrderChannel[] = ["WEBSITE", "TELEGRAM", "MESSENGER", "PHONE", "WALK_IN"]
@@ -82,145 +95,119 @@ export function OrdersPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Orders</h1>
-            <p className="text-muted-foreground mt-2">Manage and track all customer orders</p>
-          </div>
-        </div>
-        <Card className="p-6">
-          <div className="space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Skeleton key={i} className="h-16 w-full" />
-            ))}
-          </div>
-        </Card>
-      </div>
+      <AdminLoading
+        title="Orders"
+        subtitle="Manage and track all customer orders"
+        rows={5}
+      />
     )
   }
 
   return (
     <div className="p-8 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Orders</h1>
-          <p className="text-muted-foreground mt-2">Manage and track all customer orders</p>
-        </div>
-        <Button className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-          <Download size={16} /> Export to Excel
+      <AdminPageHeader
+        title="Orders"
+        subtitle="Manage and track all customer orders"
+      >
+        <Button>
+          <Download size={16} className="mr-2" /> Export to Excel
         </Button>
-      </div>
+      </AdminPageHeader>
 
-      {/* Filters */}
-      <Card className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Input
-            placeholder="Search by order ID or customer..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border-border"
-          />
-          <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v as OrderStatus)}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              {statusOptions.map((s) => (
-                <SelectItem key={s} value={s}>{s}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={channelFilter || "all"} onValueChange={(v) => setChannelFilter(v === "all" ? "" : v as OrderChannel)}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Channels" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Channels</SelectItem>
-              {channelOptions.map((c) => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="text-sm text-muted-foreground flex items-center">
-            {orders.length} orders found
-          </div>
+      <AdminFilterCardGrid columns={4}>
+        <Input
+          placeholder="Search by order ID or customer..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v as OrderStatus)}>
+          <SelectTrigger>
+            <SelectValue placeholder="All Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            {statusOptions.map((s) => (
+              <SelectItem key={s} value={s}>{s}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={channelFilter || "all"} onValueChange={(v) => setChannelFilter(v === "all" ? "" : v as OrderChannel)}>
+          <SelectTrigger>
+            <SelectValue placeholder="All Channels" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Channels</SelectItem>
+            {channelOptions.map((c) => (
+              <SelectItem key={c} value={c}>{c}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="text-sm text-muted-foreground flex items-center">
+          {orders.length} orders found
         </div>
-      </Card>
+      </AdminFilterCardGrid>
 
-      {/* Orders Table */}
-      <Card className="p-6">
-        <div className="overflow-x-auto">
-          {orders.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-border">
-                  <TableHead className="text-foreground font-semibold">Order ID</TableHead>
-                  <TableHead className="text-foreground font-semibold">Customer</TableHead>
-                  <TableHead className="text-foreground font-semibold">Phone</TableHead>
-                  <TableHead className="text-foreground font-semibold">Amount</TableHead>
-                  <TableHead className="text-foreground font-semibold">Status</TableHead>
-                  <TableHead className="text-foreground font-semibold">Channel</TableHead>
-                  <TableHead className="text-foreground font-semibold">Date</TableHead>
-                  <TableHead className="text-foreground font-semibold">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {orders.map((order) => {
-                  const nextStatuses = statusTransitions[order.status] || []
-                  return (
-                    <TableRow key={order.id} className="border-b border-border hover:bg-muted/50">
-                      <TableCell className="text-foreground font-medium">{order.orderNumber}</TableCell>
-                      <TableCell className="text-foreground">{order.customer?.name || "Unknown"}</TableCell>
-                      <TableCell className="text-foreground">{order.customer?.phone || "-"}</TableCell>
-                      <TableCell className="text-foreground">
-                        {formatCurrency(order.currency === "KHR" ? order.totalKhr : order.totalUsd, order.currency)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={getStatusBadgeVariant(order.status)} className="rounded-sm">
-                            {order.status}
-                          </Badge>
-                          {nextStatuses.length > 0 && (
-                            <Select onValueChange={(v) => handleStatusChange(order.id, order.status, v as OrderStatus)}>
-                              <SelectTrigger className="h-6 w-16 text-xs">
-                                <SelectValue placeholder="→" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {nextStatuses.map((s) => (
-                                  <SelectItem key={s} value={s}>{s}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-foreground text-sm">{order.channel}</TableCell>
-                      <TableCell className="text-foreground text-sm">{formatDate(order.createdAt)}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs bg-transparent"
-                          onClick={() => setViewOrder(order)}
-                        >
-                          <Eye size={14} />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="py-8 text-center text-muted-foreground">
-              No orders found
-            </div>
-          )}
-        </div>
-      </Card>
+      <AdminDataCard>
+        {orders.length > 0 ? (
+          <AdminTable>
+            <AdminTableHeader>
+              <AdminTableHeadRow>
+                <AdminTableHead>Order ID</AdminTableHead>
+                <AdminTableHead>Customer</AdminTableHead>
+                <AdminTableHead>Phone</AdminTableHead>
+                <AdminTableHead>Amount</AdminTableHead>
+                <AdminTableHead>Status</AdminTableHead>
+                <AdminTableHead>Channel</AdminTableHead>
+                <AdminTableHead>Date</AdminTableHead>
+                <AdminTableHead>Action</AdminTableHead>
+              </AdminTableHeadRow>
+            </AdminTableHeader>
+            <AdminTableBody>
+              {orders.map((order) => {
+                const nextStatuses = statusTransitions[order.status] || []
+                return (
+                  <AdminTableRow key={order.id}>
+                    <AdminTableCell className="font-medium">{order.orderNumber}</AdminTableCell>
+                    <AdminTableCell>{order.customer?.name || "Unknown"}</AdminTableCell>
+                    <AdminTableCell>{order.customer?.phone || "-"}</AdminTableCell>
+                    <AdminTableCell>
+                      {formatCurrency(order.currency === "KHR" ? order.totalKhr : order.totalUsd, order.currency)}
+                    </AdminTableCell>
+                    <AdminTableCell>
+                      <div className="flex items-center gap-2">
+                        <AdminBadge variant={getStatusBadgeVariant(order.status)}>
+                          {order.status}
+                        </AdminBadge>
+                        {nextStatuses.length > 0 && (
+                          <Select onValueChange={(v) => handleStatusChange(order.id, order.status, v as OrderStatus)}>
+                            <SelectTrigger className="h-6 w-16 text-xs">
+                              <SelectValue placeholder="→" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {nextStatuses.map((s) => (
+                                <SelectItem key={s} value={s}>{s}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
+                    </AdminTableCell>
+                    <AdminTableCell className="text-sm">{order.channel}</AdminTableCell>
+                    <AdminTableCell className="text-sm">{formatDate(order.createdAt)}</AdminTableCell>
+                    <AdminTableCell>
+                      <AdminActionButtons>
+                        <AdminViewButton onClick={() => setViewOrder(order)} />
+                      </AdminActionButtons>
+                    </AdminTableCell>
+                  </AdminTableRow>
+                )
+              })}
+            </AdminTableBody>
+          </AdminTable>
+        ) : (
+          <AdminEmptyState message="No orders found" />
+        )}
+      </AdminDataCard>
 
       {/* Order Detail Dialog */}
       <Dialog open={!!viewOrder} onOpenChange={() => setViewOrder(null)}>

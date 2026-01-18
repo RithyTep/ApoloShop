@@ -2,10 +2,17 @@
 
 import { DashboardWidgets } from "@/components/dashboard-widgets"
 import { PopularSearchesWidget } from "@/components/popular-searches-widget"
+import { AdminPageHeader } from "@/components/admin"
 
 export function DashboardPage() {
   return (
     <div className="p-8 space-y-8">
+      {/* Header */}
+      <AdminPageHeader
+        title="Dashboard"
+        subtitle="Overview of your shop's performance"
+      />
+
       {/* Main Dashboard Widgets */}
       <DashboardWidgets />
 

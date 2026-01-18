@@ -3,20 +3,9 @@
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import {
   Dialog,
   DialogContent,
@@ -48,31 +37,40 @@ import {
   RefreshCw,
   Image,
   ShoppingBag,
-  TrendingUp,
   Eye,
   MousePointer,
-  Bookmark,
   Heart,
   MessageCircle,
   ExternalLink,
   Plus,
   Check,
-  X,
   AlertCircle,
   Clock,
   Package,
   Users,
   DollarSign,
   Tag,
-  Settings,
   Unlink,
-  BarChart3,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/components/ui/use-toast"
 import { Checkbox } from "@/components/ui/checkbox"
+import {
+  AdminPageHeader,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 // Types
 interface InstagramAccount {
@@ -206,6 +204,22 @@ interface ShopProduct {
   isActive: boolean
 }
 
+// Status badge variant mapping
+type BadgeVariant = "default" | "secondary" | "destructive" | "outline"
+
+const statusVariants: Record<string, BadgeVariant> = {
+  ACTIVE: "default",
+  PAUSED: "secondary",
+  ERROR: "destructive",
+  DISCONNECTED: "secondary",
+  PENDING: "outline",
+  SYNCED: "default",
+  IMPORTED: "default",
+  FAILED: "destructive",
+  SKIPPED: "secondary",
+  REMOVED: "secondary",
+}
+
 // API hooks
 function useInstagramAccounts() {
   return useQuery<{ accounts: InstagramAccount[]; total: number }>({
@@ -298,20 +312,6 @@ function useShopProducts() {
   })
 }
 
-// Status badge styles
-const statusColors: Record<string, string> = {
-  ACTIVE: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
-  PAUSED: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300",
-  ERROR: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
-  DISCONNECTED: "bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300",
-  PENDING: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
-  SYNCED: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
-  IMPORTED: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
-  FAILED: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
-  SKIPPED: "bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300",
-  REMOVED: "bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300",
-}
-
 export function InstagramShopPage() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
@@ -326,7 +326,6 @@ export function InstagramShopPage() {
   // Dialogs
   const [connectDialogOpen, setConnectDialogOpen] = useState(false)
   const [syncDialogOpen, setSyncDialogOpen] = useState(false)
-  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false)
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false)
   const [selectedProducts, setSelectedProducts] = useState<string[]>([])
 
@@ -436,57 +435,62 @@ export function InstagramShopPage() {
     setSelectedAccount(accounts[0].id)
   }
 
+  // Loading state
+  if (loadingAccounts) {
+    return (
+      <AdminLoading
+        title="Instagram Shop"
+        subtitle="Connect and manage your Instagram Shopping integration"
+        rows={4}
+      />
+    )
+  }
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold flex items-center gap-2">
-            <Instagram className="h-6 w-6" />
-            Instagram Shop
-          </h1>
-          <p className="text-muted-foreground">
-            Connect and manage your Instagram Shopping integration
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {accounts.length > 0 && (
-            <Select value={selectedAccount || ""} onValueChange={setSelectedAccount}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Select account" />
-              </SelectTrigger>
-              <SelectContent>
-                {accounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id}>
-                    @{account.username}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          <Button onClick={() => setConnectDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Connect Account
-          </Button>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Instagram Shop"
+        subtitle="Connect and manage your Instagram Shopping integration"
+      >
+        {accounts.length > 0 && (
+          <Select value={selectedAccount || ""} onValueChange={setSelectedAccount}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Select account" />
+            </SelectTrigger>
+            <SelectContent>
+              {accounts.map((account) => (
+                <SelectItem key={account.id} value={account.id}>
+                  @{account.username}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        <Button onClick={() => setConnectDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Connect Account
+        </Button>
+      </AdminPageHeader>
 
       {/* No accounts state */}
-      {!loadingAccounts && accounts.length === 0 && (
-        <Card className="p-12 text-center">
-          <div className="mx-auto w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mb-4">
-            <Instagram className="h-6 w-6 text-white" />
+      {accounts.length === 0 && (
+        <AdminDataCard>
+          <div className="p-12 text-center">
+            <div className="mx-auto w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mb-4">
+              <Instagram className="h-6 w-6 text-white" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Connect Your Instagram Business Account</h3>
+            <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+              Link your Instagram Business account to sync products, tag items in posts,
+              and import orders from Instagram Shopping.
+            </p>
+            <Button onClick={() => setConnectDialogOpen(true)}>
+              <Link2 className="h-4 w-4 mr-2" />
+              Connect Instagram
+            </Button>
           </div>
-          <h3 className="text-lg font-semibold mb-2">Connect Your Instagram Business Account</h3>
-          <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-            Link your Instagram Business account to sync products, tag items in posts,
-            and import orders from Instagram Shopping.
-          </p>
-          <Button onClick={() => setConnectDialogOpen(true)}>
-            <Link2 className="h-4 w-4 mr-2" />
-            Connect Instagram
-          </Button>
-        </Card>
+        </AdminDataCard>
       )}
 
       {/* Main content */}
@@ -510,9 +514,9 @@ export function InstagramShopPage() {
                   )}
                   <div>
                     <p className="font-medium">@{selectedAccountData?.username}</p>
-                    <Badge className={statusColors[selectedAccountData?.status || "ACTIVE"]}>
+                    <AdminBadge variant={statusVariants[selectedAccountData?.status || "ACTIVE"]}>
                       {selectedAccountData?.status}
-                    </Badge>
+                    </AdminBadge>
                   </div>
                 </div>
               </CardContent>
@@ -574,8 +578,8 @@ export function InstagramShopPage() {
                   {[...Array(4)].map((_, i) => (
                     <Card key={i}>
                       <CardContent className="p-4">
-                        <Skeleton className="h-4 w-24 mb-2" />
-                        <Skeleton className="h-8 w-16" />
+                        <div className="h-4 w-24 mb-2 bg-muted animate-pulse rounded" />
+                        <div className="h-8 w-16 bg-muted animate-pulse rounded" />
                       </CardContent>
                     </Card>
                   ))}
@@ -643,9 +647,7 @@ export function InstagramShopPage() {
                       <CardContent>
                         <div className="space-y-3">
                           {analyticsData.topPosts.length === 0 ? (
-                            <p className="text-sm text-muted-foreground text-center py-4">
-                              No posts with product tags yet
-                            </p>
+                            <AdminEmptyState message="No posts with product tags yet" />
                           ) : (
                             analyticsData.topPosts.map((post) => (
                               <div key={post.id} className="flex items-center gap-3">
@@ -690,9 +692,7 @@ export function InstagramShopPage() {
                       <CardContent>
                         <div className="space-y-3">
                           {analyticsData.topProducts.length === 0 ? (
-                            <p className="text-sm text-muted-foreground text-center py-4">
-                              No products synced yet
-                            </p>
+                            <AdminEmptyState message="No products synced yet" />
                           ) : (
                             analyticsData.topProducts.map((product) => (
                               <div key={product.id} className="flex items-center gap-3">
@@ -739,40 +739,31 @@ export function InstagramShopPage() {
                 </Button>
               </div>
 
-              <Card>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Product</TableHead>
-                      <TableHead>SKU</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Impressions</TableHead>
-                      <TableHead className="text-right">Clicks</TableHead>
-                      <TableHead className="text-right">Saves</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loadingProducts ? (
-                      [...Array(5)].map((_, i) => (
-                        <TableRow key={i}>
-                          <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12 ml-auto" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12 ml-auto" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12 ml-auto" /></TableCell>
-                        </TableRow>
-                      ))
-                    ) : productsData?.products.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                          No products synced yet. Click &quot;Sync Products&quot; to get started.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      productsData?.products.map((item) => (
-                        <TableRow key={item.id}>
-                          <TableCell>
+              <AdminDataCard>
+                {loadingProducts ? (
+                  <div className="space-y-4">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="h-16 bg-muted animate-pulse rounded" />
+                    ))}
+                  </div>
+                ) : productsData?.products.length === 0 ? (
+                  <AdminEmptyState message="No products synced yet. Click 'Sync Products' to get started." />
+                ) : (
+                  <AdminTable>
+                    <AdminTableHeader>
+                      <AdminTableHeadRow>
+                        <AdminTableHead>Product</AdminTableHead>
+                        <AdminTableHead>SKU</AdminTableHead>
+                        <AdminTableHead>Status</AdminTableHead>
+                        <AdminTableHead className="text-right">Impressions</AdminTableHead>
+                        <AdminTableHead className="text-right">Clicks</AdminTableHead>
+                        <AdminTableHead className="text-right">Saves</AdminTableHead>
+                      </AdminTableHeadRow>
+                    </AdminTableHeader>
+                    <AdminTableBody>
+                      {productsData?.products.map((item) => (
+                        <AdminTableRow key={item.id}>
+                          <AdminTableCell>
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded bg-muted overflow-hidden">
                                 {item.product.imageUrl ? (
@@ -794,22 +785,22 @@ export function InstagramShopPage() {
                                 </p>
                               </div>
                             </div>
-                          </TableCell>
-                          <TableCell className="font-mono text-sm">{item.product.sku}</TableCell>
-                          <TableCell>
-                            <Badge className={statusColors[item.syncStatus]}>
+                          </AdminTableCell>
+                          <AdminTableCell className="font-mono text-sm">{item.product.sku}</AdminTableCell>
+                          <AdminTableCell>
+                            <AdminBadge variant={statusVariants[item.syncStatus]}>
                               {item.syncStatus}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">{item.impressions.toLocaleString()}</TableCell>
-                          <TableCell className="text-right">{item.clicks.toLocaleString()}</TableCell>
-                          <TableCell className="text-right">{item.saves.toLocaleString()}</TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </Card>
+                            </AdminBadge>
+                          </AdminTableCell>
+                          <AdminTableCell className="text-right">{item.impressions.toLocaleString()}</AdminTableCell>
+                          <AdminTableCell className="text-right">{item.clicks.toLocaleString()}</AdminTableCell>
+                          <AdminTableCell className="text-right">{item.saves.toLocaleString()}</AdminTableCell>
+                        </AdminTableRow>
+                      ))}
+                    </AdminTableBody>
+                  </AdminTable>
+                )}
+              </AdminDataCard>
 
               {/* Pagination */}
               {productsData && productsData.totalPages > 1 && (
@@ -847,17 +838,16 @@ export function InstagramShopPage() {
                 {loadingPosts ? (
                   [...Array(8)].map((_, i) => (
                     <Card key={i}>
-                      <Skeleton className="aspect-square" />
+                      <div className="aspect-square bg-muted animate-pulse" />
                       <CardContent className="p-3">
-                        <Skeleton className="h-4 w-full mb-2" />
-                        <Skeleton className="h-3 w-2/3" />
+                        <div className="h-4 w-full mb-2 bg-muted animate-pulse rounded" />
+                        <div className="h-3 w-2/3 bg-muted animate-pulse rounded" />
                       </CardContent>
                     </Card>
                   ))
                 ) : postsData?.posts.length === 0 ? (
-                  <div className="col-span-full text-center py-12">
-                    <Image className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No posts with product tags yet</p>
+                  <div className="col-span-full">
+                    <AdminEmptyState message="No posts with product tags yet" />
                   </div>
                 ) : (
                   postsData?.posts.map((post) => (
@@ -875,10 +865,10 @@ export function InstagramShopPage() {
                           </div>
                         )}
                         {post.taggedProducts.length > 0 && (
-                          <Badge className="absolute top-2 right-2 bg-black/50">
+                          <AdminBadge variant="secondary">
                             <Tag className="h-3 w-3 mr-1" />
                             {post.taggedProducts.length}
-                          </Badge>
+                          </AdminBadge>
                         )}
                       </div>
                       <CardContent className="p-3">
@@ -956,63 +946,53 @@ export function InstagramShopPage() {
                 </Select>
               </div>
 
-              <Card>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Order ID</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Items</TableHead>
-                      <TableHead>Total</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loadingOrders ? (
-                      [...Array(5)].map((_, i) => (
-                        <TableRow key={i}>
-                          <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                        </TableRow>
-                      ))
-                    ) : ordersData?.orders.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                          No orders from Instagram yet
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      ordersData?.orders.map((order) => (
-                        <TableRow key={order.id}>
-                          <TableCell className="font-mono text-sm">
+              <AdminDataCard>
+                {loadingOrders ? (
+                  <div className="space-y-4">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="h-16 bg-muted animate-pulse rounded" />
+                    ))}
+                  </div>
+                ) : ordersData?.orders.length === 0 ? (
+                  <AdminEmptyState message="No orders from Instagram yet" />
+                ) : (
+                  <AdminTable>
+                    <AdminTableHeader>
+                      <AdminTableHeadRow>
+                        <AdminTableHead>Order ID</AdminTableHead>
+                        <AdminTableHead>Customer</AdminTableHead>
+                        <AdminTableHead>Items</AdminTableHead>
+                        <AdminTableHead>Total</AdminTableHead>
+                        <AdminTableHead>Status</AdminTableHead>
+                        <AdminTableHead>Date</AdminTableHead>
+                        <AdminTableHead></AdminTableHead>
+                      </AdminTableHeadRow>
+                    </AdminTableHeader>
+                    <AdminTableBody>
+                      {ordersData?.orders.map((order) => (
+                        <AdminTableRow key={order.id}>
+                          <AdminTableCell className="font-mono text-sm">
                             {order.instagramOrderId.slice(0, 12)}...
-                          </TableCell>
-                          <TableCell>
+                          </AdminTableCell>
+                          <AdminTableCell>
                             <div>
                               <p className="font-medium">{order.buyerName}</p>
                               {order.buyerEmail && (
                                 <p className="text-xs text-muted-foreground">{order.buyerEmail}</p>
                               )}
                             </div>
-                          </TableCell>
-                          <TableCell>{order.items.length} items</TableCell>
-                          <TableCell>${order.totalUsd.toFixed(2)}</TableCell>
-                          <TableCell>
-                            <Badge className={statusColors[order.importStatus]}>
+                          </AdminTableCell>
+                          <AdminTableCell>{order.items.length} items</AdminTableCell>
+                          <AdminTableCell>${order.totalUsd.toFixed(2)}</AdminTableCell>
+                          <AdminTableCell>
+                            <AdminBadge variant={statusVariants[order.importStatus]}>
                               {order.importStatus}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-sm">
+                            </AdminBadge>
+                          </AdminTableCell>
+                          <AdminTableCell className="text-sm">
                             {new Date(order.orderedAt).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
+                          </AdminTableCell>
+                          <AdminTableCell>
                             {order.importStatus === "PENDING" ? (
                               <Button
                                 size="sm"
@@ -1026,13 +1006,13 @@ export function InstagramShopPage() {
                                 {order.linkedOrder.orderNumber}
                               </Button>
                             ) : null}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </Card>
+                          </AdminTableCell>
+                        </AdminTableRow>
+                      ))}
+                    </AdminTableBody>
+                  </AdminTable>
+                )}
+              </AdminDataCard>
 
               {/* Pagination */}
               {ordersData && ordersData.totalPages > 1 && (

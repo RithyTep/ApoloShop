@@ -3,18 +3,9 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import {
   Dialog,
   DialogContent,
@@ -64,6 +55,21 @@ import {
   PieChart,
   Pie,
 } from "recharts"
+import {
+  AdminPageHeader,
+  AdminFilterCard,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 interface CartItem {
   productId: string
@@ -131,14 +137,16 @@ interface AbandonedCartsResponse {
   analytics: Analytics
 }
 
-const statusColors: Record<string, string> = {
-  ACTIVE: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
-  ABANDONED: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300",
-  EMAIL_1_SENT: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300",
-  EMAIL_2_SENT: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300",
-  EMAIL_3_SENT: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
-  RECOVERED: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
-  UNRECOVERABLE: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+type StatusBadgeVariant = "default" | "secondary" | "destructive" | "outline"
+
+const statusBadgeVariants: Record<string, StatusBadgeVariant> = {
+  ACTIVE: "default",
+  ABANDONED: "outline",
+  EMAIL_1_SENT: "secondary",
+  EMAIL_2_SENT: "secondary",
+  EMAIL_3_SENT: "destructive",
+  RECOVERED: "default",
+  UNRECOVERABLE: "secondary",
 }
 
 const statusLabels: Record<string, string> = {
@@ -275,21 +283,28 @@ export function AbandonedCartsPage() {
 
   const analytics = data?.analytics
 
+  if (loading && !data) {
+    return (
+      <AdminLoading
+        title="Abandoned Cart Recovery"
+        subtitle="Track and recover abandoned shopping carts"
+        rows={5}
+      />
+    )
+  }
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-8 space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Abandoned Cart Recovery</h1>
-          <p className="text-muted-foreground">
-            Track and recover abandoned shopping carts
-          </p>
-        </div>
+      <AdminPageHeader
+        title="Abandoned Cart Recovery"
+        subtitle="Track and recover abandoned shopping carts"
+      >
         <Button onClick={fetchData} variant="outline" size="sm">
           <RefreshCw className="w-4 h-4 mr-2" />
           Refresh
         </Button>
-      </div>
+      </AdminPageHeader>
 
       {/* Analytics Overview */}
       {loading ? (
@@ -387,7 +402,7 @@ export function AbandonedCartsPage() {
         {/* Cart List Tab */}
         <TabsContent value="list" className="space-y-4">
           {/* Filters */}
-          <div className="flex gap-4 items-center">
+          <AdminFilterCard>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Filter by status" />
@@ -403,130 +418,128 @@ export function AbandonedCartsPage() {
                 <SelectItem value="UNRECOVERABLE">Unrecoverable</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </AdminFilterCard>
 
           {/* Table */}
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Cart Value</TableHead>
-                    <TableHead>Items</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Abandoned</TableHead>
-                    <TableHead>Emails Sent</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading ? (
-                    [...Array(5)].map((_, i) => (
-                      <TableRow key={i}>
-                        <TableCell colSpan={7}>
-                          <Skeleton className="h-10 w-full" />
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : data?.carts.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                        No abandoned carts found
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    data?.carts.map((cart) => (
-                      <TableRow key={cart.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Users className="w-4 h-4 text-muted-foreground" />
-                            <span className="truncate max-w-[180px]">
-                              {cart.email || (cart.guestId ? `Guest ${cart.guestId.slice(-6)}` : "Unknown")}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {formatCurrency(cart.cartTotal)}
-                        </TableCell>
-                        <TableCell>{cart.cartItems.length} items</TableCell>
-                        <TableCell>
-                          <Badge className={statusColors[cart.status] || ""}>
-                            {statusLabels[cart.status] || cart.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {formatDate(cart.abandonedAt)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            {cart.email1SentAt && (
-                              <Badge variant="outline" className="text-xs">1</Badge>
-                            )}
-                            {cart.email2SentAt && (
-                              <Badge variant="outline" className="text-xs">2</Badge>
-                            )}
-                            {cart.email3SentAt && (
-                              <Badge variant="outline" className="text-xs">3</Badge>
-                            )}
-                            {!cart.email1SentAt && (
-                              <span className="text-muted-foreground text-xs">None</span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
+          <AdminDataCard className="p-0">
+            <AdminTable>
+              <AdminTableHeader>
+                <AdminTableHeadRow>
+                  <AdminTableHead>Email</AdminTableHead>
+                  <AdminTableHead>Cart Value</AdminTableHead>
+                  <AdminTableHead>Items</AdminTableHead>
+                  <AdminTableHead>Status</AdminTableHead>
+                  <AdminTableHead>Abandoned</AdminTableHead>
+                  <AdminTableHead>Emails Sent</AdminTableHead>
+                  <AdminTableHead className="text-right">Actions</AdminTableHead>
+                </AdminTableHeadRow>
+              </AdminTableHeader>
+              <AdminTableBody>
+                {loading ? (
+                  [...Array(5)].map((_, i) => (
+                    <AdminTableRow key={i}>
+                      <AdminTableCell colSpan={7}>
+                        <Skeleton className="h-10 w-full" />
+                      </AdminTableCell>
+                    </AdminTableRow>
+                  ))
+                ) : data?.carts.length === 0 ? (
+                  <AdminTableRow>
+                    <AdminTableCell colSpan={7}>
+                      <AdminEmptyState message="No abandoned carts found" />
+                    </AdminTableCell>
+                  </AdminTableRow>
+                ) : (
+                  data?.carts.map((cart) => (
+                    <AdminTableRow key={cart.id}>
+                      <AdminTableCell>
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-muted-foreground" />
+                          <span className="truncate max-w-[180px]">
+                            {cart.email || (cart.guestId ? `Guest ${cart.guestId.slice(-6)}` : "Unknown")}
+                          </span>
+                        </div>
+                      </AdminTableCell>
+                      <AdminTableCell className="font-medium">
+                        {formatCurrency(cart.cartTotal)}
+                      </AdminTableCell>
+                      <AdminTableCell>{cart.cartItems.length} items</AdminTableCell>
+                      <AdminTableCell>
+                        <AdminBadge variant={statusBadgeVariants[cart.status] || "secondary"}>
+                          {statusLabels[cart.status] || cart.status}
+                        </AdminBadge>
+                      </AdminTableCell>
+                      <AdminTableCell className="text-muted-foreground">
+                        {formatDate(cart.abandonedAt)}
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        <div className="flex gap-1">
+                          {cart.email1SentAt && (
+                            <AdminBadge variant="outline">1</AdminBadge>
+                          )}
+                          {cart.email2SentAt && (
+                            <AdminBadge variant="outline">2</AdminBadge>
+                          )}
+                          {cart.email3SentAt && (
+                            <AdminBadge variant="outline">3</AdminBadge>
+                          )}
+                          {!cart.email1SentAt && (
+                            <span className="text-muted-foreground text-xs">None</span>
+                          )}
+                        </div>
+                      </AdminTableCell>
+                      <AdminTableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedCart(cart)
+                              setShowDetailDialog(true)
+                            }}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          {cart.email && cart.status !== "RECOVERED" && cart.status !== "UNRECOVERABLE" && (
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => {
                                 setSelectedCart(cart)
-                                setShowDetailDialog(true)
+                                setShowSendEmailDialog(true)
                               }}
                             >
-                              <Eye className="w-4 h-4" />
+                              <Send className="w-4 h-4" />
                             </Button>
-                            {cart.email && cart.status !== "RECOVERED" && cart.status !== "UNRECOVERABLE" && (
+                          )}
+                          {cart.status !== "RECOVERED" && cart.status !== "UNRECOVERABLE" && (
+                            <>
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => {
-                                  setSelectedCart(cart)
-                                  setShowSendEmailDialog(true)
-                                }}
+                                onClick={() => handleMarkRecovered(cart.id)}
+                                title="Mark as recovered"
                               >
-                                <Send className="w-4 h-4" />
+                                <CheckCircle className="w-4 h-4 text-green-600" />
                               </Button>
-                            )}
-                            {cart.status !== "RECOVERED" && cart.status !== "UNRECOVERABLE" && (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleMarkRecovered(cart.id)}
-                                  title="Mark as recovered"
-                                >
-                                  <CheckCircle className="w-4 h-4 text-green-600" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleMarkUnrecoverable(cart.id)}
-                                  title="Mark as unrecoverable"
-                                >
-                                  <XCircle className="w-4 h-4 text-red-600" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleMarkUnrecoverable(cart.id)}
+                                title="Mark as unrecoverable"
+                              >
+                                <XCircle className="w-4 h-4 text-red-600" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </AdminTableCell>
+                    </AdminTableRow>
+                  ))
+                )}
+              </AdminTableBody>
+            </AdminTable>
+          </AdminDataCard>
 
           {/* Pagination */}
           {data && data.pagination.totalPages > 1 && (
@@ -827,9 +840,9 @@ export function AbandonedCartsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
-                  <Badge className={statusColors[selectedCart.status] || ""}>
+                  <AdminBadge variant={statusBadgeVariants[selectedCart.status] || "secondary"}>
                     {statusLabels[selectedCart.status] || selectedCart.status}
-                  </Badge>
+                  </AdminBadge>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Cart Total</p>
@@ -879,19 +892,19 @@ export function AbandonedCartsPage() {
                 <p className="text-sm text-muted-foreground mb-2">Email History</p>
                 <div className="flex gap-4">
                   <div className="flex items-center gap-2">
-                    <Badge variant={selectedCart.email1SentAt ? "default" : "outline"}>1</Badge>
+                    <AdminBadge variant={selectedCart.email1SentAt ? "default" : "outline"}>1</AdminBadge>
                     <span className="text-sm">
                       {selectedCart.email1SentAt ? formatDate(selectedCart.email1SentAt) : "Not sent"}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={selectedCart.email2SentAt ? "default" : "outline"}>2</Badge>
+                    <AdminBadge variant={selectedCart.email2SentAt ? "default" : "outline"}>2</AdminBadge>
                     <span className="text-sm">
                       {selectedCart.email2SentAt ? formatDate(selectedCart.email2SentAt) : "Not sent"}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={selectedCart.email3SentAt ? "default" : "outline"}>3</Badge>
+                    <AdminBadge variant={selectedCart.email3SentAt ? "default" : "outline"}>3</AdminBadge>
                     <span className="text-sm">
                       {selectedCart.email3SentAt ? formatDate(selectedCart.email3SentAt) : "Not sent"}
                     </span>

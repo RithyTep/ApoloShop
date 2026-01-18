@@ -6,16 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -51,11 +41,23 @@ import {
   List,
   ChevronLeft,
   ChevronRight,
-  Eye,
   Ban,
 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
-import { FlashSaleCountdown } from "@/components/flash-sale-countdown"
+import {
+  AdminPageHeader,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 interface FlashSaleProduct {
   id: string
@@ -91,11 +93,13 @@ interface FlashSale {
   createdAt: string
 }
 
-const statusColors: Record<FlashSale["status"], { variant: "info" | "success" | "secondary" | "destructive" }> = {
-  SCHEDULED: { variant: "info" },
-  ACTIVE: { variant: "success" },
-  ENDED: { variant: "secondary" },
-  CANCELLED: { variant: "destructive" },
+type BadgeVariant = "default" | "secondary" | "destructive" | "outline"
+
+const statusBadgeVariants: Record<FlashSale["status"], BadgeVariant> = {
+  SCHEDULED: "outline",
+  ACTIVE: "default",
+  ENDED: "secondary",
+  CANCELLED: "destructive",
 }
 
 export function FlashSalesPage() {
@@ -350,79 +354,53 @@ export function FlashSalesPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-10 w-32" />
-        </div>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <AdminLoading
+        title="Flash Sales"
+        subtitle="Create and manage time-limited deals"
+        rows={5}
+      />
     )
   }
 
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-warning/10 p-2">
-            <Zap className="h-7 w-7 text-warning" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Flash Sales</h1>
-            <p className="text-muted-foreground mt-2">
-              Create and manage time-limited deals
-            </p>
-          </div>
-        </div>
+      <AdminPageHeader
+        title="Flash Sales"
+        subtitle="Create and manage time-limited deals"
+      >
         <Button onClick={openCreateDialog} className="gap-2">
           <Plus className="h-4 w-4" />
           New Flash Sale
         </Button>
-      </div>
+      </AdminPageHeader>
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">
-              {flashSales.filter((s) => s.status === "ACTIVE").length}
-            </div>
-            <p className="text-sm text-muted-foreground">Active Sales</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">
-              {flashSales.filter((s) => s.status === "SCHEDULED").length}
-            </div>
-            <p className="text-sm text-muted-foreground">Scheduled</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">
-              {flashSales.reduce((acc, s) => acc + s.soldCount, 0)}
-            </div>
-            <p className="text-sm text-muted-foreground">Total Units Sold</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">
-              {flashSales.filter((s) => s.isFeatured).length}
-            </div>
-            <p className="text-sm text-muted-foreground">Featured Sales</p>
-          </CardContent>
-        </Card>
+        <AdminDataCard>
+          <div className="text-2xl font-bold">
+            {flashSales.filter((s) => s.status === "ACTIVE").length}
+          </div>
+          <p className="text-sm text-muted-foreground">Active Sales</p>
+        </AdminDataCard>
+        <AdminDataCard>
+          <div className="text-2xl font-bold">
+            {flashSales.filter((s) => s.status === "SCHEDULED").length}
+          </div>
+          <p className="text-sm text-muted-foreground">Scheduled</p>
+        </AdminDataCard>
+        <AdminDataCard>
+          <div className="text-2xl font-bold">
+            {flashSales.reduce((acc, s) => acc + s.soldCount, 0)}
+          </div>
+          <p className="text-sm text-muted-foreground">Total Units Sold</p>
+        </AdminDataCard>
+        <AdminDataCard>
+          <div className="text-2xl font-bold">
+            {flashSales.filter((s) => s.isFeatured).length}
+          </div>
+          <p className="text-sm text-muted-foreground">Featured Sales</p>
+        </AdminDataCard>
       </div>
 
       {/* View Tabs */}
@@ -460,158 +438,148 @@ export function FlashSalesPage() {
 
         {/* List View */}
         <TabsContent value="list">
-          <Card>
-            <CardContent className="pt-6">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Sale Price</TableHead>
-                    <TableHead>Discount</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Stock</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredSales.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={7}
-                        className="text-center text-muted-foreground"
-                      >
-                        No flash sales found
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredSales.map((sale) => (
-                      <TableRow key={sale.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            {sale.product?.imageUrl ? (
-                              <img
-                                src={sale.product.imageUrl}
-                                alt=""
-                                className="h-10 w-10 rounded object-cover"
-                              />
-                            ) : (
-                              <div className="flex h-10 w-10 items-center justify-center rounded bg-muted">
-                                <Zap className="h-4 w-4" />
-                              </div>
-                            )}
-                            <div>
-                              <div className="font-medium">
-                                {sale.product?.nameEn || "Unknown Product"}
-                              </div>
-                              {sale.nameEn && (
-                                <div className="text-xs text-muted-foreground">
-                                  {sale.nameEn}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium text-destructive">
-                              ${sale.salePriceUsd.toFixed(2)}
-                            </div>
-                            <div className="text-xs text-muted-foreground line-through">
-                              ${sale.product?.priceUsd.toFixed(2)}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {sale.product && (
-                            <Badge variant="warning">
-                              -
-                              {Math.round(
-                                ((sale.product.priceUsd - sale.salePriceUsd) /
-                                  sale.product.priceUsd) *
-                                  100
-                              )}
-                              %
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            <div>{formatDate(sale.startTime)}</div>
-                            <div className="text-muted-foreground">
-                              → {formatDate(sale.endTime)}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {sale.quantity ? (
-                            <div className="text-sm">
-                              <div>
-                                {sale.soldCount} / {sale.quantity} sold
-                              </div>
-                              <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
-                                <div
-                                  className="h-full bg-warning"
-                                  style={{
-                                    width: `${(sale.soldCount / sale.quantity) * 100}%`,
-                                  }}
-                                />
-                              </div>
-                            </div>
+          <AdminDataCard>
+            {filteredSales.length === 0 ? (
+              <AdminEmptyState message="No flash sales found" />
+            ) : (
+              <AdminTable>
+                <AdminTableHeader>
+                  <AdminTableHeadRow>
+                    <AdminTableHead>Product</AdminTableHead>
+                    <AdminTableHead>Sale Price</AdminTableHead>
+                    <AdminTableHead>Discount</AdminTableHead>
+                    <AdminTableHead>Duration</AdminTableHead>
+                    <AdminTableHead>Stock</AdminTableHead>
+                    <AdminTableHead>Status</AdminTableHead>
+                    <AdminTableHead className="text-right">Actions</AdminTableHead>
+                  </AdminTableHeadRow>
+                </AdminTableHeader>
+                <AdminTableBody>
+                  {filteredSales.map((sale) => (
+                    <AdminTableRow key={sale.id}>
+                      <AdminTableCell>
+                        <div className="flex items-center gap-3">
+                          {sale.product?.imageUrl ? (
+                            <img
+                              src={sale.product.imageUrl}
+                              alt=""
+                              className="h-10 w-10 rounded object-cover"
+                            />
                           ) : (
-                            <span className="text-muted-foreground">
-                              Unlimited
-                            </span>
+                            <div className="flex h-10 w-10 items-center justify-center rounded bg-muted">
+                              <Zap className="h-4 w-4" />
+                            </div>
                           )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={statusColors[sale.status].variant}>
-                            {sale.status}
-                          </Badge>
-                          {sale.isFeatured && (
-                            <Badge
-                              variant="outline"
-                              className="ml-2 border-warning text-warning"
-                            >
-                              Featured
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEditDialog(sale)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            {(sale.status === "SCHEDULED" ||
-                              sale.status === "ACTIVE") && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleCancel(sale)}
-                              >
-                                <Ban className="h-4 w-4" />
-                              </Button>
+                          <div>
+                            <div className="font-medium">
+                              {sale.product?.nameEn || "Unknown Product"}
+                            </div>
+                            {sale.nameEn && (
+                              <div className="text-xs text-muted-foreground">
+                                {sale.nameEn}
+                              </div>
                             )}
+                          </div>
+                        </div>
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        <div>
+                          <div className="font-medium text-destructive">
+                            ${sale.salePriceUsd.toFixed(2)}
+                          </div>
+                          <div className="text-xs text-muted-foreground line-through">
+                            ${sale.product?.priceUsd.toFixed(2)}
+                          </div>
+                        </div>
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        {sale.product && (
+                          <AdminBadge variant="secondary">
+                            -
+                            {Math.round(
+                              ((sale.product.priceUsd - sale.salePriceUsd) /
+                                sale.product.priceUsd) *
+                                100
+                            )}
+                            %
+                          </AdminBadge>
+                        )}
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        <div className="text-sm">
+                          <div>{formatDate(sale.startTime)}</div>
+                          <div className="text-muted-foreground">
+                            to {formatDate(sale.endTime)}
+                          </div>
+                        </div>
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        {sale.quantity ? (
+                          <div className="text-sm">
+                            <div>
+                              {sale.soldCount} / {sale.quantity} sold
+                            </div>
+                            <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
+                              <div
+                                className="h-full bg-primary"
+                                style={{
+                                  width: `${(sale.soldCount / sale.quantity) * 100}%`,
+                                }}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">
+                            Unlimited
+                          </span>
+                        )}
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        <div className="flex items-center gap-2">
+                          <AdminBadge variant={statusBadgeVariants[sale.status]}>
+                            {sale.status}
+                          </AdminBadge>
+                          {sale.isFeatured && (
+                            <AdminBadge variant="outline">
+                              Featured
+                            </AdminBadge>
+                          )}
+                        </div>
+                      </AdminTableCell>
+                      <AdminTableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEditDialog(sale)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          {(sale.status === "SCHEDULED" ||
+                            sale.status === "ACTIVE") && (
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => setDeleteSale(sale)}
+                              onClick={() => handleCancel(sale)}
                             >
-                              <Trash className="h-4 w-4" />
+                              <Ban className="h-4 w-4" />
                             </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleteSale(sale)}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </AdminTableCell>
+                    </AdminTableRow>
+                  ))}
+                </AdminTableBody>
+              </AdminTable>
+            )}
+          </AdminDataCard>
         </TabsContent>
 
         {/* Calendar View */}
@@ -688,16 +656,16 @@ export function FlashSalesPage() {
                       </div>
                       <div className="mt-1 space-y-0.5">
                         {daySales.slice(0, 2).map((sale) => {
-                          const variantClasses = {
-                            info: "bg-info/10 text-info border-info/20",
-                            success: "bg-success/10 text-success border-success/20",
-                            secondary: "bg-secondary/10 text-secondary-foreground border-secondary/20",
-                            destructive: "bg-destructive/10 text-destructive border-destructive/20",
+                          const variantClasses: Record<FlashSale["status"], string> = {
+                            SCHEDULED: "bg-muted text-muted-foreground border-muted",
+                            ACTIVE: "bg-primary/10 text-primary border-primary/20",
+                            ENDED: "bg-secondary/10 text-secondary-foreground border-secondary/20",
+                            CANCELLED: "bg-destructive/10 text-destructive border-destructive/20",
                           }
                           return (
                             <div
                               key={sale.id}
-                              className={`truncate rounded border px-1 py-0.5 text-xs ${variantClasses[statusColors[sale.status].variant]}`}
+                              className={`truncate rounded border px-1 py-0.5 text-xs ${variantClasses[sale.status]}`}
                               title={sale.product?.nameEn || ""}
                             >
                               {sale.product?.nameEn?.slice(0, 15)}
@@ -721,11 +689,11 @@ export function FlashSalesPage() {
               {/* Legend */}
               <div className="mt-4 flex flex-wrap gap-4">
                 <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded bg-success" />
+                  <div className="h-3 w-3 rounded bg-primary" />
                   <span className="text-sm">Active</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded bg-info" />
+                  <div className="h-3 w-3 rounded bg-muted" />
                   <span className="text-sm">Scheduled</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -794,7 +762,7 @@ export function FlashSalesPage() {
                 <Label>Discount Preview</Label>
                 <div className="flex h-10 items-center rounded-md bg-muted px-3">
                   {selectedProduct && formData.salePriceUsd ? (
-                    <span className="font-medium text-success">
+                    <span className="font-medium text-primary">
                       {discountPercentage}% off ($
                       {(
                         selectedProduct.priceUsd -
@@ -873,7 +841,7 @@ export function FlashSalesPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, nameKh: e.target.value })
                   }
-                  placeholder="ឧទាហរណ៍: ពិសេសរដូវក្តៅ"
+                  placeholder="e.g., ពិសេសរដូវក្តៅ"
                 />
               </div>
             </div>

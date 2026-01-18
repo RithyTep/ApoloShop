@@ -5,11 +5,11 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
 import { useSettings, useUpdateSettings } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
+import { AdminPageHeader, AdminLoading } from "@/components/admin"
 
 interface PaymentMethod {
   id: string
@@ -110,28 +110,20 @@ export function PaymentsPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Payment Methods</h1>
-          <p className="text-muted-foreground mt-2">Configure payment gateway settings</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="p-6">
-              <Skeleton className="h-16 w-full" />
-            </Card>
-          ))}
-        </div>
-      </div>
+      <AdminLoading
+        title="Payment Methods"
+        subtitle="Configure payment gateway settings"
+        rows={4}
+      />
     )
   }
 
   return (
     <div className="p-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Payment Methods</h1>
-        <p className="text-muted-foreground mt-2">Configure payment gateway settings</p>
-      </div>
+      <AdminPageHeader
+        title="Payment Methods"
+        subtitle="Configure payment gateway settings"
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {paymentMethods.map((method) => {

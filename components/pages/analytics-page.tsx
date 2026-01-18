@@ -4,7 +4,6 @@ import { useState, useMemo, useRef } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   BarChart,
@@ -41,6 +40,19 @@ import {
 } from "lucide-react"
 import { useAdvancedAnalytics } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
+import {
+  AdminPageHeader,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"]
 const FUNNEL_COLORS = ["#3b82f6", "#60a5fa", "#93c5fd", "#bfdbfe"]
@@ -150,24 +162,15 @@ export function AnalyticsPage() {
     }
   }
 
-  const renderLoadingState = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="p-6">
-            <Skeleton className="h-4 w-24 mb-2" />
-            <Skeleton className="h-8 w-32" />
-          </Card>
-        ))}
-      </div>
-      <Card className="p-6">
-        <Skeleton className="h-6 w-32 mb-4" />
-        <Skeleton className="h-[300px] w-full" />
-      </Card>
-    </div>
-  )
-
-  if (isLoading) return <div className="p-8">{renderLoadingState()}</div>
+  if (isLoading) {
+    return (
+      <AdminLoading
+        title="Advanced Analytics"
+        subtitle="Business intelligence and performance insights"
+        rows={4}
+      />
+    )
+  }
 
   if (error) {
     return (
@@ -231,17 +234,10 @@ export function AnalyticsPage() {
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Advanced Analytics</h1>
-          <p className="text-muted-foreground mt-2">
-            Business intelligence and performance insights
-          </p>
-          <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            {startDate} to {endDate}
-          </p>
-        </div>
+      <AdminPageHeader
+        title="Advanced Analytics"
+        subtitle="Business intelligence and performance insights"
+      >
         <div className="flex gap-4">
           <Select value={dateRange} onValueChange={setDateRange}>
             <SelectTrigger className="w-[140px]">
@@ -263,7 +259,12 @@ export function AnalyticsPage() {
             {isExporting ? "Exporting..." : "Export PDF"}
           </Button>
         </div>
-      </div>
+      </AdminPageHeader>
+
+      <p className="text-sm text-muted-foreground flex items-center gap-1">
+        <Calendar className="h-3 w-3" />
+        {startDate} to {endDate}
+      </p>
 
       {/* Report content for PDF export */}
       <div ref={reportRef} className="space-y-6">
@@ -381,9 +382,7 @@ export function AnalyticsPage() {
               </ComposedChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[350px] flex items-center justify-center text-muted-foreground">
-              No revenue data available for selected period
-            </div>
+            <AdminEmptyState message="No revenue data available for selected period" />
           )}
         </Card>
 
@@ -429,19 +428,19 @@ export function AnalyticsPage() {
 
               {/* Funnel Stats Table */}
               <div className="w-full lg:w-1/2">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-b border-border">
-                      <TableHead className="text-foreground font-semibold">Stage</TableHead>
-                      <TableHead className="text-foreground font-semibold text-right">Count</TableHead>
-                      <TableHead className="text-foreground font-semibold text-right">% of Total</TableHead>
-                      <TableHead className="text-foreground font-semibold text-right">Drop-off</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <AdminTable>
+                  <AdminTableHeader>
+                    <AdminTableHeadRow>
+                      <AdminTableHead>Stage</AdminTableHead>
+                      <AdminTableHead className="text-right">Count</AdminTableHead>
+                      <AdminTableHead className="text-right">% of Total</AdminTableHead>
+                      <AdminTableHead className="text-right">Drop-off</AdminTableHead>
+                    </AdminTableHeadRow>
+                  </AdminTableHeader>
+                  <AdminTableBody>
                     {conversionFunnel.map((stage, index) => (
-                      <TableRow key={stage.stage} className="border-b border-border">
-                        <TableCell className="font-medium">
+                      <AdminTableRow key={stage.stage}>
+                        <AdminTableCell className="font-medium">
                           <div className="flex items-center gap-2">
                             <div
                               className="w-3 h-3 rounded"
@@ -449,22 +448,20 @@ export function AnalyticsPage() {
                             />
                             {stage.stage}
                           </div>
-                        </TableCell>
-                        <TableCell className="text-right">{stage.count.toLocaleString()}</TableCell>
-                        <TableCell className="text-right">{stage.percentage}%</TableCell>
-                        <TableCell className={`text-right ${stage.dropoff > 0 ? "text-destructive" : ""}`}>
-                          {stage.dropoff > 0 ? `-${stage.dropoff}%` : "—"}
-                        </TableCell>
-                      </TableRow>
+                        </AdminTableCell>
+                        <AdminTableCell className="text-right">{stage.count.toLocaleString()}</AdminTableCell>
+                        <AdminTableCell className="text-right">{stage.percentage}%</AdminTableCell>
+                        <AdminTableCell className={`text-right ${stage.dropoff > 0 ? "text-destructive" : ""}`}>
+                          {stage.dropoff > 0 ? `-${stage.dropoff}%` : "-"}
+                        </AdminTableCell>
+                      </AdminTableRow>
                     ))}
-                  </TableBody>
-                </Table>
+                  </AdminTableBody>
+                </AdminTable>
               </div>
             </div>
           ) : (
-            <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-              No conversion data available
-            </div>
+            <AdminEmptyState message="No conversion data available" />
           )}
         </Card>
 
@@ -551,19 +548,19 @@ export function AnalyticsPage() {
 
               {/* Top Products Table */}
               <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-b border-border sticky top-0 bg-background">
-                      <TableHead className="text-foreground font-semibold">Product</TableHead>
-                      <TableHead className="text-foreground font-semibold text-right">Revenue</TableHead>
-                      <TableHead className="text-foreground font-semibold text-right">Margin</TableHead>
-                      <TableHead className="text-foreground font-semibold text-right">Qty</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <AdminTable>
+                  <AdminTableHeader>
+                    <AdminTableHeadRow>
+                      <AdminTableHead>Product</AdminTableHead>
+                      <AdminTableHead className="text-right">Revenue</AdminTableHead>
+                      <AdminTableHead className="text-right">Margin</AdminTableHead>
+                      <AdminTableHead className="text-right">Qty</AdminTableHead>
+                    </AdminTableHeadRow>
+                  </AdminTableHeader>
+                  <AdminTableBody>
                     {productPerformance.slice(0, 15).map((product) => (
-                      <TableRow key={product.id} className="border-b border-border hover:bg-muted/50">
-                        <TableCell>
+                      <AdminTableRow key={product.id}>
+                        <AdminTableCell>
                           <div className="flex items-center gap-2">
                             {product.imageUrl ? (
                               <img
@@ -581,25 +578,23 @@ export function AnalyticsPage() {
                               <p className="text-xs text-muted-foreground">{product.sku}</p>
                             </div>
                           </div>
-                        </TableCell>
-                        <TableCell className="text-right font-medium">{formatCurrency(product.revenue)}</TableCell>
-                        <TableCell className={`text-right ${product.marginPercent >= 40 ? "text-success" : product.marginPercent < 20 ? "text-destructive" : ""}`}>
+                        </AdminTableCell>
+                        <AdminTableCell className="text-right font-medium">{formatCurrency(product.revenue)}</AdminTableCell>
+                        <AdminTableCell className={`text-right ${product.marginPercent >= 40 ? "text-success" : product.marginPercent < 20 ? "text-destructive" : ""}`}>
                           <div className="flex items-center justify-end gap-1">
                             <Percent className="h-3 w-3" />
                             {product.marginPercent}
                           </div>
-                        </TableCell>
-                        <TableCell className="text-right">{product.quantity}</TableCell>
-                      </TableRow>
+                        </AdminTableCell>
+                        <AdminTableCell className="text-right">{product.quantity}</AdminTableCell>
+                      </AdminTableRow>
                     ))}
-                  </TableBody>
-                </Table>
+                  </AdminTableBody>
+                </AdminTable>
               </div>
             </div>
           ) : (
-            <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-              No product performance data available
-            </div>
+            <AdminEmptyState message="No product performance data available" />
           )}
         </Card>
 
@@ -615,35 +610,35 @@ export function AnalyticsPage() {
           </p>
           {customerCohorts.length > 0 ? (
             <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-b border-border">
-                    <TableHead className="text-foreground font-semibold">Cohort</TableHead>
-                    <TableHead className="text-foreground font-semibold text-center">Size</TableHead>
+              <AdminTable>
+                <AdminTableHeader>
+                  <AdminTableHeadRow>
+                    <AdminTableHead>Cohort</AdminTableHead>
+                    <AdminTableHead className="text-center">Size</AdminTableHead>
                     {customerCohorts[0]?.retention.map((_, index) => (
-                      <TableHead key={index} className="text-foreground font-semibold text-center">
+                      <AdminTableHead key={index} className="text-center">
                         {index === 0 ? "Month 0" : `+${index}`}
-                      </TableHead>
+                      </AdminTableHead>
                     ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+                  </AdminTableHeadRow>
+                </AdminTableHeader>
+                <AdminTableBody>
                   {customerCohorts.map((cohort) => (
-                    <TableRow key={cohort.cohortMonth} className="border-b border-border">
-                      <TableCell className="font-medium">
+                    <AdminTableRow key={cohort.cohortMonth}>
+                      <AdminTableCell className="font-medium">
                         {new Date(cohort.cohortMonth + "-01").toLocaleDateString("en-US", {
                           month: "short",
                           year: "numeric",
                         })}
-                      </TableCell>
-                      <TableCell className="text-center font-medium">{cohort.cohortSize}</TableCell>
+                      </AdminTableCell>
+                      <AdminTableCell className="text-center font-medium">{cohort.cohortSize}</AdminTableCell>
                       {cohort.retention.map((value, index) => {
                         // Color intensity based on retention
                         const intensity = value / 100
                         const bgColor = `rgba(16, 185, 129, ${intensity * 0.8})`
                         const textColor = intensity > 0.5 ? "white" : "inherit"
                         return (
-                          <TableCell
+                          <AdminTableCell
                             key={index}
                             className="text-center font-medium"
                             style={{
@@ -652,18 +647,16 @@ export function AnalyticsPage() {
                             }}
                           >
                             {value}%
-                          </TableCell>
+                          </AdminTableCell>
                         )
                       })}
-                    </TableRow>
+                    </AdminTableRow>
                   ))}
-                </TableBody>
-              </Table>
+                </AdminTableBody>
+              </AdminTable>
             </div>
           ) : (
-            <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-              No cohort data available. Need at least 1 month of order history.
-            </div>
+            <AdminEmptyState message="No cohort data available. Need at least 1 month of order history." />
           )}
         </Card>
       </div>

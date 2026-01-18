@@ -3,8 +3,6 @@
 import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Select,
@@ -22,20 +20,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
   useSecurityDashboard,
   useUnlockAccount,
   useForceLogout,
   type SecurityDashboardTimeframe,
   type LockedAccount,
-  type SuspiciousLogin,
   type CriticalEvent,
 } from "@/lib/api-hooks"
 import {
@@ -58,8 +47,6 @@ import {
   MapPin,
   Activity,
   AlertCircle,
-  TrendingUp,
-  TrendingDown,
 } from "lucide-react"
 import {
   AreaChart,
@@ -74,6 +61,20 @@ import {
   BarChart,
   Bar,
 } from "recharts"
+import {
+  AdminPageHeader,
+  AdminDataCard,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+} from "@/components/admin"
 
 // Device type icons
 const deviceIcons: Record<string, React.ReactNode> = {
@@ -138,7 +139,13 @@ export function SecurityDashboardPage() {
   }
 
   if (isLoading) {
-    return <SecurityDashboardSkeleton />
+    return (
+      <AdminLoading
+        title="Security Dashboard"
+        subtitle="Real-time security monitoring and threat detection"
+        rows={6}
+      />
+    )
   }
 
   if (error || !data) {
@@ -167,40 +174,34 @@ export function SecurityDashboardPage() {
     alerts,
     criticalEvents,
     suspiciousLogins,
-    config,
   } = data
 
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Security Dashboard</h1>
-          <p className="text-muted-foreground mt-2">
-            Real-time security monitoring and threat detection
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Select
-            value={timeframe}
-            onValueChange={(v) => setTimeframe(v as SecurityDashboardTimeframe)}
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1h">Last 1 hour</SelectItem>
-              <SelectItem value="6h">Last 6 hours</SelectItem>
-              <SelectItem value="24h">Last 24 hours</SelectItem>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="icon" onClick={() => refetch()}>
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Security Dashboard"
+        subtitle="Real-time security monitoring and threat detection"
+      >
+        <Select
+          value={timeframe}
+          onValueChange={(v) => setTimeframe(v as SecurityDashboardTimeframe)}
+        >
+          <SelectTrigger className="w-[140px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="1h">Last 1 hour</SelectItem>
+            <SelectItem value="6h">Last 6 hours</SelectItem>
+            <SelectItem value="24h">Last 24 hours</SelectItem>
+            <SelectItem value="7d">Last 7 days</SelectItem>
+            <SelectItem value="30d">Last 30 days</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button variant="outline" size="icon" onClick={() => refetch()}>
+          <RefreshCw className="h-4 w-4" />
+        </Button>
+      </AdminPageHeader>
 
       {/* Security Score Card */}
       <Card className="p-6">
@@ -299,7 +300,7 @@ export function SecurityDashboardPage() {
                 className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
               >
                 <div className="flex items-center gap-3">
-                  <Badge
+                  <AdminBadge
                     variant={
                       alert.severity === "CRITICAL"
                         ? "destructive"
@@ -309,7 +310,7 @@ export function SecurityDashboardPage() {
                     }
                   >
                     {alert.severity}
-                  </Badge>
+                  </AdminBadge>
                   <span className="text-sm">{alert.message}</span>
                 </div>
                 <span className="text-sm text-muted-foreground">
@@ -356,9 +357,7 @@ export function SecurityDashboardPage() {
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                No data available
-              </div>
+              <AdminEmptyState message="No data available" />
             )}
           </div>
         </Card>
@@ -401,9 +400,7 @@ export function SecurityDashboardPage() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                No active sessions
-              </div>
+              <AdminEmptyState message="No active sessions" />
             )}
           </div>
         </Card>
@@ -466,9 +463,9 @@ export function SecurityDashboardPage() {
             <ShieldAlert className="h-4 w-4 text-warning" />
             Suspicious Login Activity
             {suspiciousLogins.length > 0 && (
-              <Badge variant="destructive" className="ml-2">
+              <AdminBadge variant="destructive">
                 {suspiciousLogins.length}
-              </Badge>
+              </AdminBadge>
             )}
           </h3>
           {suspiciousLogins.length > 0 ? (
@@ -495,14 +492,14 @@ export function SecurityDashboardPage() {
                     </div>
                     <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                       {login.isNewDevice && (
-                        <Badge variant="outline" className="text-xs">
+                        <AdminBadge variant="outline">
                           New Device
-                        </Badge>
+                        </AdminBadge>
                       )}
                       {login.isNewLocation && (
-                        <Badge variant="outline" className="text-xs">
+                        <AdminBadge variant="outline">
                           New Location
-                        </Badge>
+                        </AdminBadge>
                       )}
                       {login.country && (
                         <span className="flex items-center gap-1">
@@ -527,45 +524,43 @@ export function SecurityDashboardPage() {
       </div>
 
       {/* Recent Login Activity */}
-      <Card className="p-4">
+      <AdminDataCard>
         <h3 className="font-medium mb-4">Recent Login Activity</h3>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Status</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>IP Address</TableHead>
-                <TableHead>Time</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recentLoginAttempts.slice(0, 10).map((attempt) => (
-                <TableRow key={attempt.id}>
-                  <TableCell>
-                    {attempt.success ? (
-                      <Badge variant="default" className="bg-success">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Success
-                      </Badge>
-                    ) : (
-                      <Badge variant="destructive">
-                        <XCircle className="h-3 w-3 mr-1" />
-                        Failed
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="font-mono text-sm">{attempt.email}</TableCell>
-                  <TableCell className="font-mono text-sm">{attempt.ipAddress}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {new Date(attempt.createdAt).toLocaleString()}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </Card>
+        <AdminTable>
+          <AdminTableHeader>
+            <AdminTableHeadRow>
+              <AdminTableHead>Status</AdminTableHead>
+              <AdminTableHead>Email</AdminTableHead>
+              <AdminTableHead>IP Address</AdminTableHead>
+              <AdminTableHead>Time</AdminTableHead>
+            </AdminTableHeadRow>
+          </AdminTableHeader>
+          <AdminTableBody>
+            {recentLoginAttempts.slice(0, 10).map((attempt) => (
+              <AdminTableRow key={attempt.id}>
+                <AdminTableCell>
+                  {attempt.success ? (
+                    <AdminBadge variant="default">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Success
+                    </AdminBadge>
+                  ) : (
+                    <AdminBadge variant="destructive">
+                      <XCircle className="h-3 w-3 mr-1" />
+                      Failed
+                    </AdminBadge>
+                  )}
+                </AdminTableCell>
+                <AdminTableCell className="font-mono text-sm">{attempt.email}</AdminTableCell>
+                <AdminTableCell className="font-mono text-sm">{attempt.ipAddress}</AdminTableCell>
+                <AdminTableCell className="text-muted-foreground">
+                  {new Date(attempt.createdAt).toLocaleString()}
+                </AdminTableCell>
+              </AdminTableRow>
+            ))}
+          </AdminTableBody>
+        </AdminTable>
+      </AdminDataCard>
 
       {/* Critical Events */}
       {criticalEvents.length > 0 && (
@@ -644,9 +639,7 @@ export function SecurityDashboardPage() {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
-              No security events recorded
-            </div>
+            <AdminEmptyState message="No security events recorded" />
           )}
         </div>
       </Card>
@@ -738,43 +731,6 @@ export function SecurityDashboardPage() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
-  )
-}
-
-function SecurityDashboardSkeleton() {
-  return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-64 mt-2" />
-        </div>
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-10 w-[140px]" />
-          <Skeleton className="h-10 w-10" />
-        </div>
-      </div>
-
-      <Skeleton className="h-24 w-full" />
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map((i) => (
-          <Skeleton key={i} className="h-24 w-full" />
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Skeleton className="h-[280px] w-full" />
-        <Skeleton className="h-[280px] w-full" />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Skeleton className="h-[300px] w-full" />
-        <Skeleton className="h-[300px] w-full" />
-      </div>
-
-      <Skeleton className="h-[300px] w-full" />
     </div>
   )
 }

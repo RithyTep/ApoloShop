@@ -5,8 +5,6 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
@@ -14,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
-import { Plus, Pencil, Trash, Receipt, Globe, Calendar, Download, TrendingUp } from "lucide-react"
+import { Plus, Pencil, Trash, Globe, Calendar, Download } from "lucide-react"
 import {
   useTaxRates,
   useCreateTaxRate,
@@ -27,6 +25,21 @@ import {
   useCategories,
 } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
+import {
+  AdminPageHeader,
+  AdminFilterCard,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 const taxTypes: { value: TaxType; label: string }[] = [
   { value: "VAT", label: "VAT (Value Added Tax)" },
@@ -210,7 +223,7 @@ export function TaxRatesPage() {
       await deleteMutation.mutateAsync(deleteRate.id)
       toast({ title: "Tax rate deleted successfully" })
       setDeleteRate(null)
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to delete tax rate",
@@ -230,19 +243,27 @@ export function TaxRatesPage() {
 
   const formatCurrency = (amount: number, currency: "USD" | "KHR" = "USD") => {
     if (currency === "KHR") {
-      return `${amount.toLocaleString()} ៛`
+      return `${amount.toLocaleString()} KHR`
     }
     return `$${amount.toFixed(2)}`
   }
 
+  if (isLoadingRates) {
+    return (
+      <AdminLoading
+        title="Tax Management"
+        subtitle="Configure tax rates by location and product category"
+        rows={4}
+      />
+    )
+  }
+
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Tax Management</h1>
-          <p className="text-muted-foreground">Configure tax rates by location and product category</p>
-        </div>
-      </div>
+    <div className="p-8 space-y-6">
+      <AdminPageHeader
+        title="Tax Management"
+        subtitle="Configure tax rates by location and product category"
+      />
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
         <TabsList>
@@ -251,135 +272,117 @@ export function TaxRatesPage() {
         </TabsList>
 
         <TabsContent value="rates" className="space-y-4">
-          <Card className="p-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <Receipt className="h-5 w-5" />
-                Tax Rates
-              </h2>
-              <Button onClick={openCreateDialog}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Tax Rate
-              </Button>
-            </div>
+          <AdminFilterCard>
+            <div className="flex-1" />
+            <Button onClick={openCreateDialog}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Tax Rate
+            </Button>
+          </AdminFilterCard>
 
-            {isLoadingRates ? (
-              <div className="space-y-2">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </div>
-            ) : taxRates.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No tax rates configured yet</p>
-                <p className="text-sm">Add a tax rate to start calculating taxes on orders</p>
-              </div>
+          <AdminDataCard>
+            {taxRates.length === 0 ? (
+              <AdminEmptyState message="No tax rates configured yet. Add a tax rate to start calculating taxes on orders." />
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Rate</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Pricing</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <AdminTable>
+                <AdminTableHeader>
+                  <AdminTableHeadRow>
+                    <AdminTableHead>Name</AdminTableHead>
+                    <AdminTableHead>Location</AdminTableHead>
+                    <AdminTableHead>Rate</AdminTableHead>
+                    <AdminTableHead>Type</AdminTableHead>
+                    <AdminTableHead>Pricing</AdminTableHead>
+                    <AdminTableHead>Status</AdminTableHead>
+                    <AdminTableHead className="text-right">Actions</AdminTableHead>
+                  </AdminTableHeadRow>
+                </AdminTableHeader>
+                <AdminTableBody>
                   {taxRates.map((rate) => (
-                    <TableRow key={rate.id}>
-                      <TableCell>
+                    <AdminTableRow key={rate.id}>
+                      <AdminTableCell>
                         <div className="font-medium">{rate.name}</div>
                         {rate.categoryId && (
                           <div className="text-xs text-muted-foreground">
                             Category: {categories.find(c => c.id === rate.categoryId)?.nameEn || rate.categoryId}
                           </div>
                         )}
-                      </TableCell>
-                      <TableCell>
+                      </AdminTableCell>
+                      <AdminTableCell>
                         <div className="flex items-center gap-1">
                           <Globe className="h-3 w-3" />
                           {rate.countryName}
                           {rate.region && <span className="text-muted-foreground">/ {rate.regionName || rate.region}</span>}
                         </div>
-                      </TableCell>
-                      <TableCell>
+                      </AdminTableCell>
+                      <AdminTableCell>
                         <span className="font-mono">{rate.ratePercent}%</span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{rate.taxType}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={rate.pricingMode === "INCLUSIVE" ? "secondary" : "default"}>
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        <AdminBadge variant="outline">{rate.taxType}</AdminBadge>
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        <AdminBadge variant={rate.pricingMode === "INCLUSIVE" ? "secondary" : "default"}>
                           {rate.pricingMode === "INCLUSIVE" ? "Inclusive" : "Exclusive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
+                        </AdminBadge>
+                      </AdminTableCell>
+                      <AdminTableCell>
                         <div className="flex items-center gap-2">
-                          <Badge variant={rate.isActive ? "default" : "secondary"}>
+                          <AdminBadge variant={rate.isActive ? "default" : "secondary"}>
                             {rate.isActive ? "Active" : "Inactive"}
-                          </Badge>
+                          </AdminBadge>
                           {rate.isDefault && (
-                            <Badge variant="outline" className="text-xs">Default</Badge>
+                            <AdminBadge variant="outline">Default</AdminBadge>
                           )}
                         </div>
-                      </TableCell>
-                      <TableCell className="text-right">
+                      </AdminTableCell>
+                      <AdminTableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={() => openEditDialog(rate)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => setDeleteRate(rate)}>
                           <Trash className="h-4 w-4" />
                         </Button>
-                      </TableCell>
-                    </TableRow>
+                      </AdminTableCell>
+                    </AdminTableRow>
                   ))}
-                </TableBody>
-              </Table>
+                </AdminTableBody>
+              </AdminTable>
             )}
-          </Card>
+          </AdminDataCard>
         </TabsContent>
 
         <TabsContent value="report" className="space-y-4">
           {/* Date Range Selector */}
-          <Card className="p-4">
-            <div className="flex items-center gap-4 flex-wrap">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <Label>Date Range:</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="date"
-                  value={reportStartDate}
-                  onChange={(e) => setReportStartDate(e.target.value)}
-                  className="w-auto"
-                />
-                <span>to</span>
-                <Input
-                  type="date"
-                  value={reportEndDate}
-                  onChange={(e) => setReportEndDate(e.target.value)}
-                  className="w-auto"
-                />
-              </div>
-              <Button variant="outline" onClick={exportTaxReport}>
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV
-              </Button>
+          <AdminFilterCard>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <Label>Date Range:</Label>
             </div>
-          </Card>
+            <div className="flex items-center gap-2">
+              <Input
+                type="date"
+                value={reportStartDate}
+                onChange={(e) => setReportStartDate(e.target.value)}
+                className="w-auto"
+              />
+              <span>to</span>
+              <Input
+                type="date"
+                value={reportEndDate}
+                onChange={(e) => setReportEndDate(e.target.value)}
+                className="w-auto"
+              />
+            </div>
+            <Button variant="outline" onClick={exportTaxReport}>
+              <Download className="h-4 w-4 mr-2" />
+              Export CSV
+            </Button>
+          </AdminFilterCard>
 
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card className="p-4">
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                <Receipt className="h-4 w-4" />
-                Total Orders
-              </div>
+              <div className="text-muted-foreground text-sm mb-2">Total Orders</div>
               {isLoadingReport ? (
                 <Skeleton className="h-8 w-20" />
               ) : (
@@ -387,10 +390,7 @@ export function TaxRatesPage() {
               )}
             </Card>
             <Card className="p-4">
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                <TrendingUp className="h-4 w-4" />
-                Total Subtotal
-              </div>
+              <div className="text-muted-foreground text-sm mb-2">Total Subtotal</div>
               {isLoadingReport ? (
                 <Skeleton className="h-8 w-32" />
               ) : (
@@ -401,10 +401,7 @@ export function TaxRatesPage() {
               )}
             </Card>
             <Card className="p-4">
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                <Receipt className="h-4 w-4" />
-                Total Tax Collected
-              </div>
+              <div className="text-muted-foreground text-sm mb-2">Total Tax Collected</div>
               {isLoadingReport ? (
                 <Skeleton className="h-8 w-32" />
               ) : (
@@ -415,10 +412,7 @@ export function TaxRatesPage() {
               )}
             </Card>
             <Card className="p-4">
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                <Receipt className="h-4 w-4" />
-                Effective Tax Rate
-              </div>
+              <div className="text-muted-foreground text-sm mb-2">Effective Tax Rate</div>
               {isLoadingReport ? (
                 <Skeleton className="h-8 w-16" />
               ) : (
@@ -429,75 +423,68 @@ export function TaxRatesPage() {
 
           {/* Tax by Country */}
           {taxReport?.byCountry && taxReport.byCountry.length > 0 && (
-            <Card className="p-4">
+            <AdminDataCard>
               <h3 className="font-semibold mb-4 flex items-center gap-2">
                 <Globe className="h-4 w-4" />
                 Tax by Country
               </h3>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Country</TableHead>
-                    <TableHead className="text-right">Orders</TableHead>
-                    <TableHead className="text-right">Subtotal (USD)</TableHead>
-                    <TableHead className="text-right">Tax Collected (USD)</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <AdminTable>
+                <AdminTableHeader>
+                  <AdminTableHeadRow>
+                    <AdminTableHead>Country</AdminTableHead>
+                    <AdminTableHead className="text-right">Orders</AdminTableHead>
+                    <AdminTableHead className="text-right">Subtotal (USD)</AdminTableHead>
+                    <AdminTableHead className="text-right">Tax Collected (USD)</AdminTableHead>
+                  </AdminTableHeadRow>
+                </AdminTableHeader>
+                <AdminTableBody>
                   {taxReport.byCountry.map((item, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell>{item.country}</TableCell>
-                      <TableCell className="text-right">{item.orderCount}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(item.totalSubtotalUsd)}</TableCell>
-                      <TableCell className="text-right text-green-600">{formatCurrency(item.totalTaxUsd)}</TableCell>
-                    </TableRow>
+                    <AdminTableRow key={idx}>
+                      <AdminTableCell>{item.country}</AdminTableCell>
+                      <AdminTableCell className="text-right">{item.orderCount}</AdminTableCell>
+                      <AdminTableCell className="text-right">{formatCurrency(item.totalSubtotalUsd)}</AdminTableCell>
+                      <AdminTableCell className="text-right text-green-600">{formatCurrency(item.totalTaxUsd)}</AdminTableCell>
+                    </AdminTableRow>
                   ))}
-                </TableBody>
-              </Table>
-            </Card>
+                </AdminTableBody>
+              </AdminTable>
+            </AdminDataCard>
           )}
 
           {/* Tax by Type */}
           {taxReport?.byTaxType && taxReport.byTaxType.length > 0 && (
-            <Card className="p-4">
-              <h3 className="font-semibold mb-4 flex items-center gap-2">
-                <Receipt className="h-4 w-4" />
-                Tax by Type
-              </h3>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tax Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Orders</TableHead>
-                    <TableHead className="text-right">Tax Collected (USD)</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+            <AdminDataCard>
+              <h3 className="font-semibold mb-4">Tax by Type</h3>
+              <AdminTable>
+                <AdminTableHeader>
+                  <AdminTableHeadRow>
+                    <AdminTableHead>Tax Name</AdminTableHead>
+                    <AdminTableHead>Type</AdminTableHead>
+                    <AdminTableHead className="text-right">Orders</AdminTableHead>
+                    <AdminTableHead className="text-right">Tax Collected (USD)</AdminTableHead>
+                  </AdminTableHeadRow>
+                </AdminTableHeader>
+                <AdminTableBody>
                   {taxReport.byTaxType.map((item, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell>{item.taxName}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{item.taxType}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">{item.orderCount}</TableCell>
-                      <TableCell className="text-right text-green-600">{formatCurrency(item.totalTaxUsd)}</TableCell>
-                    </TableRow>
+                    <AdminTableRow key={idx}>
+                      <AdminTableCell>{item.taxName}</AdminTableCell>
+                      <AdminTableCell>
+                        <AdminBadge variant="outline">{item.taxType}</AdminBadge>
+                      </AdminTableCell>
+                      <AdminTableCell className="text-right">{item.orderCount}</AdminTableCell>
+                      <AdminTableCell className="text-right text-green-600">{formatCurrency(item.totalTaxUsd)}</AdminTableCell>
+                    </AdminTableRow>
                   ))}
-                </TableBody>
-              </Table>
-            </Card>
+                </AdminTableBody>
+              </AdminTable>
+            </AdminDataCard>
           )}
 
           {/* No data state */}
           {!isLoadingReport && (!taxReport?.logs || taxReport.logs.length === 0) && (
-            <Card className="p-12">
-              <div className="text-center text-muted-foreground">
-                <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No tax data for the selected period</p>
-                <p className="text-sm">Tax logs will appear here once orders with tax calculations are processed</p>
-              </div>
-            </Card>
+            <AdminDataCard>
+              <AdminEmptyState message="No tax data for the selected period. Tax logs will appear here once orders with tax calculations are processed." />
+            </AdminDataCard>
           )}
         </TabsContent>
       </Tabs>

@@ -3,11 +3,8 @@
 import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Minus, ScanLine, Printer, Check, X } from "lucide-react"
@@ -16,6 +13,21 @@ import { useToast } from "@/components/ui/use-toast"
 import { BarcodeScanner } from "@/components/barcode-scanner"
 import { PrintPreviewDialog, PrintLabelButton } from "@/components/barcode-label"
 import { BarcodeInfo, generateEAN13FromSKU } from "@/lib/sku-barcode-utils"
+import {
+  AdminPageHeader,
+  AdminFilterCardGrid,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 export function InventoryPage() {
   const { toast } = useToast()
@@ -163,19 +175,11 @@ export function InventoryPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Inventory</h1>
-          <p className="text-muted-foreground mt-2">Track stock levels and manage inventory</p>
-        </div>
-        <Card className="p-6">
-          <div className="space-y-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-16 w-full" />
-            ))}
-          </div>
-        </Card>
-      </div>
+      <AdminLoading
+        title="Inventory"
+        subtitle="Track stock levels and manage inventory"
+        rows={4}
+      />
     )
   }
 
@@ -185,31 +189,26 @@ export function InventoryPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Inventory</h1>
-          <p className="text-muted-foreground mt-2">Track stock levels and manage inventory</p>
-        </div>
+      <AdminPageHeader
+        title="Inventory"
+        subtitle="Track stock levels and manage inventory"
+      >
         <div className="flex items-center gap-2">
           {selectedForPrint.length > 0 && (
             <Button
               variant="outline"
               onClick={() => setIsPrintDialogOpen(true)}
-              className="flex items-center gap-2"
             >
-              <Printer size={16} />
+              <Printer size={16} className="mr-2" />
               Print Labels ({selectedForPrint.length})
             </Button>
           )}
-          <Button
-            onClick={() => setIsScannerOpen(true)}
-            className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <ScanLine size={16} />
+          <Button onClick={() => setIsScannerOpen(true)}>
+            <ScanLine size={16} className="mr-2" />
             Scan to Add
           </Button>
         </div>
-      </div>
+      </AdminPageHeader>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -219,7 +218,7 @@ export function InventoryPage() {
         </Card>
         <Card className="p-4">
           <p className="text-sm text-muted-foreground">Low Stock</p>
-          <p className="text-2xl font-bold text-warning">{lowStockCount}</p>
+          <p className="text-2xl font-bold text-orange-500">{lowStockCount}</p>
         </Card>
         <Card className="p-4">
           <p className="text-sm text-muted-foreground">Out of Stock</p>
@@ -227,135 +226,125 @@ export function InventoryPage() {
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Input
-            placeholder="Search by product name or SKU..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border-border"
-          />
-          <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v)}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="Good">Good</SelectItem>
-              <SelectItem value="Low">Low</SelectItem>
-              <SelectItem value="Out of Stock">Out of Stock</SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="text-sm text-muted-foreground flex items-center">
-            {inventory.length} items
-          </div>
+      <AdminFilterCardGrid columns={3}>
+        <Input
+          placeholder="Search by product name or SKU..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v)}>
+          <SelectTrigger>
+            <SelectValue placeholder="All Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="Good">Good</SelectItem>
+            <SelectItem value="Low">Low</SelectItem>
+            <SelectItem value="Out of Stock">Out of Stock</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="text-sm text-muted-foreground flex items-center">
+          {inventory.length} items
         </div>
-      </Card>
+      </AdminFilterCardGrid>
 
-      {/* Inventory Table */}
-      <Card className="p-6">
-        <div className="overflow-x-auto">
-          {inventory.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-border">
-                  <TableHead className="w-10">
-                    <input
-                      type="checkbox"
-                      checked={selectedForPrint.length === inventory.length && inventory.length > 0}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedForPrint(inventory.map(i => i.id))
-                        } else {
-                          setSelectedForPrint([])
+      <AdminDataCard>
+        {inventory.length > 0 ? (
+          <AdminTable>
+            <AdminTableHeader>
+              <AdminTableHeadRow>
+                <AdminTableHead className="w-10">
+                  <input
+                    type="checkbox"
+                    checked={selectedForPrint.length === inventory.length && inventory.length > 0}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedForPrint(inventory.map(i => i.id))
+                      } else {
+                        setSelectedForPrint([])
+                      }
+                    }}
+                    className="rounded"
+                  />
+                </AdminTableHead>
+                <AdminTableHead>Product</AdminTableHead>
+                <AdminTableHead>SKU</AdminTableHead>
+                <AdminTableHead>Barcode</AdminTableHead>
+                <AdminTableHead>Current Stock</AdminTableHead>
+                <AdminTableHead>Min Level</AdminTableHead>
+                <AdminTableHead>Status</AdminTableHead>
+                <AdminTableHead>Action</AdminTableHead>
+              </AdminTableHeadRow>
+            </AdminTableHeader>
+            <AdminTableBody>
+              {inventory.map((item) => {
+                const status = getStatus(item.quantity, item.minLevel)
+                const barcode = item.product ? generateEAN13FromSKU(item.product.sku) : '-'
+                return (
+                  <AdminTableRow key={item.id}>
+                    <AdminTableCell>
+                      <input
+                        type="checkbox"
+                        checked={selectedForPrint.includes(item.id)}
+                        onChange={() => togglePrintSelection(item.id)}
+                        className="rounded"
+                      />
+                    </AdminTableCell>
+                    <AdminTableCell className="font-medium">{item.product?.nameEn || "Unknown"}</AdminTableCell>
+                    <AdminTableCell className="font-mono text-sm">{item.product?.sku || "-"}</AdminTableCell>
+                    <AdminTableCell className="font-mono text-xs text-muted-foreground">{barcode}</AdminTableCell>
+                    <AdminTableCell className="font-medium">{item.quantity}</AdminTableCell>
+                    <AdminTableCell>
+                      <Input
+                        type="number"
+                        className="w-20 h-8 text-sm"
+                        value={item.minLevel}
+                        onChange={(e) => handleUpdateMinLevel(item, parseInt(e.target.value) || 0)}
+                        min={0}
+                      />
+                    </AdminTableCell>
+                    <AdminTableCell>
+                      <AdminBadge
+                        variant={
+                          status === "Out of Stock" ? "destructive" : status === "Low" ? "secondary" : "default"
                         }
-                      }}
-                      className="rounded"
-                    />
-                  </TableHead>
-                  <TableHead className="text-foreground font-semibold">Product</TableHead>
-                  <TableHead className="text-foreground font-semibold">SKU</TableHead>
-                  <TableHead className="text-foreground font-semibold">Barcode</TableHead>
-                  <TableHead className="text-foreground font-semibold">Current Stock</TableHead>
-                  <TableHead className="text-foreground font-semibold">Min Level</TableHead>
-                  <TableHead className="text-foreground font-semibold">Status</TableHead>
-                  <TableHead className="text-foreground font-semibold">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {inventory.map((item) => {
-                  const status = getStatus(item.quantity, item.minLevel)
-                  const barcode = item.product ? generateEAN13FromSKU(item.product.sku) : '-'
-                  return (
-                    <TableRow key={item.id} className="border-b border-border hover:bg-muted/50">
-                      <TableCell>
-                        <input
-                          type="checkbox"
-                          checked={selectedForPrint.includes(item.id)}
-                          onChange={() => togglePrintSelection(item.id)}
-                          className="rounded"
-                        />
-                      </TableCell>
-                      <TableCell className="text-foreground font-medium">{item.product?.nameEn || "Unknown"}</TableCell>
-                      <TableCell className="text-foreground font-mono text-sm">{item.product?.sku || "-"}</TableCell>
-                      <TableCell className="text-foreground font-mono text-xs text-muted-foreground">{barcode}</TableCell>
-                      <TableCell className="text-foreground font-medium">{item.quantity}</TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          className="w-20 h-8 text-sm"
-                          value={item.minLevel}
-                          onChange={(e) => handleUpdateMinLevel(item, parseInt(e.target.value) || 0)}
-                          min={0}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            status === "Out of Stock" ? "destructive" : status === "Low" ? "secondary" : "default"
-                          }
-                          className="rounded-sm"
+                      >
+                        {status}
+                      </AdminBadge>
+                    </AdminTableCell>
+                    <AdminTableCell>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs bg-transparent"
+                          onClick={() => openAdjustDialog(item)}
                         >
-                          {status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="outline"
+                          Adjust
+                        </Button>
+                        {item.product && (
+                          <PrintLabelButton
+                            product={{
+                              id: item.product.id,
+                              sku: item.product.sku,
+                              nameEn: item.product.nameEn,
+                              priceUsd: item.product.priceUsd || 0,
+                              category: item.product.category,
+                            }}
                             size="sm"
-                            className="text-xs bg-transparent"
-                            onClick={() => openAdjustDialog(item)}
-                          >
-                            Adjust
-                          </Button>
-                          {item.product && (
-                            <PrintLabelButton
-                              product={{
-                                id: item.product.id,
-                                sku: item.product.sku,
-                                nameEn: item.product.nameEn,
-                                priceUsd: item.product.priceUsd || 0,
-                                category: item.product.category,
-                              }}
-                              size="sm"
-                            />
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="py-8 text-center text-muted-foreground">
-              No inventory items found
-            </div>
-          )}
-        </div>
-      </Card>
+                          />
+                        )}
+                      </div>
+                    </AdminTableCell>
+                  </AdminTableRow>
+                )
+              })}
+            </AdminTableBody>
+          </AdminTable>
+        ) : (
+          <AdminEmptyState message="No inventory items found" />
+        )}
+      </AdminDataCard>
 
       {/* Adjust Stock Dialog */}
       <Dialog open={!!adjustItem} onOpenChange={() => setAdjustItem(null)}>

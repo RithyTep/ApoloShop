@@ -3,12 +3,23 @@
 import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Bell, BellOff, Package, Mail, Clock, CheckCircle } from "lucide-react"
+import { Package, Mail, Clock, CheckCircle } from "lucide-react"
 import Image from "next/image"
+import {
+  AdminPageHeader,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 interface StockNotification {
   id: string
@@ -91,24 +102,11 @@ export function StockNotificationsPage() {
 
   if (isLoading && !data) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-10 w-40" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-24" />
-          ))}
-        </div>
-        <Card className="p-6">
-          <div className="space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Skeleton key={i} className="h-16 w-full" />
-            ))}
-          </div>
-        </Card>
-      </div>
+      <AdminLoading
+        title="Stock Notification Requests"
+        subtitle="Manage customer back-in-stock notifications"
+        rows={5}
+      />
     )
   }
 
@@ -119,22 +117,10 @@ export function StockNotificationsPage() {
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-            <Bell className="h-7 w-7" />
-            Stock Notification Requests
-          </h1>
-          <p className="text-muted-foreground mt-2 flex items-center gap-2">
-            Manage customer back-in-stock notifications
-            {summary.pending > 0 && (
-              <Badge variant="warning" className="ml-2">
-                {summary.pending} Pending
-              </Badge>
-            )}
-          </p>
-        </div>
-
+      <AdminPageHeader
+        title="Stock Notification Requests"
+        subtitle="Manage customer back-in-stock notifications"
+      >
         <Select
           value={statusFilter}
           onValueChange={(value) => {
@@ -153,7 +139,7 @@ export function StockNotificationsPage() {
             ))}
           </SelectContent>
         </Select>
-      </div>
+      </AdminPageHeader>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -170,10 +156,10 @@ export function StockNotificationsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
-            <Clock className="h-4 w-4 text-warning" />
+            <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-warning">{summary.pending}</div>
+            <div className="text-2xl font-bold">{summary.pending}</div>
             <p className="text-xs text-muted-foreground">Waiting for restock</p>
           </CardContent>
         </Card>
@@ -181,39 +167,35 @@ export function StockNotificationsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Notified</CardTitle>
-            <CheckCircle className="h-4 w-4 text-success" />
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-success">{summary.notified}</div>
+            <div className="text-2xl font-bold">{summary.notified}</div>
             <p className="text-xs text-muted-foreground">Email sent</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Notifications Table */}
-      <Card className="p-6">
+      <AdminDataCard>
         {notifications.length === 0 ? (
-          <div className="p-12 text-center">
-            <BellOff className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">No notification requests found</p>
-          </div>
+          <AdminEmptyState message="No notification requests found" />
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Requested</TableHead>
-                  <TableHead>Notified</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <AdminTable>
+              <AdminTableHeader>
+                <AdminTableHeadRow>
+                  <AdminTableHead>Product</AdminTableHead>
+                  <AdminTableHead>Email</AdminTableHead>
+                  <AdminTableHead>Status</AdminTableHead>
+                  <AdminTableHead>Requested</AdminTableHead>
+                  <AdminTableHead>Notified</AdminTableHead>
+                </AdminTableHeadRow>
+              </AdminTableHeader>
+              <AdminTableBody>
                 {notifications.map((notification) => (
-                  <TableRow key={notification.id}>
-                    <TableCell>
+                  <AdminTableRow key={notification.id}>
+                    <AdminTableCell>
                       <div className="flex items-center gap-3">
                         <div className="relative h-10 w-10 rounded bg-muted overflow-hidden flex-shrink-0">
                           {notification.product.imageUrl ? (
@@ -238,37 +220,30 @@ export function StockNotificationsPage() {
                           </p>
                         </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
+                    </AdminTableCell>
+                    <AdminTableCell>
                       <div className="flex items-center gap-2">
                         <Mail className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm">{notification.email}</span>
                       </div>
-                    </TableCell>
-                    <TableCell>
+                    </AdminTableCell>
+                    <AdminTableCell>
                       {notification.notified ? (
-                        <Badge variant="success">
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Notified
-                        </Badge>
+                        <AdminBadge variant="default">Notified</AdminBadge>
                       ) : (
-                        <Badge variant="warning">
-                          <Clock className="h-3 w-3 mr-1" />
-                          Pending
-                        </Badge>
+                        <AdminBadge variant="outline">Pending</AdminBadge>
                       )}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    </AdminTableCell>
+                    <AdminTableCell className="text-sm text-muted-foreground">
                       {formatDate(notification.createdAt)}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    </AdminTableCell>
+                    <AdminTableCell className="text-sm text-muted-foreground">
                       {notification.notifiedAt ? formatDate(notification.notifiedAt) : "-"}
-                    </TableCell>
-                  </TableRow>
+                    </AdminTableCell>
+                  </AdminTableRow>
                 ))}
-              </TableBody>
-            </Table>
-            </div>
+              </AdminTableBody>
+            </AdminTable>
 
             {/* Pagination */}
             {pagination && pagination.totalPages > 1 && (
@@ -300,7 +275,7 @@ export function StockNotificationsPage() {
             )}
           </>
         )}
-      </Card>
+      </AdminDataCard>
     </div>
   )
 }

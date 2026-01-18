@@ -6,11 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/components/ui/use-toast"
 import { translations } from "@/lib/i18n"
 import { useOrders, useSalesReport } from "@/lib/api-hooks"
@@ -22,13 +19,26 @@ import {
   TrendingUp,
   Receipt,
   Calculator,
-  Calendar,
   Building2,
-  ExternalLink,
   Loader2,
   FileDown,
   Eye,
 } from "lucide-react"
+import {
+  AdminPageHeader,
+  AdminFilterCard,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 interface AccountingPageProps {
   language?: "EN" | "KH"
@@ -47,7 +57,6 @@ export function AccountingPage({ language = "EN" }: AccountingPageProps) {
   const [dateTo, setDateTo] = useState(() => new Date().toISOString().split("T")[0])
   const [period, setPeriod] = useState<"daily" | "monthly">("monthly")
   const [isExporting, setIsExporting] = useState<string | null>(null)
-  const [invoiceOrder, setInvoiceOrder] = useState<string | null>(null)
 
   // Calculate date range for hooks
   const { startDate, endDate } = useMemo(
@@ -89,7 +98,6 @@ export function AccountingPage({ language = "EN" }: AccountingPageProps) {
       }
 
       // Handle different response types
-      const contentType = response.headers.get("content-type")
       const disposition = response.headers.get("content-disposition")
       const filenameMatch = disposition?.match(/filename="([^"]+)"/)
       const filename = filenameMatch ? filenameMatch[1] : `export-${format}-${Date.now()}`
@@ -120,7 +128,6 @@ export function AccountingPage({ language = "EN" }: AccountingPageProps) {
   }
 
   const handleViewInvoice = async (orderId: string) => {
-    setInvoiceOrder(orderId)
     // Open invoice in new tab
     window.open(`/api/accounting/export?format=invoice&orderId=${orderId}`, "_blank")
   }
@@ -137,16 +144,23 @@ export function AccountingPage({ language = "EN" }: AccountingPageProps) {
     return salesData?.summary?.totalRevenue || 0
   }, [salesData])
 
+  if (salesLoading && ordersLoading) {
+    return (
+      <AdminLoading
+        title={t.title}
+        subtitle={t.subtitle}
+        rows={4}
+      />
+    )
+  }
+
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-          <Calculator className="h-7 w-7" />
-          {t.title}
-        </h1>
-        <p className="text-muted-foreground mt-2">{t.subtitle}</p>
-      </div>
+      <AdminPageHeader
+        title={t.title}
+        subtitle={t.subtitle}
+      />
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -200,8 +214,8 @@ export function AccountingPage({ language = "EN" }: AccountingPageProps) {
       </div>
 
       {/* Date Range Selector */}
-      <Card className="p-4">
-        <div className="flex flex-wrap items-end gap-4">
+      <AdminFilterCard>
+        <div className="flex flex-wrap items-end gap-4 w-full">
           <div className="flex-1 min-w-[150px]">
             <Label htmlFor="dateFrom">{t.from}</Label>
             <Input
@@ -233,7 +247,7 @@ export function AccountingPage({ language = "EN" }: AccountingPageProps) {
             </Select>
           </div>
         </div>
-      </Card>
+      </AdminFilterCard>
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="exports" className="space-y-4">
@@ -414,7 +428,7 @@ export function AccountingPage({ language = "EN" }: AccountingPageProps) {
 
         {/* Invoices Tab */}
         <TabsContent value="invoices" className="space-y-4">
-          <Card className="p-0">
+          <AdminDataCard className="p-0">
             {ordersLoading ? (
               <div className="p-6 space-y-3">
                 {[1, 2, 3, 4, 5].map((i) => (
@@ -422,45 +436,45 @@ export function AccountingPage({ language = "EN" }: AccountingPageProps) {
                 ))}
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t.invoiceNumber}</TableHead>
-                    <TableHead>{t.orderReference}</TableHead>
-                    <TableHead>{t.issueDate}</TableHead>
-                    <TableHead className="text-right">{t.total}</TableHead>
-                    <TableHead>{t.paymentStatus}</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <AdminTable>
+                <AdminTableHeader>
+                  <AdminTableHeadRow>
+                    <AdminTableHead>{t.invoiceNumber}</AdminTableHead>
+                    <AdminTableHead>{t.orderReference}</AdminTableHead>
+                    <AdminTableHead>{t.issueDate}</AdminTableHead>
+                    <AdminTableHead className="text-right">{t.total}</AdminTableHead>
+                    <AdminTableHead>{t.paymentStatus}</AdminTableHead>
+                    <AdminTableHead className="text-right">Actions</AdminTableHead>
+                  </AdminTableHeadRow>
+                </AdminTableHeader>
+                <AdminTableBody>
                   {completedOrders.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        No completed orders found
-                      </TableCell>
-                    </TableRow>
+                    <AdminTableRow>
+                      <AdminTableCell colSpan={6}>
+                        <AdminEmptyState message="No completed orders found" />
+                      </AdminTableCell>
+                    </AdminTableRow>
                   ) : (
                     completedOrders.slice(0, 20).map((order) => (
-                      <TableRow key={order.id}>
-                        <TableCell className="font-mono">INV-{order.orderNumber}</TableCell>
-                        <TableCell>{order.orderNumber}</TableCell>
-                        <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
-                        <TableCell className="text-right font-medium">
+                      <AdminTableRow key={order.id}>
+                        <AdminTableCell className="font-mono">INV-{order.orderNumber}</AdminTableCell>
+                        <AdminTableCell>{order.orderNumber}</AdminTableCell>
+                        <AdminTableCell>{new Date(order.createdAt).toLocaleDateString()}</AdminTableCell>
+                        <AdminTableCell className="text-right font-medium">
                           ${Number(order.totalUsd).toFixed(2)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
+                        </AdminTableCell>
+                        <AdminTableCell>
+                          <AdminBadge
                             variant={
                               order.payments?.[0]?.status === "COMPLETED"
-                                ? "success"
-                                : "warning"
+                                ? "default"
+                                : "outline"
                             }
                           >
                             {order.payments?.[0]?.status || "PENDING"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
+                          </AdminBadge>
+                        </AdminTableCell>
+                        <AdminTableCell className="text-right">
                           <Button
                             size="sm"
                             variant="ghost"
@@ -469,14 +483,14 @@ export function AccountingPage({ language = "EN" }: AccountingPageProps) {
                             <Eye className="h-4 w-4 mr-1" />
                             {t.viewInvoice}
                           </Button>
-                        </TableCell>
-                      </TableRow>
+                        </AdminTableCell>
+                      </AdminTableRow>
                     ))
                   )}
-                </TableBody>
-              </Table>
+                </AdminTableBody>
+              </AdminTable>
             )}
-          </Card>
+          </AdminDataCard>
         </TabsContent>
 
         {/* Tax Report Tab */}
@@ -521,26 +535,26 @@ export function AccountingPage({ language = "EN" }: AccountingPageProps) {
 
                 <div className="mt-6">
                   <h4 className="font-medium mb-3">{t.byCategory}</h4>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Category</TableHead>
-                        <TableHead className="text-right">Sales (USD)</TableHead>
-                        <TableHead className="text-right">VAT (10%)</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                  <AdminTable>
+                    <AdminTableHeader>
+                      <AdminTableHeadRow>
+                        <AdminTableHead>Category</AdminTableHead>
+                        <AdminTableHead className="text-right">Sales (USD)</AdminTableHead>
+                        <AdminTableHead className="text-right">VAT (10%)</AdminTableHead>
+                      </AdminTableHeadRow>
+                    </AdminTableHeader>
+                    <AdminTableBody>
                       {salesData?.salesByCategory?.map((cat) => (
-                        <TableRow key={cat.id}>
-                          <TableCell>{cat.nameEn}</TableCell>
-                          <TableCell className="text-right">${cat.revenue.toFixed(2)}</TableCell>
-                          <TableCell className="text-right">
+                        <AdminTableRow key={cat.id}>
+                          <AdminTableCell>{cat.nameEn}</AdminTableCell>
+                          <AdminTableCell className="text-right">${cat.revenue.toFixed(2)}</AdminTableCell>
+                          <AdminTableCell className="text-right">
                             ${(cat.revenue * 0.1 / 1.1).toFixed(2)}
-                          </TableCell>
-                        </TableRow>
+                          </AdminTableCell>
+                        </AdminTableRow>
                       ))}
-                    </TableBody>
-                  </Table>
+                    </AdminTableBody>
+                  </AdminTable>
                 </div>
 
                 <div className="flex justify-end mt-4">

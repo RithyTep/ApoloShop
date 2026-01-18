@@ -1,20 +1,34 @@
 "use client"
 
 import { useState } from "react"
-import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Plus, Pencil, Trash } from "lucide-react"
+import { Plus } from "lucide-react"
 import { usePromotions, useCreatePromotion, useUpdatePromotion, useDeletePromotion, Promotion } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
+import {
+  AdminPageHeader,
+  AdminFilterCard,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminActionButtons,
+  AdminEditButton,
+  AdminDeleteButton,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 const promoTypes = ["PERCENTAGE", "FIXED_AMOUNT", "BUY_X_GET_Y", "FREE_SHIPPING"] as const
 
@@ -149,121 +163,89 @@ export function PromotionsPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Promotions</h1>
-            <p className="text-muted-foreground mt-2">Manage discount codes and promotions</p>
-          </div>
-        </div>
-        <Card className="p-6">
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-16 w-full" />
-            ))}
-          </div>
-        </Card>
-      </div>
+      <AdminLoading
+        title="Promotions"
+        subtitle="Manage discount codes and promotions"
+        rows={3}
+      />
     )
   }
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Promotions</h1>
-          <p className="text-muted-foreground mt-2">Manage discount codes and promotions</p>
-        </div>
-        <Button onClick={openCreateDialog} className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-          <Plus size={16} /> Add Promotion
+      <AdminPageHeader
+        title="Promotions"
+        subtitle="Manage discount codes and promotions"
+      >
+        <Button onClick={openCreateDialog}>
+          <Plus size={16} className="mr-2" /> Add Promotion
         </Button>
-      </div>
+      </AdminPageHeader>
 
-      {/* Filter */}
-      <Card className="p-4">
-        <div className="flex gap-4 items-center">
-          <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v)}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive/Expired</SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="text-sm text-muted-foreground">
-            {promotions.length} promotions
-          </div>
+      <AdminFilterCard>
+        <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v)}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="All Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive/Expired</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="text-sm text-muted-foreground">
+          {promotions.length} promotions
         </div>
-      </Card>
+      </AdminFilterCard>
 
-      <Card className="p-6">
-        <div className="overflow-x-auto">
-          {promotions.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-border">
-                  <TableHead className="text-foreground font-semibold">Code</TableHead>
-                  <TableHead className="text-foreground font-semibold">Type</TableHead>
-                  <TableHead className="text-foreground font-semibold">Value</TableHead>
-                  <TableHead className="text-foreground font-semibold">Usage</TableHead>
-                  <TableHead className="text-foreground font-semibold">Valid Period</TableHead>
-                  <TableHead className="text-foreground font-semibold">Status</TableHead>
-                  <TableHead className="text-foreground font-semibold">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {promotions.map((promo) => {
-                  const status = getPromoStatus(promo)
-                  return (
-                    <TableRow key={promo.id} className="border-b border-border hover:bg-muted/50">
-                      <TableCell className="text-foreground font-medium font-mono">{promo.code}</TableCell>
-                      <TableCell className="text-foreground text-sm">{promo.type.replace("_", " ")}</TableCell>
-                      <TableCell className="text-foreground">{formatValue(promo)}</TableCell>
-                      <TableCell className="text-foreground text-sm">
-                        {promo.usedCount || 0}{promo.usageLimit ? ` / ${promo.usageLimit}` : ""}
-                      </TableCell>
-                      <TableCell className="text-foreground text-sm">
-                        {formatDate(promo.startDate)} - {formatDate(promo.endDate)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={status.variant} className="rounded-sm">
-                          {status.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-xs bg-transparent"
-                            onClick={() => openEditDialog(promo)}
-                          >
-                            <Pencil size={14} />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-xs text-destructive hover:text-destructive bg-transparent"
-                            onClick={() => setDeletePromo(promo)}
-                          >
-                            <Trash size={14} />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="py-8 text-center text-muted-foreground">
-              No promotions found. Create your first promotion!
-            </div>
-          )}
-        </div>
-      </Card>
+      <AdminDataCard>
+        {promotions.length > 0 ? (
+          <AdminTable>
+            <AdminTableHeader>
+              <AdminTableHeadRow>
+                <AdminTableHead>Code</AdminTableHead>
+                <AdminTableHead>Type</AdminTableHead>
+                <AdminTableHead>Value</AdminTableHead>
+                <AdminTableHead>Usage</AdminTableHead>
+                <AdminTableHead>Valid Period</AdminTableHead>
+                <AdminTableHead>Status</AdminTableHead>
+                <AdminTableHead>Actions</AdminTableHead>
+              </AdminTableHeadRow>
+            </AdminTableHeader>
+            <AdminTableBody>
+              {promotions.map((promo) => {
+                const status = getPromoStatus(promo)
+                return (
+                  <AdminTableRow key={promo.id}>
+                    <AdminTableCell className="font-medium font-mono">{promo.code}</AdminTableCell>
+                    <AdminTableCell className="text-sm">{promo.type.replace("_", " ")}</AdminTableCell>
+                    <AdminTableCell>{formatValue(promo)}</AdminTableCell>
+                    <AdminTableCell className="text-sm">
+                      {promo.usedCount || 0}{promo.usageLimit ? ` / ${promo.usageLimit}` : ""}
+                    </AdminTableCell>
+                    <AdminTableCell className="text-sm">
+                      {formatDate(promo.startDate)} - {formatDate(promo.endDate)}
+                    </AdminTableCell>
+                    <AdminTableCell>
+                      <AdminBadge variant={status.variant}>
+                        {status.label}
+                      </AdminBadge>
+                    </AdminTableCell>
+                    <AdminTableCell>
+                      <AdminActionButtons>
+                        <AdminEditButton onClick={() => openEditDialog(promo)} />
+                        <AdminDeleteButton onClick={() => setDeletePromo(promo)} />
+                      </AdminActionButtons>
+                    </AdminTableCell>
+                  </AdminTableRow>
+                )
+              })}
+            </AdminTableBody>
+          </AdminTable>
+        ) : (
+          <AdminEmptyState message="No promotions found. Create your first promotion!" />
+        )}
+      </AdminDataCard>
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

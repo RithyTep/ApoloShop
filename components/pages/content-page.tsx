@@ -1,20 +1,35 @@
 "use client"
 
 import { useState } from "react"
-import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { Plus, Pencil, Trash, Eye } from "lucide-react"
+import { Plus } from "lucide-react"
 import { useCMSContent, useCreateCMSContent, useUpdateCMSContent, useDeleteCMSContent, CMSContent, CMSContentType } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
+import {
+  AdminPageHeader,
+  AdminFilterCard,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminActionButtons,
+  AdminEditButton,
+  AdminDeleteButton,
+  AdminViewButton,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 const contentTypes: CMSContentType[] = ["PAGE", "BLOG", "BANNER", "FAQ"]
 const statusOptions = ["DRAFT", "PUBLISHED", "ARCHIVED"] as const
@@ -135,7 +150,7 @@ export function ContentPage() {
     })
   }
 
-  const getStatusVariant = (status: string) => {
+  const getStatusVariant = (status: string): "default" | "secondary" | "outline" => {
     switch (status) {
       case "PUBLISHED": return "default"
       case "DRAFT": return "secondary"
@@ -146,130 +161,92 @@ export function ContentPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Content Management</h1>
-            <p className="text-muted-foreground mt-2">Manage pages, blog posts, and SEO content</p>
-          </div>
-        </div>
-        <Card className="p-6">
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-16 w-full" />
-            ))}
-          </div>
-        </Card>
-      </div>
+      <AdminLoading
+        title="Content Management"
+        subtitle="Manage pages, blog posts, and SEO content"
+        rows={3}
+      />
     )
   }
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Content Management</h1>
-          <p className="text-muted-foreground mt-2">Manage pages, blog posts, and SEO content</p>
-        </div>
+      <AdminPageHeader
+        title="Content Management"
+        subtitle="Manage pages, blog posts, and SEO content"
+      >
         <Button onClick={openCreateDialog} className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
           <Plus size={16} /> Add Content
         </Button>
-      </div>
+      </AdminPageHeader>
 
       {/* Filter */}
-      <Card className="p-4">
-        <div className="flex gap-4 items-center">
-          <Select value={typeFilter || "all"} onValueChange={(v) => setTypeFilter(v === "all" ? "" : v as CMSContentType)}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="All Types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              {contentTypes.map((t) => (
-                <SelectItem key={t} value={t}>{t}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="text-sm text-muted-foreground">
-            {contents.length} items
-          </div>
+      <AdminFilterCard>
+        <Select value={typeFilter || "all"} onValueChange={(v) => setTypeFilter(v === "all" ? "" : v as CMSContentType)}>
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="All Types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            {contentTypes.map((t) => (
+              <SelectItem key={t} value={t}>{t}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="text-sm text-muted-foreground">
+          {contents.length} items
         </div>
-      </Card>
+      </AdminFilterCard>
 
-      <Card className="p-6">
-        <div className="overflow-x-auto">
-          {contents.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-border">
-                  <TableHead className="text-foreground font-semibold">Title</TableHead>
-                  <TableHead className="text-foreground font-semibold">Type</TableHead>
-                  <TableHead className="text-foreground font-semibold">Slug</TableHead>
-                  <TableHead className="text-foreground font-semibold">Status</TableHead>
-                  <TableHead className="text-foreground font-semibold">Last Edited</TableHead>
-                  <TableHead className="text-foreground font-semibold">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {contents.map((content) => (
-                  <TableRow key={content.id} className="border-b border-border hover:bg-muted/50">
-                    <TableCell>
-                      <div>
-                        <p className="text-foreground font-medium">{content.titleEn}</p>
-                        <p className="text-sm text-muted-foreground">{content.titleKh}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-foreground text-sm">{content.type}</TableCell>
-                    <TableCell className="text-foreground text-sm font-mono">/{content.slug}</TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusVariant(content.status)} className="rounded-sm">
-                        {content.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-foreground text-sm">
-                      {formatDate(content.updatedAt)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        {content.status === "PUBLISHED" && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-xs bg-transparent"
-                            onClick={() => window.open(`/${content.slug}`, "_blank")}
-                          >
-                            <Eye size={14} />
-                          </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs bg-transparent"
-                          onClick={() => openEditDialog(content)}
-                        >
-                          <Pencil size={14} />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs text-destructive hover:text-destructive bg-transparent"
-                          onClick={() => setDeleteContent(content)}
-                        >
-                          <Trash size={14} />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="py-8 text-center text-muted-foreground">
-              No content found. Create your first page!
-            </div>
-          )}
-        </div>
-      </Card>
+      <AdminDataCard>
+        {contents.length > 0 ? (
+          <AdminTable>
+            <AdminTableHeader>
+              <AdminTableHeadRow>
+                <AdminTableHead>Title</AdminTableHead>
+                <AdminTableHead>Type</AdminTableHead>
+                <AdminTableHead>Slug</AdminTableHead>
+                <AdminTableHead>Status</AdminTableHead>
+                <AdminTableHead>Last Edited</AdminTableHead>
+                <AdminTableHead>Actions</AdminTableHead>
+              </AdminTableHeadRow>
+            </AdminTableHeader>
+            <AdminTableBody>
+              {contents.map((content) => (
+                <AdminTableRow key={content.id}>
+                  <AdminTableCell>
+                    <div>
+                      <p className="font-medium">{content.titleEn}</p>
+                      <p className="text-sm text-muted-foreground">{content.titleKh}</p>
+                    </div>
+                  </AdminTableCell>
+                  <AdminTableCell className="text-sm">{content.type}</AdminTableCell>
+                  <AdminTableCell className="text-sm font-mono">/{content.slug}</AdminTableCell>
+                  <AdminTableCell>
+                    <AdminBadge variant={getStatusVariant(content.status)}>
+                      {content.status}
+                    </AdminBadge>
+                  </AdminTableCell>
+                  <AdminTableCell className="text-sm">
+                    {formatDate(content.updatedAt)}
+                  </AdminTableCell>
+                  <AdminTableCell>
+                    <AdminActionButtons>
+                      {content.status === "PUBLISHED" && (
+                        <AdminViewButton onClick={() => window.open(`/${content.slug}`, "_blank")} />
+                      )}
+                      <AdminEditButton onClick={() => openEditDialog(content)} />
+                      <AdminDeleteButton onClick={() => setDeleteContent(content)} />
+                    </AdminActionButtons>
+                  </AdminTableCell>
+                </AdminTableRow>
+              ))}
+            </AdminTableBody>
+          </AdminTable>
+        ) : (
+          <AdminEmptyState message="No content found. Create your first page!" />
+        )}
+      </AdminDataCard>
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

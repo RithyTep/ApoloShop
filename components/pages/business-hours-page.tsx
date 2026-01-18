@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Clock, Plus, Trash2, Calendar, Loader2, Save } from "lucide-react"
+import { Plus, Trash2, Loader2, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -36,6 +36,11 @@ import {
   type BusinessHoursDay,
   type Holiday,
 } from "@/lib/api-hooks"
+import {
+  AdminPageHeader,
+  AdminLoading,
+  AdminEmptyState,
+} from "@/components/admin"
 
 const DAYS = [
   { value: 0, label: "Sunday", labelKh: "អាទិត្យ" },
@@ -172,33 +177,28 @@ export function BusinessHoursPage() {
 
   if (hoursLoading || holidaysLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
+      <AdminLoading
+        title="Business Hours"
+        subtitle="Set your store's operating hours and holidays"
+        rows={5}
+      />
     )
   }
 
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Business Hours</h1>
-          <p className="text-muted-foreground mt-2">
-            Set your store's operating hours and holidays
-          </p>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Business Hours"
+        subtitle="Set your store's operating hours and holidays"
+      />
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Weekly Hours */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-primary" />
-                <CardTitle>Weekly Schedule</CardTitle>
-              </div>
+              <CardTitle>Weekly Schedule</CardTitle>
               {hasHoursChanges && (
                 <Button
                   size="sm"
@@ -274,10 +274,7 @@ export function BusinessHoursPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" />
-                <CardTitle>Holidays ({currentYear})</CardTitle>
-              </div>
+              <CardTitle>Holidays ({currentYear})</CardTitle>
               <Button size="sm" onClick={() => handleOpenHolidayDialog()}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Holiday
@@ -289,11 +286,7 @@ export function BusinessHoursPage() {
           </CardHeader>
           <CardContent>
             {holidaysData?.holidays.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No holidays configured</p>
-                <p className="text-sm">Add holidays to mark special closures</p>
-              </div>
+              <AdminEmptyState message="No holidays configured. Add holidays to mark special closures." />
             ) : (
               <div className="space-y-3">
                 {holidaysData?.holidays.map((holiday) => (
@@ -304,7 +297,7 @@ export function BusinessHoursPage() {
                     <div>
                       <p className="font-medium text-sm">{holiday.nameEn}</p>
                       <p className="text-xs text-muted-foreground">
-                        {holiday.nameKh} • {formatDate(holiday.date)}
+                        {holiday.nameKh} - {formatDate(holiday.date)}
                       </p>
                       {!holiday.isFullDay && (
                         <p className="text-xs text-primary mt-1">

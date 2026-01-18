@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import {
   useBacklogItems,
@@ -33,6 +32,12 @@ import {
   type BacklogStatus,
 } from "@/lib/api-hooks"
 import { toast } from "sonner"
+import {
+  AdminPageHeader,
+  AdminDataCard,
+  AdminBadge,
+  AdminLoading,
+} from "@/components/admin"
 
 const priorityColors: Record<BacklogPriority, string> = {
   LOW: "bg-muted-foreground",
@@ -173,23 +178,21 @@ export function BacklogPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 flex items-center justify-center h-full">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-      </div>
+      <AdminLoading
+        title="Feature Backlog"
+        subtitle="Development environment only - Track feature requirements"
+        rows={5}
+      />
     )
   }
 
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Feature Backlog</h1>
-          <p className="text-muted-foreground mt-2">
-            Development environment only - Track feature requirements
-          </p>
-        </div>
-
+      <AdminPageHeader
+        title="Feature Backlog"
+        subtitle="Development environment only - Track feature requirements"
+      >
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => resetForm()}>
@@ -251,19 +254,17 @@ export function BacklogPage() {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
+      </AdminPageHeader>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         {columns.map(({ status, title }) => (
-          <Card key={status} className={cn("border", statusColors[status])}>
-            <CardContent className="py-3">
-              <div className="text-sm text-muted-foreground">{title}</div>
-              <div className="text-2xl font-bold">
-                {getItemsByStatus(status).length}
-              </div>
-            </CardContent>
-          </Card>
+          <AdminDataCard key={status} className={cn("border", statusColors[status])}>
+            <div className="text-sm text-muted-foreground">{title}</div>
+            <div className="text-2xl font-bold">
+              {getItemsByStatus(status).length}
+            </div>
+          </AdminDataCard>
         ))}
       </div>
 
@@ -309,15 +310,17 @@ export function BacklogPage() {
                             </p>
                           )}
                           <div className="flex items-center gap-2 mt-2">
-                            <Badge
-                              variant="secondary"
-                              className={cn(
-                                "text-white text-[10px]",
-                                priorityColors[item.priority]
-                              )}
+                            <AdminBadge
+                              variant={
+                                item.priority === "CRITICAL"
+                                  ? "destructive"
+                                  : item.priority === "HIGH"
+                                  ? "default"
+                                  : "secondary"
+                              }
                             >
                               {priorityLabels[item.priority]}
-                            </Badge>
+                            </AdminBadge>
                           </div>
                         </div>
                       </div>

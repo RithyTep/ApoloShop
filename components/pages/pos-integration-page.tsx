@@ -5,9 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -23,15 +20,27 @@ import {
   Check,
   X,
   Clock,
-  AlertCircle,
   Copy,
-  ExternalLink,
   Package,
   Users,
   DollarSign,
   Activity,
 } from "lucide-react"
 import { translations, type Language } from "@/lib/i18n"
+import {
+  AdminPageHeader,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 interface POSProvider {
   id: string
@@ -317,28 +326,28 @@ export function POSIntegrationPage({ language = "en" }: POSIntegrationPageProps)
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "connected":
-        return <Badge variant="success">{t.connected}</Badge>
+        return <AdminBadge variant="default">{t.connected}</AdminBadge>
       case "disconnected":
-        return <Badge variant="secondary">{t.disconnected}</Badge>
+        return <AdminBadge variant="secondary">{t.disconnected}</AdminBadge>
       case "error":
-        return <Badge variant="destructive">{t.error}</Badge>
+        return <AdminBadge variant="destructive">{t.error}</AdminBadge>
       default:
-        return <Badge variant="outline">{status}</Badge>
+        return <AdminBadge variant="outline">{status}</AdminBadge>
     }
   }
 
   const getSyncStatusBadge = (status: string) => {
     switch (status) {
       case "COMPLETED":
-        return <Badge variant="success"><Check className="w-3 h-3 mr-1" />{t.completed}</Badge>
+        return <AdminBadge variant="default"><Check className="w-3 h-3 mr-1" />{t.completed}</AdminBadge>
       case "FAILED":
-        return <Badge variant="destructive"><X className="w-3 h-3 mr-1" />{t.failed}</Badge>
+        return <AdminBadge variant="destructive"><X className="w-3 h-3 mr-1" />{t.failed}</AdminBadge>
       case "IN_PROGRESS":
-        return <Badge variant="info"><RefreshCw className="w-3 h-3 mr-1 animate-spin" />{t.inProgress}</Badge>
+        return <AdminBadge variant="outline"><RefreshCw className="w-3 h-3 mr-1 animate-spin" />{t.inProgress}</AdminBadge>
       case "PENDING":
-        return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />{t.pending}</Badge>
+        return <AdminBadge variant="secondary"><Clock className="w-3 h-3 mr-1" />{t.pending}</AdminBadge>
       default:
-        return <Badge variant="outline">{status}</Badge>
+        return <AdminBadge variant="outline">{status}</AdminBadge>
     }
   }
 
@@ -349,37 +358,32 @@ export function POSIntegrationPage({ language = "en" }: POSIntegrationPageProps)
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <div className="grid gap-4 md:grid-cols-3">
-          <Skeleton className="h-32" />
-          <Skeleton className="h-32" />
-          <Skeleton className="h-32" />
-        </div>
-      </div>
+      <AdminLoading
+        title={t.title}
+        subtitle={t.subtitle}
+        rows={3}
+      />
     )
   }
 
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">{t.title}</h1>
-          <p className="text-muted-foreground mt-2">{t.subtitle}</p>
-        </div>
+      <AdminPageHeader
+        title={t.title}
+        subtitle={t.subtitle}
+      >
         <Button onClick={openCreateDialog}>
           <Plus className="w-4 h-4 mr-2" />
           {t.addProvider}
         </Button>
-      </div>
+      </AdminPageHeader>
 
       {/* Provider Cards */}
       {providers.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Package className="w-12 h-12 text-muted-foreground mb-4" />
-            <p className="text-lg font-medium">{t.noProviders}</p>
+        <AdminDataCard>
+          <AdminEmptyState message={t.noProviders} />
+          <div className="text-center pb-6">
             <p className="text-muted-foreground text-sm mb-4">
               Connect Square or Loyverse to sync your inventory and sales
             </p>
@@ -387,8 +391,8 @@ export function POSIntegrationPage({ language = "en" }: POSIntegrationPageProps)
               <Plus className="w-4 h-4 mr-2" />
               {t.addProvider}
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </AdminDataCard>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {providers.map((provider) => (
@@ -402,7 +406,7 @@ export function POSIntegrationPage({ language = "en" }: POSIntegrationPageProps)
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <div className="flex items-center gap-2">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                    provider.type === "SQUARE" ? "bg-black text-white" : "bg-info text-white"
+                    provider.type === "SQUARE" ? "bg-black text-white" : "bg-blue-500 text-white"
                   }`}>
                     {provider.type === "SQUARE" ? "SQ" : "LV"}
                   </div>
@@ -554,61 +558,51 @@ export function POSIntegrationPage({ language = "en" }: POSIntegrationPageProps)
 
           {/* History Tab */}
           <TabsContent value="history">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t.syncHistory}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[400px]">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{t.syncType}</TableHead>
-                        <TableHead>{t.syncStatus}</TableHead>
-                        <TableHead>{t.processed}</TableHead>
-                        <TableHead>{t.startTime}</TableHead>
-                        <TableHead>Triggered By</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {syncs.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                            No sync history
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        syncs.map((sync) => (
-                          <TableRow key={sync.id}>
-                            <TableCell>
-                              <Badge variant="outline">{sync.syncType}</Badge>
-                            </TableCell>
-                            <TableCell>{getSyncStatusBadge(sync.status)}</TableCell>
-                            <TableCell>
-                              {sync.processedItems}/{sync.totalItems}
-                              {sync.failedItems > 0 && (
-                                <span className="text-destructive ml-1">({sync.failedItems} failed)</span>
-                              )}
-                            </TableCell>
-                            <TableCell>{formatDate(sync.startedAt || sync.createdAt)}</TableCell>
-                            <TableCell>{sync.triggeredBy}</TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </ScrollArea>
-              </CardContent>
-            </Card>
+            <AdminDataCard>
+              <h3 className="font-semibold mb-4">{t.syncHistory}</h3>
+              <ScrollArea className="h-[400px]">
+                {syncs.length === 0 ? (
+                  <AdminEmptyState message="No sync history" />
+                ) : (
+                  <AdminTable>
+                    <AdminTableHeader>
+                      <AdminTableHeadRow>
+                        <AdminTableHead>{t.syncType}</AdminTableHead>
+                        <AdminTableHead>{t.syncStatus}</AdminTableHead>
+                        <AdminTableHead>{t.processed}</AdminTableHead>
+                        <AdminTableHead>{t.startTime}</AdminTableHead>
+                        <AdminTableHead>Triggered By</AdminTableHead>
+                      </AdminTableHeadRow>
+                    </AdminTableHeader>
+                    <AdminTableBody>
+                      {syncs.map((sync) => (
+                        <AdminTableRow key={sync.id}>
+                          <AdminTableCell>
+                            <AdminBadge variant="outline">{sync.syncType}</AdminBadge>
+                          </AdminTableCell>
+                          <AdminTableCell>{getSyncStatusBadge(sync.status)}</AdminTableCell>
+                          <AdminTableCell>
+                            {sync.processedItems}/{sync.totalItems}
+                            {sync.failedItems > 0 && (
+                              <span className="text-destructive ml-1">({sync.failedItems} failed)</span>
+                            )}
+                          </AdminTableCell>
+                          <AdminTableCell>{formatDate(sync.startedAt || sync.createdAt)}</AdminTableCell>
+                          <AdminTableCell>{sync.triggeredBy}</AdminTableCell>
+                        </AdminTableRow>
+                      ))}
+                    </AdminTableBody>
+                  </AdminTable>
+                )}
+              </ScrollArea>
+            </AdminDataCard>
           </TabsContent>
 
           {/* Settings Tab */}
           <TabsContent value="settings">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t.syncSettings}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <AdminDataCard>
+              <h3 className="font-semibold mb-4">{t.syncSettings}</h3>
+              <div className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="flex items-center justify-between">
                     <div>
@@ -640,8 +634,8 @@ export function POSIntegrationPage({ language = "en" }: POSIntegrationPageProps)
                   <Pencil className="w-4 h-4 mr-2" />
                   {t.editProvider}
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+            </AdminDataCard>
           </TabsContent>
         </Tabs>
       )}

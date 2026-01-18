@@ -5,8 +5,6 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -34,6 +32,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  AdminPageHeader,
+  AdminFilterCard,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 import {
   useInfluencers,
   useInfluencerDashboard,
@@ -65,42 +78,15 @@ import {
   Copy,
   CheckCircle2,
   XCircle,
-  Clock,
   Eye,
   ChevronLeft,
   ChevronRight,
-  Download,
   Wallet,
-  BarChart3,
-  Instagram,
-  MessageCircle,
-  Facebook,
   Search,
-  ShoppingBag,
   CreditCard,
   Percent,
   Link2,
 } from "lucide-react"
-
-// Tier badge colors
-const tierColors: Record<InfluencerTier, string> = {
-  STANDARD: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
-  BRONZE: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
-  SILVER: "bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200",
-  GOLD: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-  PLATINUM: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
-}
-
-// Status badge colors
-const statusColors: Record<string, string> = {
-  PENDING: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-  APPROVED: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  REJECTED: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-  PAID: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-  PROCESSING: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
-  COMPLETED: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  FAILED: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-}
 
 const payoutMethodLabels: Record<PayoutMethod, string> = {
   BANK_TRANSFER: "Bank Transfer",
@@ -108,6 +94,26 @@ const payoutMethodLabels: Record<PayoutMethod, string> = {
   WING: "Wing",
   ABA_BANK: "ABA Bank",
   CASH: "Cash",
+}
+
+// Map tier to badge variant
+const tierBadgeVariant: Record<InfluencerTier, "default" | "secondary" | "outline"> = {
+  STANDARD: "secondary",
+  BRONZE: "outline",
+  SILVER: "outline",
+  GOLD: "default",
+  PLATINUM: "default",
+}
+
+// Map status to badge variant
+const statusBadgeVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+  PENDING: "outline",
+  APPROVED: "default",
+  REJECTED: "destructive",
+  PAID: "default",
+  PROCESSING: "outline",
+  COMPLETED: "default",
+  FAILED: "destructive",
 }
 
 interface InfluencersPageProps {
@@ -291,69 +297,80 @@ export function InfluencersPage({ language = "en" }: InfluencersPageProps) {
     })
   }
 
+  // Loading state
+  if (dashboardLoading && influencersLoading) {
+    return (
+      <AdminLoading
+        title={t.influencers}
+        subtitle="Manage your influencer partners and commissions"
+        rows={5}
+      />
+    )
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="p-8 space-y-6">
+      {/* Header */}
+      <AdminPageHeader
+        title={t.influencers}
+        subtitle="Manage your influencer partners and commissions"
+      >
+        <Button onClick={handleCreate}>
+          <Plus className="h-4 w-4 mr-2" />
+          {t.addInfluencer}
+        </Button>
+      </AdminPageHeader>
+
       {/* Dashboard Summary */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {dashboardLoading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i} className="p-6">
-              <Skeleton className="h-4 w-24 mb-2" />
-              <Skeleton className="h-8 w-32" />
-            </Card>
-          ))
-        ) : (
-          <>
-            <Card className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{t.totalInfluencers}</p>
-                  <p className="text-2xl font-bold">{dashboardData?.totalInfluencers || 0}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {dashboardData?.activeInfluencers || 0} {t.active}
-                  </p>
-                </div>
-                <Users className="h-8 w-8 text-muted-foreground" />
-              </div>
-            </Card>
-            <Card className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{t.totalSales}</p>
-                  <p className="text-2xl font-bold">{formatCurrency(dashboardData?.totalSales || 0)}</p>
-                  <p className="text-xs text-green-600">
-                    {formatCurrency(dashboardData?.thisMonthSales || 0)} {t.thisMonth}
-                  </p>
-                </div>
-                <DollarSign className="h-8 w-8 text-muted-foreground" />
-              </div>
-            </Card>
-            <Card className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{t.totalCommission}</p>
-                  <p className="text-2xl font-bold">{formatCurrency(dashboardData?.totalCommission || 0)}</p>
-                  <p className="text-xs text-green-600">
-                    {formatCurrency(dashboardData?.thisMonthCommission || 0)} {t.thisMonth}
-                  </p>
-                </div>
-                <TrendingUp className="h-8 w-8 text-muted-foreground" />
-              </div>
-            </Card>
-            <Card className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{t.pendingPayouts}</p>
-                  <p className="text-2xl font-bold">{formatCurrency(dashboardData?.pendingPayoutAmount || 0)}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {dashboardData?.pendingPayouts || 0} {t.payoutsToProcess}
-                  </p>
-                </div>
-                <Wallet className="h-8 w-8 text-muted-foreground" />
-              </div>
-            </Card>
-          </>
-        )}
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">{t.totalInfluencers}</p>
+              <p className="text-2xl font-bold">{dashboardData?.totalInfluencers || 0}</p>
+              <p className="text-xs text-muted-foreground">
+                {dashboardData?.activeInfluencers || 0} {t.active}
+              </p>
+            </div>
+            <Users className="h-8 w-8 text-muted-foreground" />
+          </div>
+        </Card>
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">{t.totalSales}</p>
+              <p className="text-2xl font-bold">{formatCurrency(dashboardData?.totalSales || 0)}</p>
+              <p className="text-xs text-green-600">
+                {formatCurrency(dashboardData?.thisMonthSales || 0)} {t.thisMonth}
+              </p>
+            </div>
+            <DollarSign className="h-8 w-8 text-muted-foreground" />
+          </div>
+        </Card>
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">{t.totalCommission}</p>
+              <p className="text-2xl font-bold">{formatCurrency(dashboardData?.totalCommission || 0)}</p>
+              <p className="text-xs text-green-600">
+                {formatCurrency(dashboardData?.thisMonthCommission || 0)} {t.thisMonth}
+              </p>
+            </div>
+            <TrendingUp className="h-8 w-8 text-muted-foreground" />
+          </div>
+        </Card>
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">{t.pendingPayouts}</p>
+              <p className="text-2xl font-bold">{formatCurrency(dashboardData?.pendingPayoutAmount || 0)}</p>
+              <p className="text-xs text-muted-foreground">
+                {dashboardData?.pendingPayouts || 0} {t.payoutsToProcess}
+              </p>
+            </div>
+            <Wallet className="h-8 w-8 text-muted-foreground" />
+          </div>
+        </Card>
       </div>
 
       {/* Top Influencers */}
@@ -385,91 +402,64 @@ export function InfluencersPage({ language = "en" }: InfluencersPageProps) {
         </Card>
       )}
 
-      {/* Influencers List */}
-      <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            {t.influencers}
-          </h3>
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={t.searchPlaceholder}
-                value={searchQuery}
-                onChange={handleSearch}
-                className="pl-9 w-64"
-              />
-            </div>
-            <Select
-              value={params.tier || "all"}
-              onValueChange={(v) => setParams(p => ({ ...p, tier: v === "all" ? undefined : v as InfluencerTier, page: 1 }))}
-            >
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder={t.allTiers} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t.allTiers}</SelectItem>
-                <SelectItem value="STANDARD">Standard</SelectItem>
-                <SelectItem value="BRONZE">Bronze</SelectItem>
-                <SelectItem value="SILVER">Silver</SelectItem>
-                <SelectItem value="GOLD">Gold</SelectItem>
-                <SelectItem value="PLATINUM">Platinum</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button onClick={handleCreate}>
-              <Plus className="h-4 w-4 mr-2" />
-              {t.addInfluencer}
-            </Button>
-          </div>
+      {/* Filters */}
+      <AdminFilterCard>
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={t.searchPlaceholder}
+            value={searchQuery}
+            onChange={handleSearch}
+            className="pl-9"
+          />
         </div>
+        <Select
+          value={params.tier || "all"}
+          onValueChange={(v) => setParams(p => ({ ...p, tier: v === "all" ? undefined : v as InfluencerTier, page: 1 }))}
+        >
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder={t.allTiers} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t.allTiers}</SelectItem>
+            <SelectItem value="STANDARD">Standard</SelectItem>
+            <SelectItem value="BRONZE">Bronze</SelectItem>
+            <SelectItem value="SILVER">Silver</SelectItem>
+            <SelectItem value="GOLD">Gold</SelectItem>
+            <SelectItem value="PLATINUM">Platinum</SelectItem>
+          </SelectContent>
+        </Select>
+      </AdminFilterCard>
 
-        {/* Table */}
-        <div className="border rounded-lg overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-muted">
-              <tr>
-                <th className="px-4 py-3 text-left text-sm font-medium">{t.name}</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">{t.affiliateCode}</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">{t.tier}</th>
-                <th className="px-4 py-3 text-right text-sm font-medium">{t.commission}</th>
-                <th className="px-4 py-3 text-right text-sm font-medium">{t.totalSales}</th>
-                <th className="px-4 py-3 text-right text-sm font-medium">{t.pendingPayout}</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">{t.status}</th>
-                <th className="px-4 py-3 text-right text-sm font-medium">{t.actions}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {influencersLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="border-t">
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-32" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-16" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-16" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
-                  </tr>
-                ))
-              ) : influencersData?.influencers.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
-                    {t.noInfluencers}
-                  </td>
-                </tr>
-              ) : (
-                influencersData?.influencers.map((inf) => (
-                  <tr key={inf.id} className="border-t hover:bg-muted/50">
-                    <td className="px-4 py-3">
+      {/* Influencers Table */}
+      <AdminDataCard>
+        {influencersData?.influencers.length === 0 ? (
+          <AdminEmptyState message={t.noInfluencers} />
+        ) : (
+          <>
+            <AdminTable>
+              <AdminTableHeader>
+                <AdminTableHeadRow>
+                  <AdminTableHead>{t.name}</AdminTableHead>
+                  <AdminTableHead>{t.affiliateCode}</AdminTableHead>
+                  <AdminTableHead>{t.tier}</AdminTableHead>
+                  <AdminTableHead className="text-right">{t.commission}</AdminTableHead>
+                  <AdminTableHead className="text-right">{t.totalSales}</AdminTableHead>
+                  <AdminTableHead className="text-right">{t.pendingPayout}</AdminTableHead>
+                  <AdminTableHead>{t.status}</AdminTableHead>
+                  <AdminTableHead className="text-right">{t.actions}</AdminTableHead>
+                </AdminTableHeadRow>
+              </AdminTableHeader>
+              <AdminTableBody>
+                {influencersData?.influencers.map((inf) => (
+                  <AdminTableRow key={inf.id}>
+                    <AdminTableCell>
                       <div>
                         <p className="font-medium">{inf.name}</p>
                         <p className="text-xs text-muted-foreground">{inf.email}</p>
                       </div>
-                    </td>
-                    <td className="px-4 py-3">
+                    </AdminTableCell>
+                    <AdminTableCell>
                       <div className="flex items-center gap-2">
                         <code className="px-2 py-1 bg-muted rounded text-sm font-mono">
                           {inf.affiliateCode}
@@ -486,19 +476,19 @@ export function InfluencersPage({ language = "en" }: InfluencersPageProps) {
                           )}
                         </Button>
                       </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge className={tierColors[inf.tier]}>
+                    </AdminTableCell>
+                    <AdminTableCell>
+                      <AdminBadge variant={tierBadgeVariant[inf.tier]}>
                         {inf.tier}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-right">
+                      </AdminBadge>
+                    </AdminTableCell>
+                    <AdminTableCell className="text-right">
                       <span className="font-medium">{inf.commissionRate}%</span>
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium">
+                    </AdminTableCell>
+                    <AdminTableCell className="text-right font-medium">
                       {formatCurrency(inf.totalSales)}
-                    </td>
-                    <td className="px-4 py-3 text-right">
+                    </AdminTableCell>
+                    <AdminTableCell className="text-right">
                       {inf.pendingPayout > 0 ? (
                         <span className="font-medium text-green-600">
                           {formatCurrency(inf.pendingPayout)}
@@ -506,13 +496,13 @@ export function InfluencersPage({ language = "en" }: InfluencersPageProps) {
                       ) : (
                         <span className="text-muted-foreground">$0.00</span>
                       )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant={inf.isActive ? "default" : "secondary"}>
+                    </AdminTableCell>
+                    <AdminTableCell>
+                      <AdminBadge variant={inf.isActive ? "default" : "secondary"}>
                         {inf.isActive ? t.active : t.inactive}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-right">
+                      </AdminBadge>
+                    </AdminTableCell>
+                    <AdminTableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Button
                           variant="ghost"
@@ -545,46 +535,46 @@ export function InfluencersPage({ language = "en" }: InfluencersPageProps) {
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                    </AdminTableCell>
+                  </AdminTableRow>
+                ))}
+              </AdminTableBody>
+            </AdminTable>
 
-        {/* Pagination */}
-        {influencersData && influencersData.pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between mt-4">
-            <p className="text-sm text-muted-foreground">
-              {t.showing} {((params.page || 1) - 1) * (params.limit || 10) + 1} -{" "}
-              {Math.min((params.page || 1) * (params.limit || 10), influencersData.pagination.totalCount)}{" "}
-              {t.of} {influencersData.pagination.totalCount}
-            </p>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setParams(p => ({ ...p, page: (p.page || 1) - 1 }))}
-                disabled={!params.page || params.page <= 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="text-sm">
-                {params.page || 1} / {influencersData.pagination.totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setParams(p => ({ ...p, page: (p.page || 1) + 1 }))}
-                disabled={(params.page || 1) >= influencersData.pagination.totalPages}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+            {/* Pagination */}
+            {influencersData && influencersData.pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4">
+                <p className="text-sm text-muted-foreground">
+                  {t.showing} {((params.page || 1) - 1) * (params.limit || 10) + 1} -{" "}
+                  {Math.min((params.page || 1) * (params.limit || 10), influencersData.pagination.totalCount)}{" "}
+                  {t.of} {influencersData.pagination.totalCount}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setParams(p => ({ ...p, page: (p.page || 1) - 1 }))}
+                    disabled={!params.page || params.page <= 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="text-sm">
+                    {params.page || 1} / {influencersData.pagination.totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setParams(p => ({ ...p, page: (p.page || 1) + 1 }))}
+                    disabled={(params.page || 1) >= influencersData.pagination.totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
-      </Card>
+      </AdminDataCard>
 
       {/* Create Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
@@ -800,8 +790,7 @@ export function InfluencersPage({ language = "en" }: InfluencersPageProps) {
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
+            <DialogTitle>
               {influencerDetail?.name || t.influencerDetails}
             </DialogTitle>
           </DialogHeader>
@@ -875,7 +864,7 @@ export function InfluencersPage({ language = "en" }: InfluencersPageProps) {
                       <Card className="p-4">
                         <h4 className="font-medium mb-3">{t.commissionSettings}</h4>
                         <div className="space-y-2 text-sm">
-                          <p><span className="text-muted-foreground">{t.tier}:</span> <Badge className={tierColors[influencerDetail.tier]}>{influencerDetail.tier}</Badge></p>
+                          <p><span className="text-muted-foreground">{t.tier}:</span> <AdminBadge variant={tierBadgeVariant[influencerDetail.tier]}>{influencerDetail.tier}</AdminBadge></p>
                           <p><span className="text-muted-foreground">{t.commissionRate}:</span> {influencerDetail.commissionRate}%</p>
                           <p><span className="text-muted-foreground">{t.payoutMethod}:</span> {payoutMethodLabels[influencerDetail.payoutMethod]}</p>
                           <p><span className="text-muted-foreground">{t.minPayout}:</span> {formatCurrency(influencerDetail.minPayoutAmount)}</p>
@@ -888,52 +877,48 @@ export function InfluencersPage({ language = "en" }: InfluencersPageProps) {
 
               <TabsContent value="sales" className="mt-0">
                 <div className="space-y-4">
-                  <div className="border rounded-lg overflow-hidden">
-                    <table className="w-full">
-                      <thead className="bg-muted">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-sm font-medium">{t.order}</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium">{t.date}</th>
-                          <th className="px-4 py-3 text-right text-sm font-medium">{t.orderTotal}</th>
-                          <th className="px-4 py-3 text-right text-sm font-medium">{t.commission}</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium">{t.status}</th>
-                          <th className="px-4 py-3 text-right text-sm font-medium">{t.actions}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {salesData?.sales.length === 0 ? (
-                          <tr>
-                            <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                              {t.noSales}
-                            </td>
-                          </tr>
-                        ) : (
-                          salesData?.sales.map((sale) => (
-                            <tr key={sale.id} className="border-t">
-                              <td className="px-4 py-3">
+                  <AdminDataCard>
+                    {salesData?.sales.length === 0 ? (
+                      <AdminEmptyState message={t.noSales} />
+                    ) : (
+                      <AdminTable>
+                        <AdminTableHeader>
+                          <AdminTableHeadRow>
+                            <AdminTableHead>{t.order}</AdminTableHead>
+                            <AdminTableHead>{t.date}</AdminTableHead>
+                            <AdminTableHead className="text-right">{t.orderTotal}</AdminTableHead>
+                            <AdminTableHead className="text-right">{t.commission}</AdminTableHead>
+                            <AdminTableHead>{t.status}</AdminTableHead>
+                            <AdminTableHead className="text-right">{t.actions}</AdminTableHead>
+                          </AdminTableHeadRow>
+                        </AdminTableHeader>
+                        <AdminTableBody>
+                          {salesData?.sales.map((sale) => (
+                            <AdminTableRow key={sale.id}>
+                              <AdminTableCell>
                                 <p className="font-medium">{sale.orderNumber}</p>
                                 {sale.customer && (
                                   <p className="text-xs text-muted-foreground">{sale.customer.name}</p>
                                 )}
-                              </td>
-                              <td className="px-4 py-3 text-sm">
+                              </AdminTableCell>
+                              <AdminTableCell className="text-sm">
                                 {formatDate(sale.saleDate)}
-                              </td>
-                              <td className="px-4 py-3 text-right font-medium">
+                              </AdminTableCell>
+                              <AdminTableCell className="text-right font-medium">
                                 {formatCurrency(sale.orderTotal)}
-                              </td>
-                              <td className="px-4 py-3 text-right">
+                              </AdminTableCell>
+                              <AdminTableCell className="text-right">
                                 <span className="font-medium text-green-600">
                                   {formatCurrency(sale.commissionAmount)}
                                 </span>
                                 <p className="text-xs text-muted-foreground">{sale.commissionRate}%</p>
-                              </td>
-                              <td className="px-4 py-3">
-                                <Badge className={statusColors[sale.status]}>
+                              </AdminTableCell>
+                              <AdminTableCell>
+                                <AdminBadge variant={statusBadgeVariant[sale.status] || "secondary"}>
                                   {sale.status}
-                                </Badge>
-                              </td>
-                              <td className="px-4 py-3 text-right">
+                                </AdminBadge>
+                              </AdminTableCell>
+                              <AdminTableCell className="text-right">
                                 {sale.status === "PENDING" && (
                                   <div className="flex items-center justify-end gap-1">
                                     <Button
@@ -954,66 +939,62 @@ export function InfluencersPage({ language = "en" }: InfluencersPageProps) {
                                     </Button>
                                   </div>
                                 )}
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                              </AdminTableCell>
+                            </AdminTableRow>
+                          ))}
+                        </AdminTableBody>
+                      </AdminTable>
+                    )}
+                  </AdminDataCard>
                 </div>
               </TabsContent>
 
               <TabsContent value="payouts" className="mt-0">
                 <div className="space-y-4">
-                  <div className="border rounded-lg overflow-hidden">
-                    <table className="w-full">
-                      <thead className="bg-muted">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-sm font-medium">{t.period}</th>
-                          <th className="px-4 py-3 text-right text-sm font-medium">{t.amount}</th>
-                          <th className="px-4 py-3 text-right text-sm font-medium">{t.salesCount}</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium">{t.method}</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium">{t.status}</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium">{t.paidAt}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {payoutsData?.payouts.length === 0 ? (
-                          <tr>
-                            <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                              {t.noPayouts}
-                            </td>
-                          </tr>
-                        ) : (
-                          payoutsData?.payouts.map((payout) => (
-                            <tr key={payout.id} className="border-t">
-                              <td className="px-4 py-3 text-sm">
+                  <AdminDataCard>
+                    {payoutsData?.payouts.length === 0 ? (
+                      <AdminEmptyState message={t.noPayouts} />
+                    ) : (
+                      <AdminTable>
+                        <AdminTableHeader>
+                          <AdminTableHeadRow>
+                            <AdminTableHead>{t.period}</AdminTableHead>
+                            <AdminTableHead className="text-right">{t.amount}</AdminTableHead>
+                            <AdminTableHead className="text-right">{t.salesCount}</AdminTableHead>
+                            <AdminTableHead>{t.method}</AdminTableHead>
+                            <AdminTableHead>{t.status}</AdminTableHead>
+                            <AdminTableHead>{t.paidAt}</AdminTableHead>
+                          </AdminTableHeadRow>
+                        </AdminTableHeader>
+                        <AdminTableBody>
+                          {payoutsData?.payouts.map((payout) => (
+                            <AdminTableRow key={payout.id}>
+                              <AdminTableCell className="text-sm">
                                 {formatDate(payout.periodStart)} - {formatDate(payout.periodEnd)}
-                              </td>
-                              <td className="px-4 py-3 text-right font-bold">
+                              </AdminTableCell>
+                              <AdminTableCell className="text-right font-bold">
                                 {formatCurrency(payout.amount)}
-                              </td>
-                              <td className="px-4 py-3 text-right">
+                              </AdminTableCell>
+                              <AdminTableCell className="text-right">
                                 {payout.salesCount}
-                              </td>
-                              <td className="px-4 py-3 text-sm">
+                              </AdminTableCell>
+                              <AdminTableCell className="text-sm">
                                 {payoutMethodLabels[payout.payoutMethod]}
-                              </td>
-                              <td className="px-4 py-3">
-                                <Badge className={statusColors[payout.status]}>
+                              </AdminTableCell>
+                              <AdminTableCell>
+                                <AdminBadge variant={statusBadgeVariant[payout.status] || "secondary"}>
                                   {payout.status}
-                                </Badge>
-                              </td>
-                              <td className="px-4 py-3 text-sm">
+                                </AdminBadge>
+                              </AdminTableCell>
+                              <AdminTableCell className="text-sm">
                                 {payout.paidAt ? formatDate(payout.paidAt) : "-"}
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                              </AdminTableCell>
+                            </AdminTableRow>
+                          ))}
+                        </AdminTableBody>
+                      </AdminTable>
+                    )}
+                  </AdminDataCard>
                 </div>
               </TabsContent>
             </ScrollArea>

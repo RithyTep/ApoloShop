@@ -5,8 +5,6 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Badge } from "@/components/ui/badge"
 import {
   Select,
   SelectContent,
@@ -29,7 +27,6 @@ import {
 } from "@/lib/api-hooks"
 import {
   Search,
-  Filter,
   X,
   Plus,
   Pencil,
@@ -57,6 +54,14 @@ import {
   AreaChart,
   Area,
 } from "recharts"
+import {
+  AdminPageHeader,
+  AdminFilterCardGrid,
+  AdminDataCard,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 // Action icons mapping
 const actionIcons: Record<AuditAction, React.ReactNode> = {
@@ -183,27 +188,11 @@ export function AuditLogsPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="p-8 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Audit Logs</h1>
-          <p className="text-muted-foreground mt-2">
-            Track all admin actions for security and compliance
-          </p>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Skeleton className="h-40" />
-          <Skeleton className="h-40" />
-          <Skeleton className="h-40" />
-        </div>
-        <Card className="p-6">
-          <Skeleton className="h-10 w-full mb-4" />
-          <div className="space-y-3">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-16 w-full" />
-            ))}
-          </div>
-        </Card>
-      </div>
+      <AdminLoading
+        title="Audit Logs"
+        subtitle="Track all admin actions for security and compliance"
+        rows={5}
+      />
     )
   }
 
@@ -233,12 +222,10 @@ export function AuditLogsPage() {
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Audit Logs</h1>
-        <p className="text-muted-foreground mt-2">
-          Track all admin actions for security and compliance
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Audit Logs"
+        subtitle="Track all admin actions for security and compliance"
+      />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -276,14 +263,12 @@ export function AuditLogsPage() {
           )}
           <div className="flex flex-wrap gap-2 mt-2">
             {actionChartData.map((item) => (
-              <Badge
+              <AdminBadge
                 key={item.action}
                 variant="outline"
-                className="text-xs"
-                style={{ borderColor: item.fill, color: item.fill }}
               >
                 {formatAction(item.action as AuditAction)}: {item.count}
-              </Badge>
+              </AdminBadge>
             ))}
           </div>
         </Card>
@@ -356,129 +341,127 @@ export function AuditLogsPage() {
       </div>
 
       {/* Filters */}
-      <Card className="p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <h3 className="font-medium text-foreground">Filters</h3>
-          {hasFilters && (
+      <AdminFilterCardGrid columns={4}>
+        {/* Search */}
+        <div className="md:col-span-2">
+          <Label className="text-xs text-muted-foreground mb-1 block">Search</Label>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Search by user name or resource ID..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              className="flex-1"
+            />
+            <Button onClick={handleSearch} size="icon" variant="secondary">
+              <Search className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Action Filter */}
+        <div>
+          <Label className="text-xs text-muted-foreground mb-1 block">Action</Label>
+          <Select
+            value={filters.action || "all"}
+            onValueChange={(value) =>
+              setFilters((prev) => ({
+                ...prev,
+                page: 1,
+                action: value === "all" ? undefined : (value as AuditAction),
+              }))
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="All Actions" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Actions</SelectItem>
+              {data?.filters?.validActions.map((action) => (
+                <SelectItem key={action} value={action}>
+                  {formatAction(action)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Resource Filter */}
+        <div>
+          <Label className="text-xs text-muted-foreground mb-1 block">Resource</Label>
+          <Select
+            value={filters.resource || "all"}
+            onValueChange={(value) =>
+              setFilters((prev) => ({
+                ...prev,
+                page: 1,
+                resource: value === "all" ? undefined : value,
+              }))
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="All Resources" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Resources</SelectItem>
+              {data?.filters?.validResources.map((resource) => (
+                <SelectItem key={resource} value={resource}>
+                  {resource.charAt(0).toUpperCase() + resource.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Date Range */}
+        <div>
+          <Label className="text-xs text-muted-foreground mb-1 block">Date Range</Label>
+          <div className="flex gap-1">
+            <Input
+              type="date"
+              value={filters.startDate || ""}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  page: 1,
+                  startDate: e.target.value || undefined,
+                }))
+              }
+              className="flex-1 text-xs"
+            />
+            <Input
+              type="date"
+              value={filters.endDate || ""}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  page: 1,
+                  endDate: e.target.value || undefined,
+                }))
+              }
+              className="flex-1 text-xs"
+            />
+          </div>
+        </div>
+
+        {/* Clear Filters */}
+        {hasFilters && (
+          <div className="flex items-end">
             <Button
               variant="ghost"
               size="sm"
               onClick={clearFilters}
-              className="ml-auto text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground"
             >
               <X className="h-4 w-4 mr-1" />
               Clear
             </Button>
-          )}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          {/* Search */}
-          <div className="md:col-span-2">
-            <Label className="text-xs text-muted-foreground mb-1 block">Search</Label>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Search by user name or resource ID..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="flex-1"
-              />
-              <Button onClick={handleSearch} size="icon" variant="secondary">
-                <Search className="h-4 w-4" />
-              </Button>
-            </div>
           </div>
-
-          {/* Action Filter */}
-          <div>
-            <Label className="text-xs text-muted-foreground mb-1 block">Action</Label>
-            <Select
-              value={filters.action || "all"}
-              onValueChange={(value) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  page: 1,
-                  action: value === "all" ? undefined : (value as AuditAction),
-                }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All Actions" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Actions</SelectItem>
-                {data?.filters?.validActions.map((action) => (
-                  <SelectItem key={action} value={action}>
-                    {formatAction(action)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Resource Filter */}
-          <div>
-            <Label className="text-xs text-muted-foreground mb-1 block">Resource</Label>
-            <Select
-              value={filters.resource || "all"}
-              onValueChange={(value) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  page: 1,
-                  resource: value === "all" ? undefined : value,
-                }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All Resources" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Resources</SelectItem>
-                {data?.filters?.validResources.map((resource) => (
-                  <SelectItem key={resource} value={resource}>
-                    {resource.charAt(0).toUpperCase() + resource.slice(1)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Date Range */}
-          <div>
-            <Label className="text-xs text-muted-foreground mb-1 block">Date Range</Label>
-            <div className="flex gap-1">
-              <Input
-                type="date"
-                value={filters.startDate || ""}
-                onChange={(e) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    page: 1,
-                    startDate: e.target.value || undefined,
-                  }))
-                }
-                className="flex-1 text-xs"
-              />
-              <Input
-                type="date"
-                value={filters.endDate || ""}
-                onChange={(e) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    page: 1,
-                    endDate: e.target.value || undefined,
-                  }))
-                }
-                className="flex-1 text-xs"
-              />
-            </div>
-          </div>
-        </div>
-      </Card>
+        )}
+      </AdminFilterCardGrid>
 
       {/* Logs Table */}
-      <Card className="p-4">
+      <AdminDataCard>
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-medium text-foreground">
             Audit Logs ({pagination.total.toLocaleString()})
@@ -486,10 +469,7 @@ export function AuditLogsPage() {
         </div>
 
         {logs.length === 0 ? (
-          <div className="text-center py-12">
-            <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">No audit logs found</p>
-          </div>
+          <AdminEmptyState message="No audit logs found" />
         ) : (
           <>
             <div className="space-y-2">
@@ -510,9 +490,9 @@ export function AuditLogsPage() {
                       <span className="font-medium text-foreground">
                         {formatAction(log.action)}
                       </span>
-                      <Badge variant="secondary" className="text-xs">
+                      <AdminBadge variant="secondary">
                         {log.resource}
-                      </Badge>
+                      </AdminBadge>
                       {log.resourceId && (
                         <span className="text-xs text-muted-foreground truncate">
                           {log.resourceId}
@@ -561,7 +541,7 @@ export function AuditLogsPage() {
             )}
           </>
         )}
-      </Card>
+      </AdminDataCard>
 
       {/* Detail Dialog */}
       <Dialog open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>

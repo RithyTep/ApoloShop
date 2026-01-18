@@ -31,16 +31,25 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { Check, X, Package, CreditCard, DollarSign } from "lucide-react"
 import {
-  Check,
-  X,
-  Package,
-  RotateCcw,
-  CreditCard,
-  Eye,
-  DollarSign,
-  AlertCircle,
-} from "lucide-react"
+  AdminPageHeader,
+  AdminFilterCard,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminActionButtons,
+  AdminViewButton,
+  AdminActionButton,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/components/ui/use-toast"
 
@@ -264,19 +273,19 @@ export function ReturnsPage() {
   }
 
   const getStatusBadge = (status: ReturnStatus) => {
-    const variants: Record<ReturnStatus, { variant: "warning" | "info" | "success" | "destructive" | "secondary"; label: string }> = {
-      PENDING: { variant: "warning", label: "Pending" },
-      APPROVED: { variant: "info", label: "Approved" },
-      RECEIVED: { variant: "info", label: "Received" },
-      REFUNDED: { variant: "success", label: "Refunded" },
+    const variants: Record<ReturnStatus, { variant: "default" | "outline" | "destructive" | "secondary"; label: string }> = {
+      PENDING: { variant: "outline", label: "Pending" },
+      APPROVED: { variant: "default", label: "Approved" },
+      RECEIVED: { variant: "default", label: "Received" },
+      REFUNDED: { variant: "default", label: "Refunded" },
       REJECTED: { variant: "destructive", label: "Rejected" },
       CANCELLED: { variant: "secondary", label: "Cancelled" },
     }
     const v = variants[status]
     return (
-      <Badge variant={v.variant}>
+      <AdminBadge variant={v.variant}>
         {v.label}
-      </Badge>
+      </AdminBadge>
     )
   }
 
@@ -290,239 +299,157 @@ export function ReturnsPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-64 w-full" />
-      </div>
+      <AdminLoading
+        title="Returns"
+        subtitle="Manage customer return requests and process refunds"
+        rows={5}
+      />
     )
   }
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-            <RotateCcw className="h-7 w-7" />
-            Returns Management
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Manage customer return requests and process refunds
-          </p>
-        </div>
-        {pendingCount > 0 && (
-          <Badge variant="warning" className="text-base px-3 py-1">
-            {pendingCount} pending
-          </Badge>
-        )}
-      </div>
+      <AdminPageHeader
+        title="Returns"
+        subtitle="Manage customer return requests and process refunds"
+      />
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Returns
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{pagination?.total || 0}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-warning">
-              Pending Review
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-warning">
-              {returns.filter((r) => r.status === "PENDING").length}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-info">
-              Awaiting Product
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-info">
-              {returns.filter((r) => r.status === "APPROVED").length}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-success">
-              Refunded
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-success">
-              {returns.filter((r) => r.status === "REFUNDED").length}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filter and Table */}
-      <Card className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold">Return Requests</h2>
-          <Select
-            value={statusFilter}
-            onValueChange={(v) => setStatusFilter(v as ReturnStatus | "ALL")}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_FILTERS.map((f) => (
-                <SelectItem key={f.value} value={f.value}>
-                  {f.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <AdminFilterCard>
+        <Select
+          value={statusFilter}
+          onValueChange={(v) => setStatusFilter(v as ReturnStatus | "ALL")}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_FILTERS.map((f) => (
+              <SelectItem key={f.value} value={f.value}>
+                {f.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="text-sm text-muted-foreground">
+          {pagination?.total || 0} returns
+          {pendingCount > 0 && ` (${pendingCount} pending)`}
         </div>
+      </AdminFilterCard>
+
+      <AdminDataCard>
         {returns.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No return requests found</p>
-          </div>
+          <AdminEmptyState message="No return requests found" />
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Return #</TableHead>
-                  <TableHead>Order</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Reason</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {returns.map((ret) => (
-                  <TableRow key={ret.id}>
-                    <TableCell className="font-medium">{ret.returnNumber}</TableCell>
-                    <TableCell>{ret.order?.orderNumber || ret.orderId.slice(0, 8)}</TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{ret.customer?.name || "Unknown"}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {ret.customer?.phone}
-                        </div>
+          <AdminTable>
+            <AdminTableHeader>
+              <AdminTableHeadRow>
+                <AdminTableHead>Return #</AdminTableHead>
+                <AdminTableHead>Order</AdminTableHead>
+                <AdminTableHead>Customer</AdminTableHead>
+                <AdminTableHead>Reason</AdminTableHead>
+                <AdminTableHead>Amount</AdminTableHead>
+                <AdminTableHead>Status</AdminTableHead>
+                <AdminTableHead>Date</AdminTableHead>
+                <AdminTableHead>Actions</AdminTableHead>
+              </AdminTableHeadRow>
+            </AdminTableHeader>
+            <AdminTableBody>
+              {returns.map((ret) => (
+                <AdminTableRow key={ret.id}>
+                  <AdminTableCell className="font-medium">{ret.returnNumber}</AdminTableCell>
+                  <AdminTableCell>{ret.order?.orderNumber || ret.orderId.slice(0, 8)}</AdminTableCell>
+                  <AdminTableCell>
+                    <div>
+                      <div className="font-medium">{ret.customer?.name || "Unknown"}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {ret.customer?.phone}
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm">{REASON_LABELS[ret.reason] || ret.reason}</span>
-                    </TableCell>
-                    <TableCell>
-                      ${Number(ret.refundAmountUsd || 0).toFixed(2)}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(ret.status)}</TableCell>
-                    <TableCell>{formatDate(ret.createdAt)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedReturn(ret)
-                            setAdminNotes(ret.adminNotes || "")
-                          }}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        {ret.status === "PENDING" && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-success hover:text-success hover:bg-success/10"
-                              onClick={() => {
-                                setSelectedReturn(ret)
-                                setActionDialog("approve")
-                              }}
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                              onClick={() => {
-                                setSelectedReturn(ret)
-                                setActionDialog("reject")
-                              }}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                        {ret.status === "APPROVED" && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-info hover:text-info hover:bg-info/10"
-                            onClick={() => handleMarkReceived(ret)}
-                          >
-                            <Package className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {ret.status === "RECEIVED" && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-success hover:text-success hover:bg-success/10"
+                    </div>
+                  </AdminTableCell>
+                  <AdminTableCell>
+                    <span className="text-sm">{REASON_LABELS[ret.reason] || ret.reason}</span>
+                  </AdminTableCell>
+                  <AdminTableCell>
+                    ${Number(ret.refundAmountUsd || 0).toFixed(2)}
+                  </AdminTableCell>
+                  <AdminTableCell>{getStatusBadge(ret.status)}</AdminTableCell>
+                  <AdminTableCell>{formatDate(ret.createdAt)}</AdminTableCell>
+                  <AdminTableCell>
+                    <AdminActionButtons>
+                      <AdminViewButton
+                        onClick={() => {
+                          setSelectedReturn(ret)
+                          setAdminNotes(ret.adminNotes || "")
+                        }}
+                      />
+                      {ret.status === "PENDING" && (
+                        <>
+                          <AdminActionButton
+                            icon={<Check size={14} />}
                             onClick={() => {
                               setSelectedReturn(ret)
-                              setRefundAmount(ret.refundAmountUsd?.toString() || "")
-                              setActionDialog("refund")
+                              setActionDialog("approve")
                             }}
-                          >
-                            <CreditCard className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                          />
+                          <AdminActionButton
+                            icon={<X size={14} />}
+                            onClick={() => {
+                              setSelectedReturn(ret)
+                              setActionDialog("reject")
+                            }}
+                            variant="destructive"
+                          />
+                        </>
+                      )}
+                      {ret.status === "APPROVED" && (
+                        <AdminActionButton
+                          icon={<Package size={14} />}
+                          onClick={() => handleMarkReceived(ret)}
+                        />
+                      )}
+                      {ret.status === "RECEIVED" && (
+                        <AdminActionButton
+                          icon={<CreditCard size={14} />}
+                          onClick={() => {
+                            setSelectedReturn(ret)
+                            setRefundAmount(ret.refundAmountUsd?.toString() || "")
+                            setActionDialog("refund")
+                          }}
+                        />
+                      )}
+                    </AdminActionButtons>
+                  </AdminTableCell>
+                </AdminTableRow>
+              ))}
+            </AdminTableBody>
+          </AdminTable>
         )}
+      </AdminDataCard>
 
-        {/* Pagination */}
-        {pagination && pagination.totalPages > 1 && (
-          <div className="flex justify-center gap-2 mt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page === 1}
-              onClick={() => setPage(page - 1)}
-            >
-              Previous
-            </Button>
-            <span className="py-2 px-4 text-sm">
-              Page {page} of {pagination.totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page === pagination.totalPages}
-              onClick={() => setPage(page + 1)}
-            >
-              Next
-            </Button>
-          </div>
-        )}
-      </Card>
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex justify-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+          >
+            Previous
+          </Button>
+          <span className="py-2 px-4 text-sm">
+            Page {page} of {pagination.totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page === pagination.totalPages}
+            onClick={() => setPage(page + 1)}
+          >
+            Next
+          </Button>
+        </div>
+      )}
 
       {/* View Return Details Dialog */}
       {selectedReturn && !actionDialog && (

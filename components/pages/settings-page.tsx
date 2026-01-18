@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { useSettings, useUpdateSettings, useComponentRegistry, useUpdateComponentRegistry, ComponentRegistryConfigData } from "@/lib/api-hooks"
@@ -16,6 +15,7 @@ import { type GA4Settings } from "@/providers/ga4-provider"
 import { type FBPixelSettings } from "@/providers/fb-pixel-provider"
 import { SUPPORTED_LANGUAGES, LANGUAGE_CONFIG, type Language } from "@/lib/i18n"
 import { Globe, Check } from "lucide-react"
+import { AdminPageHeader, AdminLoading } from "@/components/admin"
 
 export function SettingsPage() {
   const { toast } = useToast()
@@ -308,36 +308,20 @@ export function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-          <p className="text-muted-foreground mt-2">Configure your shop settings</p>
-        </div>
-        <Card className="p-6">
-          <Skeleton className="h-6 w-32 mb-4" />
-          <div className="space-y-4">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-        </Card>
-        <Card className="p-6">
-          <Skeleton className="h-6 w-32 mb-4" />
-          <div className="space-y-4">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-        </Card>
-      </div>
+      <AdminLoading
+        title="Settings"
+        subtitle="Configure your shop settings"
+        rows={6}
+      />
     )
   }
 
   return (
     <div className="p-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground mt-2">Configure your shop settings</p>
-      </div>
+      <AdminPageHeader
+        title="Settings"
+        subtitle="Configure your shop settings"
+      />
 
       {/* Shop Info */}
       <Card className="p-6">

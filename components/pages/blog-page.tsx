@@ -1,14 +1,11 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -18,11 +15,7 @@ import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import {
   Plus,
-  Pencil,
-  Trash,
-  Eye,
   Search,
-  Calendar,
   Tag,
   FolderOpen,
   FileText,
@@ -58,6 +51,25 @@ import {
 import { useToast } from "@/components/ui/use-toast"
 import { RichTextEditor } from "@/components/rich-text-editor"
 import { translations } from "@/lib/i18n"
+import {
+  AdminPageHeader,
+  AdminFilterCard,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminActionButtons,
+  AdminEditButton,
+  AdminDeleteButton,
+  AdminViewButton,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 type Language = "EN" | "KH"
 
@@ -389,14 +401,14 @@ export function BlogPage({ language = "EN" }: BlogPageProps) {
     })
   }
 
-  const getStatusBadge = (status: BlogPostStatus) => {
+  const getStatusVariant = (status: BlogPostStatus): "default" | "secondary" | "outline" | "destructive" => {
     const variants: Record<BlogPostStatus, "default" | "secondary" | "outline" | "destructive"> = {
       PUBLISHED: "default",
       DRAFT: "secondary",
       SCHEDULED: "outline",
       ARCHIVED: "destructive",
     }
-    return <Badge variant={variants[status]}>{status}</Badge>
+    return variants[status]
   }
 
   // Toggle tag selection
@@ -422,50 +434,37 @@ export function BlogPage({ language = "EN" }: BlogPageProps) {
   // Loading state
   if (postsLoading && activeTab === "posts") {
     return (
-      <div className="p-8 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">{t.blog?.title || "Blog"}</h1>
-            <p className="text-muted-foreground mt-2">{t.blog?.description || "Manage blog posts, categories, and tags"}</p>
-          </div>
-        </div>
-        <Card className="p-6">
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-16 w-full" />
-            ))}
-          </div>
-        </Card>
-      </div>
+      <AdminLoading
+        title={t.blog?.title || "Blog"}
+        subtitle={t.blog?.description || "Manage blog posts, categories, and tags"}
+        rows={3}
+      />
     )
   }
 
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">{t.blog?.title || "Blog"}</h1>
-          <p className="text-muted-foreground mt-2">{t.blog?.description || "Manage blog posts, categories, and tags"}</p>
-        </div>
-        <div className="flex gap-2">
-          {activeTab === "posts" && (
-            <Button onClick={openCreatePostDialog} className="flex items-center gap-2">
-              <Plus size={16} /> {t.blog?.newPost || "New Post"}
-            </Button>
-          )}
-          {activeTab === "categories" && (
-            <Button onClick={openCreateCategoryDialog} className="flex items-center gap-2">
-              <Plus size={16} /> {t.blog?.newCategory || "New Category"}
-            </Button>
-          )}
-          {activeTab === "tags" && (
-            <Button onClick={() => setIsTagDialogOpen(true)} className="flex items-center gap-2">
-              <Plus size={16} /> {t.blog?.newTag || "New Tag"}
-            </Button>
-          )}
-        </div>
-      </div>
+      <AdminPageHeader
+        title={t.blog?.title || "Blog"}
+        subtitle={t.blog?.description || "Manage blog posts, categories, and tags"}
+      >
+        {activeTab === "posts" && (
+          <Button onClick={openCreatePostDialog} className="flex items-center gap-2">
+            <Plus size={16} /> {t.blog?.newPost || "New Post"}
+          </Button>
+        )}
+        {activeTab === "categories" && (
+          <Button onClick={openCreateCategoryDialog} className="flex items-center gap-2">
+            <Plus size={16} /> {t.blog?.newCategory || "New Category"}
+          </Button>
+        )}
+        {activeTab === "tags" && (
+          <Button onClick={() => setIsTagDialogOpen(true)} className="flex items-center gap-2">
+            <Plus size={16} /> {t.blog?.newTag || "New Tag"}
+          </Button>
+        )}
+      </AdminPageHeader>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
@@ -484,72 +483,70 @@ export function BlogPage({ language = "EN" }: BlogPageProps) {
         {/* Posts Tab */}
         <TabsContent value="posts" className="space-y-4">
           {/* Filters */}
-          <Card className="p-4">
-            <div className="flex flex-wrap gap-4 items-center">
-              <div className="flex-1 min-w-[200px] max-w-xs">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
-                  <Input
-                    placeholder={t.blog?.searchPosts || "Search posts..."}
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value)
-                      setPage(1)
-                    }}
-                    className="pl-9"
-                  />
-                </div>
+          <AdminFilterCard>
+            <div className="flex-1 min-w-[200px] max-w-xs">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
+                <Input
+                  placeholder={t.blog?.searchPosts || "Search posts..."}
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value)
+                    setPage(1)
+                  }}
+                  className="pl-9"
+                />
               </div>
-              <Select value={statusFilter || "all"} onValueChange={(v) => {
-                setStatusFilter(v === "all" ? "" : v as BlogPostStatus)
-                setPage(1)
-              }}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder={t.blog?.allStatuses || "All Statuses"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t.blog?.allStatuses || "All Statuses"}</SelectItem>
-                  {statusOptions.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={categoryFilter || "all"} onValueChange={(v) => {
-                setCategoryFilter(v === "all" ? "" : v)
-                setPage(1)
-              }}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder={t.blog?.allCategories || "All Categories"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t.blog?.allCategories || "All Categories"}</SelectItem>
-                  {categories.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{language === "EN" ? c.nameEn : c.nameKh}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
-          </Card>
+            <Select value={statusFilter || "all"} onValueChange={(v) => {
+              setStatusFilter(v === "all" ? "" : v as BlogPostStatus)
+              setPage(1)
+            }}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder={t.blog?.allStatuses || "All Statuses"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t.blog?.allStatuses || "All Statuses"}</SelectItem>
+                {statusOptions.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={categoryFilter || "all"} onValueChange={(v) => {
+              setCategoryFilter(v === "all" ? "" : v)
+              setPage(1)
+            }}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={t.blog?.allCategories || "All Categories"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t.blog?.allCategories || "All Categories"}</SelectItem>
+                {categories.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{language === "EN" ? c.nameEn : c.nameKh}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </AdminFilterCard>
 
           {/* Posts Table */}
-          <Card className="p-6">
+          <AdminDataCard>
             {posts.length > 0 ? (
               <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t.blog?.titleColumn || "Title"}</TableHead>
-                      <TableHead>{t.blog?.authorColumn || "Author"}</TableHead>
-                      <TableHead>{t.blog?.categoryColumn || "Category"}</TableHead>
-                      <TableHead>{t.blog?.statusColumn || "Status"}</TableHead>
-                      <TableHead>{t.blog?.dateColumn || "Date"}</TableHead>
-                      <TableHead>{t.blog?.actionsColumn || "Actions"}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <AdminTable>
+                  <AdminTableHeader>
+                    <AdminTableHeadRow>
+                      <AdminTableHead>{t.blog?.titleColumn || "Title"}</AdminTableHead>
+                      <AdminTableHead>{t.blog?.authorColumn || "Author"}</AdminTableHead>
+                      <AdminTableHead>{t.blog?.categoryColumn || "Category"}</AdminTableHead>
+                      <AdminTableHead>{t.blog?.statusColumn || "Status"}</AdminTableHead>
+                      <AdminTableHead>{t.blog?.dateColumn || "Date"}</AdminTableHead>
+                      <AdminTableHead>{t.blog?.actionsColumn || "Actions"}</AdminTableHead>
+                    </AdminTableHeadRow>
+                  </AdminTableHeader>
+                  <AdminTableBody>
                     {posts.map((post) => (
-                      <TableRow key={post.id}>
-                        <TableCell>
+                      <AdminTableRow key={post.id}>
+                        <AdminTableCell>
                           <div className="flex items-start gap-3">
                             {post.featuredImage && (
                               <img
@@ -565,56 +562,45 @@ export function BlogPage({ language = "EN" }: BlogPageProps) {
                               </p>
                             </div>
                           </div>
-                        </TableCell>
-                        <TableCell>
+                        </AdminTableCell>
+                        <AdminTableCell>
                           <div className="flex items-center gap-2">
                             <User size={14} className="text-muted-foreground" />
                             {post.author.name}
                           </div>
-                        </TableCell>
-                        <TableCell>
+                        </AdminTableCell>
+                        <AdminTableCell>
                           {post.category ? (
-                            <Badge variant="outline">
+                            <AdminBadge variant="outline">
                               {language === "EN" ? post.category.nameEn : post.category.nameKh}
-                            </Badge>
+                            </AdminBadge>
                           ) : (
-                            <span className="text-muted-foreground">—</span>
+                            <span className="text-muted-foreground">-</span>
                           )}
-                        </TableCell>
-                        <TableCell>{getStatusBadge(post.status)}</TableCell>
-                        <TableCell>
+                        </AdminTableCell>
+                        <AdminTableCell>
+                          <AdminBadge variant={getStatusVariant(post.status)}>
+                            {post.status}
+                          </AdminBadge>
+                        </AdminTableCell>
+                        <AdminTableCell>
                           <div className="text-sm">
                             {post.publishedAt ? formatDate(post.publishedAt) : formatDate(post.createdAt)}
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
+                        </AdminTableCell>
+                        <AdminTableCell>
+                          <AdminActionButtons>
                             {post.status === "PUBLISHED" && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => window.open(`/blog/${post.slug}`, "_blank")}
-                              >
-                                <Eye size={14} />
-                              </Button>
+                              <AdminViewButton onClick={() => window.open(`/blog/${post.slug}`, "_blank")} />
                             )}
-                            <Button variant="outline" size="sm" onClick={() => openEditPostDialog(post)}>
-                              <Pencil size={14} />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => setDeletePost(post)}
-                            >
-                              <Trash size={14} />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                            <AdminEditButton onClick={() => openEditPostDialog(post)} />
+                            <AdminDeleteButton onClick={() => setDeletePost(post)} />
+                          </AdminActionButtons>
+                        </AdminTableCell>
+                      </AdminTableRow>
                     ))}
-                  </TableBody>
-                </Table>
+                  </AdminTableBody>
+                </AdminTable>
 
                 {/* Pagination */}
                 {pagination && pagination.totalPages > 1 && (
@@ -644,85 +630,70 @@ export function BlogPage({ language = "EN" }: BlogPageProps) {
                 )}
               </>
             ) : (
-              <div className="py-8 text-center text-muted-foreground">
-                {t.blog?.noPosts || "No posts found. Create your first blog post!"}
-              </div>
+              <AdminEmptyState message={t.blog?.noPosts || "No posts found. Create your first blog post!"} />
             )}
-          </Card>
+          </AdminDataCard>
         </TabsContent>
 
         {/* Categories Tab */}
         <TabsContent value="categories" className="space-y-4">
-          <Card className="p-6">
+          <AdminDataCard>
             {categoriesLoading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </div>
+              <AdminLoading
+                title={t.blog?.categories || "Categories"}
+                rows={3}
+              />
             ) : categories.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t.blog?.nameColumn || "Name"}</TableHead>
-                    <TableHead>{t.blog?.slugColumn || "Slug"}</TableHead>
-                    <TableHead>{t.blog?.postsColumn || "Posts"}</TableHead>
-                    <TableHead>{t.blog?.statusColumn || "Status"}</TableHead>
-                    <TableHead>{t.blog?.actionsColumn || "Actions"}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <AdminTable>
+                <AdminTableHeader>
+                  <AdminTableHeadRow>
+                    <AdminTableHead>{t.blog?.nameColumn || "Name"}</AdminTableHead>
+                    <AdminTableHead>{t.blog?.slugColumn || "Slug"}</AdminTableHead>
+                    <AdminTableHead>{t.blog?.postsColumn || "Posts"}</AdminTableHead>
+                    <AdminTableHead>{t.blog?.statusColumn || "Status"}</AdminTableHead>
+                    <AdminTableHead>{t.blog?.actionsColumn || "Actions"}</AdminTableHead>
+                  </AdminTableHeadRow>
+                </AdminTableHeader>
+                <AdminTableBody>
                   {categories.map((category) => (
-                    <TableRow key={category.id}>
-                      <TableCell>
+                    <AdminTableRow key={category.id}>
+                      <AdminTableCell>
                         <div>
                           <p className="font-medium">{language === "EN" ? category.nameEn : category.nameKh}</p>
                           <p className="text-xs text-muted-foreground">{language === "KH" ? category.nameEn : category.nameKh}</p>
                         </div>
-                      </TableCell>
-                      <TableCell className="font-mono text-sm">{category.slug}</TableCell>
-                      <TableCell>{category._count?.posts || 0}</TableCell>
-                      <TableCell>
-                        <Badge variant={category.isActive ? "default" : "secondary"}>
+                      </AdminTableCell>
+                      <AdminTableCell className="font-mono text-sm">{category.slug}</AdminTableCell>
+                      <AdminTableCell>{category._count?.posts || 0}</AdminTableCell>
+                      <AdminTableCell>
+                        <AdminBadge variant={category.isActive ? "default" : "secondary"}>
                           {category.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm" onClick={() => openEditCategoryDialog(category)}>
-                            <Pencil size={14} />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => setDeleteCategory(category)}
-                          >
-                            <Trash size={14} />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                        </AdminBadge>
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        <AdminActionButtons>
+                          <AdminEditButton onClick={() => openEditCategoryDialog(category)} />
+                          <AdminDeleteButton onClick={() => setDeleteCategory(category)} />
+                        </AdminActionButtons>
+                      </AdminTableCell>
+                    </AdminTableRow>
                   ))}
-                </TableBody>
-              </Table>
+                </AdminTableBody>
+              </AdminTable>
             ) : (
-              <div className="py-8 text-center text-muted-foreground">
-                {t.blog?.noCategories || "No categories found. Create your first category!"}
-              </div>
+              <AdminEmptyState message={t.blog?.noCategories || "No categories found. Create your first category!"} />
             )}
-          </Card>
+          </AdminDataCard>
         </TabsContent>
 
         {/* Tags Tab */}
         <TabsContent value="tags" className="space-y-4">
           <Card className="p-6">
             {tagsLoading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </div>
+              <AdminLoading
+                title={t.blog?.tags || "Tags"}
+                rows={3}
+              />
             ) : tags.length > 0 ? (
               <div className="flex flex-wrap gap-3">
                 {tags.map((tag) => (
@@ -747,9 +718,7 @@ export function BlogPage({ language = "EN" }: BlogPageProps) {
                 ))}
               </div>
             ) : (
-              <div className="py-8 text-center text-muted-foreground">
-                {t.blog?.noTags || "No tags found. Create your first tag!"}
-              </div>
+              <AdminEmptyState message={t.blog?.noTags || "No tags found. Create your first tag!"} />
             )}
           </Card>
         </TabsContent>

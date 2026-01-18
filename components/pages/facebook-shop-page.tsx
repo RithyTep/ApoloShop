@@ -3,21 +3,10 @@
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import {
   Dialog,
   DialogContent,
@@ -48,18 +37,14 @@ import {
   Link2,
   RefreshCw,
   ShoppingBag,
-  TrendingUp,
   Eye,
   MousePointer,
   ShoppingCart,
   Plus,
   Check,
-  X,
-  AlertCircle,
   Package,
   Users,
   DollarSign,
-  Settings,
   Unlink,
   ChevronLeft,
   ChevronRight,
@@ -67,13 +52,25 @@ import {
   Send,
   User,
   Clock,
-  Tag,
-  ExternalLink,
 } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/components/ui/use-toast"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  AdminPageHeader,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 // Types
 interface FacebookPage {
@@ -209,6 +206,25 @@ interface ShopProduct {
   isActive: boolean
 }
 
+// Status badge variant mapping
+type BadgeVariant = "default" | "secondary" | "destructive" | "outline"
+
+const statusVariants: Record<string, BadgeVariant> = {
+  ACTIVE: "default",
+  PAUSED: "secondary",
+  ERROR: "destructive",
+  DISCONNECTED: "secondary",
+  PENDING: "outline",
+  SYNCED: "default",
+  IMPORTED: "default",
+  FAILED: "destructive",
+  SKIPPED: "secondary",
+  REMOVED: "secondary",
+  OPEN: "outline",
+  CLOSED: "secondary",
+  SPAM: "destructive",
+}
+
 // API hooks
 function useFacebookPages() {
   return useQuery<{ pages: FacebookPage[]; total: number }>({
@@ -324,23 +340,6 @@ function useShopProducts() {
   })
 }
 
-// Status badge styles
-const statusColors: Record<string, string> = {
-  ACTIVE: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
-  PAUSED: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300",
-  ERROR: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
-  DISCONNECTED: "bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300",
-  PENDING: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
-  SYNCED: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
-  IMPORTED: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
-  FAILED: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
-  SKIPPED: "bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300",
-  REMOVED: "bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300",
-  OPEN: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
-  CLOSED: "bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300",
-  SPAM: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
-}
-
 export function FacebookShopPage() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
@@ -357,7 +356,6 @@ export function FacebookShopPage() {
   // Dialogs
   const [connectDialogOpen, setConnectDialogOpen] = useState(false)
   const [syncDialogOpen, setSyncDialogOpen] = useState(false)
-  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false)
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false)
   const [selectedProducts, setSelectedProducts] = useState<string[]>([])
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
@@ -495,57 +493,62 @@ export function FacebookShopPage() {
     setSelectedPage(pages[0].id)
   }
 
+  // Loading state
+  if (loadingPages) {
+    return (
+      <AdminLoading
+        title="Facebook Shop"
+        subtitle="Connect and manage your Facebook Shop integration"
+        rows={4}
+      />
+    )
+  }
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold flex items-center gap-2">
-            <Facebook className="h-6 w-6 text-blue-600" />
-            Facebook Shop
-          </h1>
-          <p className="text-muted-foreground">
-            Connect and manage your Facebook Shop integration
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {pages.length > 0 && (
-            <Select value={selectedPage || ""} onValueChange={setSelectedPage}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Select page" />
-              </SelectTrigger>
-              <SelectContent>
-                {pages.map((page) => (
-                  <SelectItem key={page.id} value={page.id}>
-                    {page.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          <Button onClick={() => setConnectDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Connect Page
-          </Button>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Facebook Shop"
+        subtitle="Connect and manage your Facebook Shop integration"
+      >
+        {pages.length > 0 && (
+          <Select value={selectedPage || ""} onValueChange={setSelectedPage}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Select page" />
+            </SelectTrigger>
+            <SelectContent>
+              {pages.map((page) => (
+                <SelectItem key={page.id} value={page.id}>
+                  {page.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        <Button onClick={() => setConnectDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Connect Page
+        </Button>
+      </AdminPageHeader>
 
       {/* No pages state */}
-      {!loadingPages && pages.length === 0 && (
-        <Card className="p-12 text-center">
-          <div className="mx-auto w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mb-4">
-            <Facebook className="h-6 w-6 text-white" />
+      {pages.length === 0 && (
+        <AdminDataCard>
+          <div className="p-12 text-center">
+            <div className="mx-auto w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mb-4">
+              <Facebook className="h-6 w-6 text-white" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Connect Your Facebook Page</h3>
+            <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+              Link your Facebook Page to sync products to Facebook Shop, import orders,
+              and manage Messenger conversations for customer support.
+            </p>
+            <Button onClick={() => setConnectDialogOpen(true)}>
+              <Link2 className="h-4 w-4 mr-2" />
+              Connect Facebook
+            </Button>
           </div>
-          <h3 className="text-lg font-semibold mb-2">Connect Your Facebook Page</h3>
-          <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-            Link your Facebook Page to sync products to Facebook Shop, import orders,
-            and manage Messenger conversations for customer support.
-          </p>
-          <Button onClick={() => setConnectDialogOpen(true)}>
-            <Link2 className="h-4 w-4 mr-2" />
-            Connect Facebook
-          </Button>
-        </Card>
+        </AdminDataCard>
       )}
 
       {/* Main content */}
@@ -569,9 +572,9 @@ export function FacebookShopPage() {
                   )}
                   <div>
                     <p className="font-medium">{selectedPageData?.name}</p>
-                    <Badge className={statusColors[selectedPageData?.status || "ACTIVE"]}>
+                    <AdminBadge variant={statusVariants[selectedPageData?.status || "ACTIVE"]}>
                       {selectedPageData?.status}
-                    </Badge>
+                    </AdminBadge>
                   </div>
                 </div>
               </CardContent>
@@ -637,9 +640,9 @@ export function FacebookShopPage() {
               <TabsTrigger value="messenger">
                 Messenger
                 {(conversationsData?.unreadTotal || 0) > 0 && (
-                  <Badge variant="destructive" className="ml-2 text-xs">
+                  <AdminBadge variant="destructive">
                     {conversationsData?.unreadTotal}
-                  </Badge>
+                  </AdminBadge>
                 )}
               </TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
@@ -652,8 +655,8 @@ export function FacebookShopPage() {
                   {[...Array(4)].map((_, i) => (
                     <Card key={i}>
                       <CardContent className="p-4">
-                        <Skeleton className="h-4 w-24 mb-2" />
-                        <Skeleton className="h-8 w-16" />
+                        <div className="h-4 w-24 mb-2 bg-muted animate-pulse rounded" />
+                        <div className="h-8 w-16 bg-muted animate-pulse rounded" />
                       </CardContent>
                     </Card>
                   ))}
@@ -743,9 +746,7 @@ export function FacebookShopPage() {
                     <CardContent>
                       <div className="space-y-3">
                         {analyticsData.topProducts.length === 0 ? (
-                          <p className="text-sm text-muted-foreground text-center py-4">
-                            No products synced yet
-                          </p>
+                          <AdminEmptyState message="No products synced yet" />
                         ) : (
                           analyticsData.topProducts.map((product) => (
                             <div key={product.id} className="flex items-center gap-3">
@@ -791,42 +792,32 @@ export function FacebookShopPage() {
                 </Button>
               </div>
 
-              <Card>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Product</TableHead>
-                      <TableHead>SKU</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Impressions</TableHead>
-                      <TableHead className="text-right">Clicks</TableHead>
-                      <TableHead className="text-right">Purchases</TableHead>
-                      <TableHead className="text-right">Revenue</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loadingProducts ? (
-                      [...Array(5)].map((_, i) => (
-                        <TableRow key={i}>
-                          <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12 ml-auto" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12 ml-auto" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12 ml-auto" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
-                        </TableRow>
-                      ))
-                    ) : productsData?.products.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                          No products synced yet. Click &quot;Sync Products&quot; to get started.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      productsData?.products.map((item) => (
-                        <TableRow key={item.id}>
-                          <TableCell>
+              <AdminDataCard>
+                {loadingProducts ? (
+                  <div className="space-y-4">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="h-16 bg-muted animate-pulse rounded" />
+                    ))}
+                  </div>
+                ) : productsData?.products.length === 0 ? (
+                  <AdminEmptyState message="No products synced yet. Click 'Sync Products' to get started." />
+                ) : (
+                  <AdminTable>
+                    <AdminTableHeader>
+                      <AdminTableHeadRow>
+                        <AdminTableHead>Product</AdminTableHead>
+                        <AdminTableHead>SKU</AdminTableHead>
+                        <AdminTableHead>Status</AdminTableHead>
+                        <AdminTableHead className="text-right">Impressions</AdminTableHead>
+                        <AdminTableHead className="text-right">Clicks</AdminTableHead>
+                        <AdminTableHead className="text-right">Purchases</AdminTableHead>
+                        <AdminTableHead className="text-right">Revenue</AdminTableHead>
+                      </AdminTableHeadRow>
+                    </AdminTableHeader>
+                    <AdminTableBody>
+                      {productsData?.products.map((item) => (
+                        <AdminTableRow key={item.id}>
+                          <AdminTableCell>
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded bg-muted overflow-hidden">
                                 {item.product.imageUrl ? (
@@ -848,23 +839,23 @@ export function FacebookShopPage() {
                                 </p>
                               </div>
                             </div>
-                          </TableCell>
-                          <TableCell className="font-mono text-sm">{item.product.sku}</TableCell>
-                          <TableCell>
-                            <Badge className={statusColors[item.syncStatus]}>
+                          </AdminTableCell>
+                          <AdminTableCell className="font-mono text-sm">{item.product.sku}</AdminTableCell>
+                          <AdminTableCell>
+                            <AdminBadge variant={statusVariants[item.syncStatus]}>
                               {item.syncStatus}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">{item.impressions.toLocaleString()}</TableCell>
-                          <TableCell className="text-right">{item.clicks.toLocaleString()}</TableCell>
-                          <TableCell className="text-right">{item.purchases}</TableCell>
-                          <TableCell className="text-right">${item.revenue.toFixed(2)}</TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </Card>
+                            </AdminBadge>
+                          </AdminTableCell>
+                          <AdminTableCell className="text-right">{item.impressions.toLocaleString()}</AdminTableCell>
+                          <AdminTableCell className="text-right">{item.clicks.toLocaleString()}</AdminTableCell>
+                          <AdminTableCell className="text-right">{item.purchases}</AdminTableCell>
+                          <AdminTableCell className="text-right">${item.revenue.toFixed(2)}</AdminTableCell>
+                        </AdminTableRow>
+                      ))}
+                    </AdminTableBody>
+                  </AdminTable>
+                )}
+              </AdminDataCard>
 
               {/* Pagination */}
               {productsData && productsData.totalPages > 1 && (
@@ -924,77 +915,66 @@ export function FacebookShopPage() {
                 </div>
               </div>
 
-              <Card>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Order ID</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Channel</TableHead>
-                      <TableHead>Items</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loadingOrders ? (
-                      [...Array(5)].map((_, i) => (
-                        <TableRow key={i}>
-                          <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-8" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                        </TableRow>
-                      ))
-                    ) : ordersData?.orders.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                          No orders from Facebook yet
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      ordersData?.orders.map((order) => (
-                        <TableRow key={order.id}>
-                          <TableCell className="font-mono text-sm">
+              <AdminDataCard>
+                {loadingOrders ? (
+                  <div className="space-y-4">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="h-16 bg-muted animate-pulse rounded" />
+                    ))}
+                  </div>
+                ) : ordersData?.orders.length === 0 ? (
+                  <AdminEmptyState message="No orders from Facebook yet" />
+                ) : (
+                  <AdminTable>
+                    <AdminTableHeader>
+                      <AdminTableHeadRow>
+                        <AdminTableHead>Order ID</AdminTableHead>
+                        <AdminTableHead>Customer</AdminTableHead>
+                        <AdminTableHead>Channel</AdminTableHead>
+                        <AdminTableHead>Items</AdminTableHead>
+                        <AdminTableHead className="text-right">Total</AdminTableHead>
+                        <AdminTableHead>Status</AdminTableHead>
+                        <AdminTableHead>Date</AdminTableHead>
+                        <AdminTableHead></AdminTableHead>
+                      </AdminTableHeadRow>
+                    </AdminTableHeader>
+                    <AdminTableBody>
+                      {ordersData?.orders.map((order) => (
+                        <AdminTableRow key={order.id}>
+                          <AdminTableCell className="font-mono text-sm">
                             {order.facebookOrderId.substring(0, 10)}...
-                          </TableCell>
-                          <TableCell>
+                          </AdminTableCell>
+                          <AdminTableCell>
                             <div>
                               <p className="font-medium">{order.buyerName}</p>
                               {order.buyerEmail && (
                                 <p className="text-xs text-muted-foreground">{order.buyerEmail}</p>
                               )}
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="capitalize">
+                          </AdminTableCell>
+                          <AdminTableCell>
+                            <AdminBadge variant="outline">
                               {order.channel.replace("_", " ")}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{order.items.length}</TableCell>
-                          <TableCell className="text-right">${order.totalUsd.toFixed(2)}</TableCell>
-                          <TableCell>
+                            </AdminBadge>
+                          </AdminTableCell>
+                          <AdminTableCell>{order.items.length}</AdminTableCell>
+                          <AdminTableCell className="text-right">${order.totalUsd.toFixed(2)}</AdminTableCell>
+                          <AdminTableCell>
                             <div className="space-y-1">
-                              <Badge className={statusColors[order.importStatus]}>
+                              <AdminBadge variant={statusVariants[order.importStatus]}>
                                 {order.importStatus}
-                              </Badge>
+                              </AdminBadge>
                               {order.linkedOrder && (
                                 <p className="text-xs text-muted-foreground">
                                   {order.linkedOrder.orderNumber}
                                 </p>
                               )}
                             </div>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
+                          </AdminTableCell>
+                          <AdminTableCell className="text-sm text-muted-foreground">
                             {new Date(order.orderedAt).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
+                          </AdminTableCell>
+                          <AdminTableCell>
                             {order.importStatus === "PENDING" && (
                               <Button
                                 variant="outline"
@@ -1005,13 +985,13 @@ export function FacebookShopPage() {
                                 Import
                               </Button>
                             )}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </Card>
+                          </AdminTableCell>
+                        </AdminTableRow>
+                      ))}
+                    </AdminTableBody>
+                  </AdminTable>
+                )}
+              </AdminDataCard>
 
               {/* Pagination */}
               {ordersData && ordersData.totalPages > 1 && (
@@ -1071,18 +1051,17 @@ export function FacebookShopPage() {
                         <div className="p-4 space-y-3">
                           {[...Array(5)].map((_, i) => (
                             <div key={i} className="flex items-center gap-3">
-                              <Skeleton className="h-10 w-10 rounded-full" />
+                              <div className="h-10 w-10 rounded-full bg-muted animate-pulse" />
                               <div className="flex-1">
-                                <Skeleton className="h-4 w-24 mb-1" />
-                                <Skeleton className="h-3 w-full" />
+                                <div className="h-4 w-24 mb-1 bg-muted animate-pulse rounded" />
+                                <div className="h-3 w-full bg-muted animate-pulse rounded" />
                               </div>
                             </div>
                           ))}
                         </div>
                       ) : conversationsData?.conversations.length === 0 ? (
-                        <div className="p-8 text-center text-muted-foreground">
-                          <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">No conversations yet</p>
+                        <div className="p-8">
+                          <AdminEmptyState message="No conversations yet" />
                         </div>
                       ) : (
                         <div className="divide-y">
@@ -1112,9 +1091,9 @@ export function FacebookShopPage() {
                                       {conv.participantName || "Unknown User"}
                                     </p>
                                     {conv.unreadCount > 0 && (
-                                      <Badge variant="destructive" className="text-xs">
+                                      <AdminBadge variant="destructive">
                                         {conv.unreadCount}
-                                      </Badge>
+                                      </AdminBadge>
                                     )}
                                   </div>
                                   <p className="text-xs text-muted-foreground truncate">
@@ -1153,9 +1132,9 @@ export function FacebookShopPage() {
                               </CardDescription>
                             </div>
                           </div>
-                          <Badge className={statusColors[conversationsData?.conversations.find(c => c.id === selectedConversation)?.status || "OPEN"]}>
+                          <AdminBadge variant={statusVariants[conversationsData?.conversations.find(c => c.id === selectedConversation)?.status || "OPEN"]}>
                             {conversationsData?.conversations.find(c => c.id === selectedConversation)?.status}
-                          </Badge>
+                          </AdminBadge>
                         </div>
                       </CardHeader>
                       <CardContent className="p-0">
@@ -1164,7 +1143,7 @@ export function FacebookShopPage() {
                             <div className="space-y-3">
                               {[...Array(5)].map((_, i) => (
                                 <div key={i} className={`flex ${i % 2 === 0 ? "justify-start" : "justify-end"}`}>
-                                  <Skeleton className="h-12 w-48 rounded-lg" />
+                                  <div className="h-12 w-48 rounded-lg bg-muted animate-pulse" />
                                 </div>
                               ))}
                             </div>
@@ -1212,11 +1191,8 @@ export function FacebookShopPage() {
                       </CardContent>
                     </>
                   ) : (
-                    <div className="h-full flex items-center justify-center text-muted-foreground">
-                      <div className="text-center">
-                        <MessageCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                        <p>Select a conversation to view messages</p>
-                      </div>
+                    <div className="h-full flex items-center justify-center text-muted-foreground p-8">
+                      <AdminEmptyState message="Select a conversation to view messages" />
                     </div>
                   )}
                 </Card>
@@ -1397,10 +1373,10 @@ export function FacebookShopPage() {
                       </p>
                     </div>
                     {isAlreadySynced && (
-                      <Badge variant="outline" className="text-xs">
+                      <AdminBadge variant="outline">
                         <Check className="h-3 w-3 mr-1" />
                         Synced
-                      </Badge>
+                      </AdminBadge>
                     )}
                   </div>
                 )

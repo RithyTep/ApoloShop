@@ -5,13 +5,19 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Switch } from "@/components/ui/switch"
 import { Plus, Pencil, Trash, GripVertical } from "lucide-react"
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, Category } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
+import {
+  AdminPageHeader,
+  AdminDataCard,
+  AdminEmptyState,
+  AdminLoading,
+  AdminBadge,
+} from "@/components/admin"
 import {
   DndContext,
   closestCenter,
@@ -82,11 +88,11 @@ function SortableCategoryItem({ category, onEdit, onDelete, onToggleActive }: So
         />
         <span className="text-sm text-foreground">Enabled</span>
       </div>
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
         <Button
           variant="outline"
           size="sm"
-          className="text-xs bg-transparent"
+          className="h-8 w-8 p-0 bg-transparent"
           onClick={() => onEdit(category)}
         >
           <Pencil size={14} />
@@ -94,7 +100,7 @@ function SortableCategoryItem({ category, onEdit, onDelete, onToggleActive }: So
         <Button
           variant="outline"
           size="sm"
-          className="text-xs text-destructive hover:text-destructive bg-transparent"
+          className="h-8 w-8 p-0 text-destructive hover:text-destructive bg-transparent"
           onClick={() => onDelete(category)}
         >
           <Trash size={14} />
@@ -231,35 +237,26 @@ export function CategoriesPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Categories</h1>
-            <p className="text-muted-foreground mt-2">Manage product categories with drag & drop reordering</p>
-          </div>
-        </div>
-        <Card className="p-6 space-y-4">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-16 w-full" />
-          ))}
-        </Card>
-      </div>
+      <AdminLoading
+        title="Categories"
+        subtitle="Manage product categories with drag & drop reordering"
+        rows={3}
+      />
     )
   }
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Categories</h1>
-          <p className="text-muted-foreground mt-2">Manage product categories with drag & drop reordering</p>
-        </div>
-        <Button onClick={openCreateDialog} className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-          <Plus size={16} /> Add Category
+      <AdminPageHeader
+        title="Categories"
+        subtitle="Manage product categories with drag & drop reordering"
+      >
+        <Button onClick={openCreateDialog}>
+          <Plus size={16} className="mr-2" /> Add Category
         </Button>
-      </div>
+      </AdminPageHeader>
 
-      <Card className="p-6 space-y-4">
+      <AdminDataCard>
         {categories.length > 0 ? (
           <DndContext
             sensors={sensors}
@@ -284,11 +281,9 @@ export function CategoriesPage() {
             </SortableContext>
           </DndContext>
         ) : (
-          <div className="py-8 text-center text-muted-foreground">
-            No categories found. Add your first category!
-          </div>
+          <AdminEmptyState message="No categories found. Add your first category!" />
         )}
-      </Card>
+      </AdminDataCard>
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

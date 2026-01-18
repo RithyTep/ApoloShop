@@ -1,18 +1,29 @@
 "use client"
 
 import { useState } from "react"
-import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
-import { Check, X, Trash, HelpCircle, MessageCircle, AlertCircle, Send } from "lucide-react"
+import { Check, X, Trash, MessageCircle, Send } from "lucide-react"
 import { useAdminQuestions, useUpdateQuestionStatus, useDeleteQuestion, useCreateAnswer, ProductQuestion } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
+import {
+  AdminPageHeader,
+  AdminFilterCard,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 type QuestionStatus = "PENDING" | "APPROVED" | "REJECTED"
 
@@ -108,11 +119,11 @@ export function QAPage() {
   const getStatusBadge = (status: QuestionStatus) => {
     switch (status) {
       case "PENDING":
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">Pending</Badge>
+        return <AdminBadge variant="outline">Pending</AdminBadge>
       case "APPROVED":
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">Approved</Badge>
+        return <AdminBadge variant="default">Approved</AdminBadge>
       case "REJECTED":
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300">Rejected</Badge>
+        return <AdminBadge variant="destructive">Rejected</AdminBadge>
     }
   }
 
@@ -128,36 +139,30 @@ export function QAPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-10 w-40" />
-        </div>
-        <Card className="p-6">
-          <div className="space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Skeleton key={i} className="h-20 w-full" />
-            ))}
-          </div>
-        </Card>
-      </div>
+      <AdminLoading
+        title="Q&A Management"
+        subtitle="Manage customer questions and provide official answers"
+        rows={5}
+      />
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <HelpCircle className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold text-foreground">Q&A Management</h1>
-          {statusCounts.PENDING > 0 && (
-            <Badge variant="destructive" className="ml-2">
-              {statusCounts.PENDING} Pending
-            </Badge>
-          )}
-        </div>
+      <AdminPageHeader
+        title="Q&A Management"
+        subtitle="Manage customer questions and provide official answers"
+      >
+        {statusCounts.PENDING > 0 && (
+          <AdminBadge variant="destructive">
+            {statusCounts.PENDING} Pending
+          </AdminBadge>
+        )}
+      </AdminPageHeader>
 
+      {/* Filter */}
+      <AdminFilterCard>
         <Select
           value={statusFilter}
           onValueChange={(value) => {
@@ -176,85 +181,39 @@ export function QAPage() {
             ))}
           </SelectContent>
         </Select>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-yellow-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Pending</p>
-              <p className="text-2xl font-bold">{statusCounts.PENDING}</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Check className="h-5 w-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Approved</p>
-              <p className="text-2xl font-bold">{statusCounts.APPROVED}</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <X className="h-5 w-5 text-red-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Rejected</p>
-              <p className="text-2xl font-bold">{statusCounts.REJECTED}</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <HelpCircle className="h-5 w-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total</p>
-              <p className="text-2xl font-bold">{pagination?.total || 0}</p>
-            </div>
-          </div>
-        </Card>
-      </div>
+        <div className="flex-1" />
+        <div className="text-sm text-muted-foreground">
+          {pagination?.total || 0} questions total | Pending: {statusCounts.PENDING} | Approved: {statusCounts.APPROVED} | Rejected: {statusCounts.REJECTED}
+        </div>
+      </AdminFilterCard>
 
       {/* Questions Table */}
-      <Card>
+      <AdminDataCard>
         {questions.length === 0 ? (
-          <div className="p-12 text-center">
-            <HelpCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium text-foreground mb-2">No Questions Found</h3>
-            <p className="text-muted-foreground">
-              {statusFilter === "ALL"
+          <AdminEmptyState
+            message={
+              statusFilter === "ALL"
                 ? "No questions have been submitted yet."
-                : `No ${statusFilter.toLowerCase()} questions found.`}
-            </p>
-          </div>
+                : `No ${statusFilter.toLowerCase()} questions found.`
+            }
+          />
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Product</TableHead>
-                <TableHead>Question</TableHead>
-                <TableHead>Asked By</TableHead>
-                <TableHead>Answers</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          <AdminTable>
+            <AdminTableHeader>
+              <AdminTableHeadRow>
+                <AdminTableHead>Product</AdminTableHead>
+                <AdminTableHead>Question</AdminTableHead>
+                <AdminTableHead>Asked By</AdminTableHead>
+                <AdminTableHead>Answers</AdminTableHead>
+                <AdminTableHead>Status</AdminTableHead>
+                <AdminTableHead>Date</AdminTableHead>
+                <AdminTableHead className="text-right">Actions</AdminTableHead>
+              </AdminTableHeadRow>
+            </AdminTableHeader>
+            <AdminTableBody>
               {questions.map((question) => (
-                <TableRow key={question.id}>
-                  <TableCell>
+                <AdminTableRow key={question.id}>
+                  <AdminTableCell>
                     {question.product ? (
                       <div className="flex items-center gap-3">
                         {question.product.imageUrl && (
@@ -265,38 +224,38 @@ export function QAPage() {
                           />
                         )}
                         <div>
-                          <p className="font-medium text-foreground text-sm">{question.product.nameEn}</p>
+                          <p className="font-medium text-sm">{question.product.nameEn}</p>
                           <p className="text-xs text-muted-foreground">{question.product.nameKh}</p>
                         </div>
                       </div>
                     ) : (
                       <span className="text-muted-foreground">Product deleted</span>
                     )}
-                  </TableCell>
-                  <TableCell className="max-w-xs">
-                    <p className="text-sm text-foreground line-clamp-2">{question.question}</p>
-                  </TableCell>
-                  <TableCell>
+                  </AdminTableCell>
+                  <AdminTableCell className="max-w-xs">
+                    <p className="text-sm line-clamp-2">{question.question}</p>
+                  </AdminTableCell>
+                  <AdminTableCell>
                     <div>
                       <p className="font-medium text-sm">{question.askerName}</p>
                       {question.askerEmail && (
                         <p className="text-xs text-muted-foreground">{question.askerEmail}</p>
                       )}
                     </div>
-                  </TableCell>
-                  <TableCell>
+                  </AdminTableCell>
+                  <AdminTableCell>
                     <div className="flex items-center gap-1">
                       <MessageCircle className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm">{question.answerCount}</span>
                     </div>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(question.status)}</TableCell>
-                  <TableCell>
+                  </AdminTableCell>
+                  <AdminTableCell>{getStatusBadge(question.status)}</AdminTableCell>
+                  <AdminTableCell>
                     <span className="text-sm text-muted-foreground">
                       {formatDate(question.createdAt)}
                     </span>
-                  </TableCell>
-                  <TableCell>
+                  </AdminTableCell>
+                  <AdminTableCell>
                     <div className="flex items-center justify-end gap-1">
                       {question.status === "APPROVED" && (
                         <Button
@@ -341,11 +300,11 @@ export function QAPage() {
                         <Trash className="h-4 w-4" />
                       </Button>
                     </div>
-                  </TableCell>
-                </TableRow>
+                  </AdminTableCell>
+                </AdminTableRow>
               ))}
-            </TableBody>
-          </Table>
+            </AdminTableBody>
+          </AdminTable>
         )}
 
         {/* Pagination */}
@@ -372,7 +331,7 @@ export function QAPage() {
             </Button>
           </div>
         )}
-      </Card>
+      </AdminDataCard>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteQuestion} onOpenChange={() => setDeleteQuestion(null)}>
@@ -413,7 +372,7 @@ export function QAPage() {
               <p className="text-sm font-medium text-muted-foreground mb-1">Question:</p>
               <p className="text-foreground">{answerQuestion?.question}</p>
               <p className="text-xs text-muted-foreground mt-2">
-                Asked by {answerQuestion?.askerName} • {answerQuestion?.product?.nameEn}
+                Asked by {answerQuestion?.askerName} - {answerQuestion?.product?.nameEn}
               </p>
             </div>
 

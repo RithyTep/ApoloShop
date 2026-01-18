@@ -2,10 +2,8 @@
 
 import { useState } from "react"
 import { Card } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
@@ -60,6 +58,21 @@ import {
   Client,
 } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
+import {
+  AdminPageHeader,
+  AdminFilterCard,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 interface ClientFormData {
   name: string
@@ -222,35 +235,26 @@ export function SuperAdminPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Super Admin</h1>
-          <p className="text-muted-foreground mt-2">Manage all clients and tenants</p>
-        </div>
-        <Card className="p-6">
-          <div className="space-y-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-16 w-full" />
-            ))}
-          </div>
-        </Card>
-      </div>
+      <AdminLoading
+        title="Super Admin"
+        subtitle="Manage all clients and tenants"
+        rows={4}
+      />
     )
   }
 
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Super Admin</h1>
-          <p className="text-muted-foreground mt-2">Manage all clients and tenants</p>
-        </div>
+      <AdminPageHeader
+        title="Super Admin"
+        subtitle="Manage all clients and tenants"
+      >
         <Button onClick={() => setCreateDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           New Client
         </Button>
-      </div>
+      </AdminPageHeader>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -305,142 +309,136 @@ export function SuperAdminPage() {
       </div>
 
       {/* Filters */}
-      <Card className="p-4">
-        <div className="flex gap-4 items-center flex-wrap">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search clients..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value)
-                setPage(1)
-              }}
-              className="pl-9"
-            />
-          </div>
-          <Select
-            value={statusFilter}
-            onValueChange={(value: "all" | "active" | "inactive") => {
-              setStatusFilter(value)
+      <AdminFilterCard>
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search clients..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value)
               setPage(1)
             }}
-          >
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="text-sm text-muted-foreground">
-            {pagination?.total || 0} clients found
-          </div>
+            className="pl-9"
+          />
         </div>
-      </Card>
+        <Select
+          value={statusFilter}
+          onValueChange={(value: "all" | "active" | "inactive") => {
+            setStatusFilter(value)
+            setPage(1)
+          }}
+        >
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="text-sm text-muted-foreground">
+          {pagination?.total || 0} clients found
+        </div>
+      </AdminFilterCard>
 
       {/* Clients Table */}
-      <Card className="p-6">
-        <div className="overflow-x-auto">
-          {clients.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-border">
-                  <TableHead className="text-foreground font-semibold">Client</TableHead>
-                  <TableHead className="text-foreground font-semibold">Slug/Domain</TableHead>
-                  <TableHead className="text-foreground font-semibold">Products</TableHead>
-                  <TableHead className="text-foreground font-semibold">Orders</TableHead>
-                  <TableHead className="text-foreground font-semibold">Customers</TableHead>
-                  <TableHead className="text-foreground font-semibold">Status</TableHead>
-                  <TableHead className="text-foreground font-semibold">Created</TableHead>
-                  <TableHead className="text-foreground font-semibold">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {clients.map((client) => (
-                  <TableRow key={client.id} className="border-b border-border hover:bg-muted/50">
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        {client.logoUrl ? (
-                          <img
-                            src={client.logoUrl}
-                            alt={client.name}
-                            className="h-8 w-8 rounded object-cover"
-                          />
-                        ) : (
-                          <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
-                            <Building2 className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                        )}
-                        <span className="font-medium">{client.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="text-sm font-mono">{client.slug}</div>
-                        {client.domain && (
-                          <div className="text-xs text-muted-foreground">{client.domain}</div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>{client._count?.products || 0}</TableCell>
-                    <TableCell>{client._count?.orders || 0}</TableCell>
-                    <TableCell>{client._count?.customers || 0}</TableCell>
-                    <TableCell>
-                      <Badge variant={client.isActive ? "default" : "secondary"}>
-                        {client.isActive ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm">{formatDate(client.createdAt)}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setViewClient(client)}
-                          title="View details"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEditDialog(client)}
-                          title="Edit client"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleImpersonate(client)}
-                          title="Impersonate client admin"
-                        >
-                          <UserCog className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDeleteClient(client)}
-                          className="text-destructive hover:text-destructive"
-                          title="Delete client"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="py-8 text-center text-muted-foreground">
-              No clients found
-            </div>
-          )}
-        </div>
+      <AdminDataCard>
+        {clients.length > 0 ? (
+          <AdminTable>
+            <AdminTableHeader>
+              <AdminTableHeadRow>
+                <AdminTableHead>Client</AdminTableHead>
+                <AdminTableHead>Slug/Domain</AdminTableHead>
+                <AdminTableHead>Products</AdminTableHead>
+                <AdminTableHead>Orders</AdminTableHead>
+                <AdminTableHead>Customers</AdminTableHead>
+                <AdminTableHead>Status</AdminTableHead>
+                <AdminTableHead>Created</AdminTableHead>
+                <AdminTableHead>Actions</AdminTableHead>
+              </AdminTableHeadRow>
+            </AdminTableHeader>
+            <AdminTableBody>
+              {clients.map((client) => (
+                <AdminTableRow key={client.id}>
+                  <AdminTableCell>
+                    <div className="flex items-center gap-3">
+                      {client.logoUrl ? (
+                        <img
+                          src={client.logoUrl}
+                          alt={client.name}
+                          className="h-8 w-8 rounded object-cover"
+                        />
+                      ) : (
+                        <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      )}
+                      <span className="font-medium">{client.name}</span>
+                    </div>
+                  </AdminTableCell>
+                  <AdminTableCell>
+                    <div className="space-y-1">
+                      <div className="text-sm font-mono">{client.slug}</div>
+                      {client.domain && (
+                        <div className="text-xs text-muted-foreground">{client.domain}</div>
+                      )}
+                    </div>
+                  </AdminTableCell>
+                  <AdminTableCell>{client._count?.products || 0}</AdminTableCell>
+                  <AdminTableCell>{client._count?.orders || 0}</AdminTableCell>
+                  <AdminTableCell>{client._count?.customers || 0}</AdminTableCell>
+                  <AdminTableCell>
+                    <AdminBadge variant={client.isActive ? "default" : "secondary"}>
+                      {client.isActive ? "Active" : "Inactive"}
+                    </AdminBadge>
+                  </AdminTableCell>
+                  <AdminTableCell className="text-sm">{formatDate(client.createdAt)}</AdminTableCell>
+                  <AdminTableCell>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setViewClient(client)}
+                        title="View details"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEditDialog(client)}
+                        title="Edit client"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleImpersonate(client)}
+                        title="Impersonate client admin"
+                      >
+                        <UserCog className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeleteClient(client)}
+                        className="text-destructive hover:text-destructive"
+                        title="Delete client"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </AdminTableCell>
+                </AdminTableRow>
+              ))}
+            </AdminTableBody>
+          </AdminTable>
+        ) : (
+          <AdminEmptyState message="No clients found" />
+        )}
 
         {/* Pagination */}
         {pagination && pagination.totalPages > 1 && (
@@ -468,7 +466,7 @@ export function SuperAdminPage() {
             </div>
           </div>
         )}
-      </Card>
+      </AdminDataCard>
 
       {/* Create Client Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
@@ -529,7 +527,7 @@ export function SuperAdminPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="USD">USD ($)</SelectItem>
-                    <SelectItem value="KHR">KHR (៛)</SelectItem>
+                    <SelectItem value="KHR">KHR (&#6107;)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -625,7 +623,7 @@ export function SuperAdminPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="USD">USD ($)</SelectItem>
-                    <SelectItem value="KHR">KHR (៛)</SelectItem>
+                    <SelectItem value="KHR">KHR (&#6107;)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -696,11 +694,13 @@ export function SuperAdminPage() {
                   <span className="text-muted-foreground">Slug:</span>
                   <span className="ml-2 font-mono">{viewClient.slug}</span>
                 </div>
-                <div>
+                <div className="flex items-center">
                   <span className="text-muted-foreground">Status:</span>
-                  <Badge className="ml-2" variant={viewClient.isActive ? "default" : "secondary"}>
-                    {viewClient.isActive ? "Active" : "Inactive"}
-                  </Badge>
+                  <span className="ml-2">
+                    <AdminBadge variant={viewClient.isActive ? "default" : "secondary"}>
+                      {viewClient.isActive ? "Active" : "Inactive"}
+                    </AdminBadge>
+                  </span>
                 </div>
                 {viewClient.domain && (
                   <div className="col-span-2">

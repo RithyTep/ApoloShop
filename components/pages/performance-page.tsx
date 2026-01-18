@@ -3,9 +3,7 @@
 import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -13,14 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -46,7 +36,6 @@ import {
   Activity,
   AlertTriangle,
   CheckCircle,
-  Clock,
   Database,
   Server,
   Zap,
@@ -55,6 +44,20 @@ import {
   RefreshCw,
   Eye,
 } from "lucide-react";
+import {
+  AdminPageHeader,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin";
 import {
   usePerformanceSummary,
   usePerformanceErrors,
@@ -149,39 +152,18 @@ export function PerformancePage() {
     }
   };
 
-  const renderLoadingState = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="p-6">
-            <Skeleton className="h-4 w-24 mb-2" />
-            <Skeleton className="h-8 w-32" />
-          </Card>
-        ))}
-      </div>
-      <Card className="p-6">
-        <Skeleton className="h-6 w-32 mb-4" />
-        <Skeleton className="h-[300px] w-full" />
-      </Card>
-    </div>
-  );
-
-  const getRatingBadge = (rating: string) => {
-    const variants = {
-      good: "success",
-      "needs-improvement": "warning",
-      poor: "destructive",
-    } as const;
+  // Loading state
+  if (perfLoading && errorsLoading) {
     return (
-      <Badge variant={variants[rating as keyof typeof variants] as "success" | "warning" | "destructive" | undefined}>
-        {rating}
-      </Badge>
+      <AdminLoading
+        title="Performance"
+        subtitle="Monitor Core Web Vitals, API performance, and errors"
+        rows={5}
+      />
     );
-  };
+  }
 
   const renderOverviewTab = () => {
-    if (perfLoading) return renderLoadingState();
-
     const webVitals = perfData?.webVitals || [];
     const api = perfData?.api;
     const database = perfData?.database;
@@ -265,9 +247,7 @@ export function PerformancePage() {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-              No Web Vitals data yet. Add the WebVitalsReporter component to your app.
-            </div>
+            <AdminEmptyState message="No Web Vitals data yet. Add the WebVitalsReporter component to your app." />
           )}
         </Card>
 
@@ -299,9 +279,7 @@ export function PerformancePage() {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-              No errors recorded
-            </div>
+            <AdminEmptyState message="No errors recorded" />
           )}
         </Card>
       </div>
@@ -309,8 +287,6 @@ export function PerformancePage() {
   };
 
   const renderWebVitalsTab = () => {
-    if (perfLoading) return renderLoadingState();
-
     const webVitals = perfData?.webVitals || [];
     const ratings = perfData?.webVitalRatings || {};
 
@@ -419,8 +395,6 @@ export function PerformancePage() {
   };
 
   const renderApiTab = () => {
-    if (perfLoading) return renderLoadingState();
-
     const api = perfData?.api;
     const slowEndpoints = api?.slowestEndpoints || [];
 
@@ -455,48 +429,44 @@ export function PerformancePage() {
         </div>
 
         {/* Slowest Endpoints */}
-        <Card className="p-6">
+        <AdminDataCard>
           <h3 className="text-lg font-semibold mb-4">Slowest Endpoints</h3>
           {slowEndpoints.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Endpoint</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead className="text-right">Avg Time</TableHead>
-                  <TableHead className="text-right">Requests</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <AdminTable>
+              <AdminTableHeader>
+                <AdminTableHeadRow>
+                  <AdminTableHead>Endpoint</AdminTableHead>
+                  <AdminTableHead>Method</AdminTableHead>
+                  <AdminTableHead className="text-right">Avg Time</AdminTableHead>
+                  <AdminTableHead className="text-right">Requests</AdminTableHead>
+                </AdminTableHeadRow>
+              </AdminTableHeader>
+              <AdminTableBody>
                 {slowEndpoints.map((endpoint, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-mono text-sm">{endpoint.path}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{endpoint.method || "GET"}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
+                  <AdminTableRow key={index}>
+                    <AdminTableCell className="font-mono text-sm">{endpoint.path}</AdminTableCell>
+                    <AdminTableCell>
+                      <AdminBadge variant="outline">{endpoint.method || "GET"}</AdminBadge>
+                    </AdminTableCell>
+                    <AdminTableCell className="text-right">
                       {Math.round(endpoint.avgTime)}ms
-                    </TableCell>
-                    <TableCell className="text-right">
+                    </AdminTableCell>
+                    <AdminTableCell className="text-right">
                       {endpoint.count.toLocaleString()}
-                    </TableCell>
-                  </TableRow>
+                    </AdminTableCell>
+                  </AdminTableRow>
                 ))}
-              </TableBody>
-            </Table>
+              </AdminTableBody>
+            </AdminTable>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No API data collected yet
-            </div>
+            <AdminEmptyState message="No API data collected yet" />
           )}
-        </Card>
+        </AdminDataCard>
       </div>
     );
   };
 
   const renderDatabaseTab = () => {
-    if (perfLoading) return renderLoadingState();
-
     const database = perfData?.database;
     const slowQueries = database?.slowestQueries || [];
 
@@ -525,49 +495,45 @@ export function PerformancePage() {
         </div>
 
         {/* Slowest Queries */}
-        <Card className="p-6">
+        <AdminDataCard>
           <h3 className="text-lg font-semibold mb-4">Slowest Queries</h3>
           {slowQueries.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Query</TableHead>
-                  <TableHead className="text-right">Avg Time</TableHead>
-                  <TableHead className="text-right">Count</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <AdminTable>
+              <AdminTableHeader>
+                <AdminTableHeadRow>
+                  <AdminTableHead>Query</AdminTableHead>
+                  <AdminTableHead className="text-right">Avg Time</AdminTableHead>
+                  <AdminTableHead className="text-right">Count</AdminTableHead>
+                </AdminTableHeadRow>
+              </AdminTableHeader>
+              <AdminTableBody>
                 {slowQueries.map((query, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-mono text-sm">{query.name}</TableCell>
-                    <TableCell className="text-right">
+                  <AdminTableRow key={index}>
+                    <AdminTableCell className="font-mono text-sm">{query.name}</AdminTableCell>
+                    <AdminTableCell className="text-right">
                       {Math.round(query.avgTime)}ms
-                    </TableCell>
-                    <TableCell className="text-right">
+                    </AdminTableCell>
+                    <AdminTableCell className="text-right">
                       {query.count.toLocaleString()}
-                    </TableCell>
-                  </TableRow>
+                    </AdminTableCell>
+                  </AdminTableRow>
                 ))}
-              </TableBody>
-            </Table>
+              </AdminTableBody>
+            </AdminTable>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No database query data collected yet
-            </div>
+            <AdminEmptyState message="No database query data collected yet" />
           )}
-        </Card>
+        </AdminDataCard>
       </div>
     );
   };
 
   const renderErrorsTab = () => {
-    if (errorsLoading) return renderLoadingState();
-
     const errors = errorsData?.errors || [];
 
     return (
       <div className="space-y-6">
-        <Card className="p-6">
+        <AdminDataCard>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Unresolved Errors</h3>
             <Button variant="outline" size="sm" onClick={() => refetchErrors()}>
@@ -577,20 +543,20 @@ export function PerformancePage() {
           </div>
 
           {errors.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Error</TableHead>
-                  <TableHead>Path</TableHead>
-                  <TableHead className="text-right">Count</TableHead>
-                  <TableHead>Last Seen</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <AdminTable>
+              <AdminTableHeader>
+                <AdminTableHeadRow>
+                  <AdminTableHead>Error</AdminTableHead>
+                  <AdminTableHead>Path</AdminTableHead>
+                  <AdminTableHead className="text-right">Count</AdminTableHead>
+                  <AdminTableHead>Last Seen</AdminTableHead>
+                  <AdminTableHead className="text-right">Actions</AdminTableHead>
+                </AdminTableHeadRow>
+              </AdminTableHeader>
+              <AdminTableBody>
                 {errors.map((error) => (
-                  <TableRow key={error.id}>
-                    <TableCell>
+                  <AdminTableRow key={error.id}>
+                    <AdminTableCell>
                       <div className="flex items-center gap-2">
                         <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0" />
                         <span className="font-medium truncate max-w-[300px]">
@@ -598,23 +564,23 @@ export function PerformancePage() {
                         </span>
                       </div>
                       {error.name && (
-                        <Badge variant="outline" className="mt-1">
+                        <AdminBadge variant="outline" className="mt-1">
                           {error.name}
-                        </Badge>
+                        </AdminBadge>
                       )}
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">
+                    </AdminTableCell>
+                    <AdminTableCell className="font-mono text-sm">
                       {error.path || "-"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Badge variant={error.count > 10 ? "destructive" : "secondary"}>
+                    </AdminTableCell>
+                    <AdminTableCell className="text-right">
+                      <AdminBadge variant={error.count > 10 ? "destructive" : "secondary"}>
                         {error.count}x
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                      </AdminBadge>
+                    </AdminTableCell>
+                    <AdminTableCell className="text-sm text-muted-foreground">
                       {new Date(error.lastSeen).toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-right">
+                    </AdminTableCell>
+                    <AdminTableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Button
                           variant="ghost"
@@ -632,18 +598,18 @@ export function PerformancePage() {
                           <CheckCircle className="h-4 w-4" />
                         </Button>
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </AdminTableCell>
+                  </AdminTableRow>
                 ))}
-              </TableBody>
-            </Table>
+              </AdminTableBody>
+            </AdminTable>
           ) : (
             <div className="text-center py-8">
-              <CheckCircle className="h-12 w-12 mx-auto text-success mb-4" />
+              <CheckCircle className="h-12 w-12 mx-auto text-green-500 mb-4" />
               <p className="text-muted-foreground">No unresolved errors</p>
             </div>
           )}
-        </Card>
+        </AdminDataCard>
 
         {/* Error Detail Dialog */}
         <Dialog open={!!selectedError} onOpenChange={() => setSelectedError(null)}>
@@ -724,36 +690,31 @@ export function PerformancePage() {
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Performance</h1>
-          <p className="text-muted-foreground mt-2">
-            Monitor Core Web Vitals, API performance, and errors
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <Select value={dateRange} onValueChange={setDateRange}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="24h">Last 24h</SelectItem>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            variant="outline"
-            onClick={() => {
-              refetchPerf();
-              refetchErrors();
-            }}
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Performance"
+        subtitle="Monitor Core Web Vitals, API performance, and errors"
+      >
+        <Select value={dateRange} onValueChange={setDateRange}>
+          <SelectTrigger className="w-32">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="24h">Last 24h</SelectItem>
+            <SelectItem value="7d">Last 7 days</SelectItem>
+            <SelectItem value="30d">Last 30 days</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button
+          variant="outline"
+          onClick={() => {
+            refetchPerf();
+            refetchErrors();
+          }}
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
+      </AdminPageHeader>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -778,9 +739,9 @@ export function PerformancePage() {
             <AlertTriangle className="h-4 w-4" />
             Errors
             {perfData?.errors?.unresolved ? (
-              <Badge variant="destructive" className="ml-1">
+              <AdminBadge variant="destructive">
                 {perfData.errors.unresolved}
-              </Badge>
+              </AdminBadge>
             ) : null}
           </TabsTrigger>
         </TabsList>

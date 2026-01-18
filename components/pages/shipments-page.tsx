@@ -5,9 +5,6 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -23,12 +20,25 @@ import {
   Search,
   AlertCircle,
   ArrowRight,
-  PackageCheck,
-  PackageX,
   SplitSquareVertical,
 } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/components/ui/use-toast"
+import {
+  AdminPageHeader,
+  AdminFilterCard,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 // Types
 type ShipmentStatus = "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED"
@@ -165,28 +175,6 @@ const courierOptions: { value: CourierProvider; label: string }[] = [
   { value: "OTHER", label: "Other" },
 ]
 
-const statusIcons: Record<ShipmentStatus, typeof Package> = {
-  PENDING: Clock,
-  PROCESSING: Package,
-  SHIPPED: Truck,
-  DELIVERED: CheckCircle,
-  CANCELLED: X,
-}
-
-const statusColors: Record<ShipmentStatus, string> = {
-  PENDING: "bg-yellow-100 text-yellow-800",
-  PROCESSING: "bg-blue-100 text-blue-800",
-  SHIPPED: "bg-purple-100 text-purple-800",
-  DELIVERED: "bg-green-100 text-green-800",
-  CANCELLED: "bg-red-100 text-red-800",
-}
-
-const typeColors: Record<ShipmentType, string> = {
-  STANDARD: "bg-gray-100 text-gray-800",
-  SPLIT: "bg-indigo-100 text-indigo-800",
-  PARTIAL: "bg-orange-100 text-orange-800",
-}
-
 export function ShipmentsPage() {
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState<"pending" | "processing" | "shipped" | "all">("pending")
@@ -297,21 +285,53 @@ export function ShipmentsPage() {
     })
   }
 
+  const getStatusBadge = (status: ShipmentStatus) => {
+    switch (status) {
+      case "PENDING":
+        return <AdminBadge variant="outline"><Clock className="h-3 w-3 mr-1" />Pending</AdminBadge>
+      case "PROCESSING":
+        return <AdminBadge variant="secondary"><Package className="h-3 w-3 mr-1" />Processing</AdminBadge>
+      case "SHIPPED":
+        return <AdminBadge variant="default"><Truck className="h-3 w-3 mr-1" />Shipped</AdminBadge>
+      case "DELIVERED":
+        return <AdminBadge variant="default"><CheckCircle className="h-3 w-3 mr-1" />Delivered</AdminBadge>
+      case "CANCELLED":
+        return <AdminBadge variant="destructive"><X className="h-3 w-3 mr-1" />Cancelled</AdminBadge>
+    }
+  }
+
+  const getTypeBadge = (type: ShipmentType) => {
+    switch (type) {
+      case "STANDARD":
+        return <AdminBadge variant="secondary">Standard</AdminBadge>
+      case "SPLIT":
+        return <AdminBadge variant="outline">Split</AdminBadge>
+      case "PARTIAL":
+        return <AdminBadge variant="outline">Partial</AdminBadge>
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <AdminLoading
+        title="Shipment Fulfillment"
+        subtitle="Manage order shipments and split deliveries"
+        rows={4}
+      />
+    )
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="p-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Shipment Fulfillment</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage order shipments and split deliveries
-          </p>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Shipment Fulfillment"
+        subtitle="Manage order shipments and split deliveries"
+      />
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <TabsList>
             <TabsTrigger value="pending" className="gap-2">
               <Clock className="h-4 w-4" />
@@ -340,117 +360,99 @@ export function ShipmentsPage() {
         </div>
 
         <TabsContent value={activeTab} className="mt-4">
-          <Card>
-            {isLoading ? (
-              <div className="p-6 space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
-              </div>
-            ) : filteredShipments.length === 0 ? (
-              <div className="p-12 text-center">
-                <PackageCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium">No shipments found</h3>
-                <p className="text-sm text-muted-foreground">
-                  {searchQuery ? "Try adjusting your search query" : "No shipments in this status"}
-                </p>
-              </div>
+          <AdminDataCard>
+            {filteredShipments.length === 0 ? (
+              <AdminEmptyState
+                message={searchQuery ? "No shipments match your search query" : "No shipments in this status"}
+              />
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Shipment</TableHead>
-                    <TableHead>Order</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Items</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Est. Ship Date</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredShipments.map((shipment) => {
-                    const StatusIcon = statusIcons[shipment.status]
-                    return (
-                      <TableRow key={shipment.id}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            {shipment.type === "SPLIT" && (
-                              <SplitSquareVertical className="h-4 w-4 text-indigo-500" />
-                            )}
-                            {shipment.shipmentNumber}
-                          </div>
-                          {shipment.trackingNumber && (
-                            <span className="text-xs text-muted-foreground">
-                              {shipment.trackingNumber}
-                            </span>
+              <AdminTable>
+                <AdminTableHeader>
+                  <AdminTableHeadRow>
+                    <AdminTableHead>Shipment</AdminTableHead>
+                    <AdminTableHead>Order</AdminTableHead>
+                    <AdminTableHead>Customer</AdminTableHead>
+                    <AdminTableHead>Type</AdminTableHead>
+                    <AdminTableHead>Items</AdminTableHead>
+                    <AdminTableHead>Status</AdminTableHead>
+                    <AdminTableHead>Est. Ship Date</AdminTableHead>
+                    <AdminTableHead>Actions</AdminTableHead>
+                  </AdminTableHeadRow>
+                </AdminTableHeader>
+                <AdminTableBody>
+                  {filteredShipments.map((shipment) => (
+                    <AdminTableRow key={shipment.id}>
+                      <AdminTableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {shipment.type === "SPLIT" && (
+                            <SplitSquareVertical className="h-4 w-4 text-indigo-500" />
                           )}
-                        </TableCell>
-                        <TableCell>{shipment.order.orderNumber}</TableCell>
-                        <TableCell>
-                          <div>{shipment.order.customer.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {shipment.order.customer.phone}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={typeColors[shipment.type]}>
-                            {shipment.type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            {shipment.items.length} item(s)
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {shipment.items.slice(0, 2).map(i => i.productName).join(", ")}
-                            {shipment.items.length > 2 && ` +${shipment.items.length - 2} more`}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={statusColors[shipment.status]}>
-                            <StatusIcon className="h-3 w-3 mr-1" />
-                            {shipment.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{formatDate(shipment.estimatedShipDate)}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleViewDetails(shipment)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            {shipment.status !== "DELIVERED" && shipment.status !== "CANCELLED" && (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleUpdateStatus(shipment)}
-                                >
-                                  <ArrowRight className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleCancelShipment(shipment)}
-                                >
-                                  <X className="h-4 w-4 text-red-500" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
+                          {shipment.shipmentNumber}
+                        </div>
+                        {shipment.trackingNumber && (
+                          <span className="text-xs text-muted-foreground">
+                            {shipment.trackingNumber}
+                          </span>
+                        )}
+                      </AdminTableCell>
+                      <AdminTableCell>{shipment.order.orderNumber}</AdminTableCell>
+                      <AdminTableCell>
+                        <div>{shipment.order.customer.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {shipment.order.customer.phone}
+                        </div>
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        {getTypeBadge(shipment.type)}
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        <div className="text-sm">
+                          {shipment.items.length} item(s)
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {shipment.items.slice(0, 2).map(i => i.productName).join(", ")}
+                          {shipment.items.length > 2 && ` +${shipment.items.length - 2} more`}
+                        </div>
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        {getStatusBadge(shipment.status)}
+                      </AdminTableCell>
+                      <AdminTableCell>{formatDate(shipment.estimatedShipDate)}</AdminTableCell>
+                      <AdminTableCell>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleViewDetails(shipment)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {shipment.status !== "DELIVERED" && shipment.status !== "CANCELLED" && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleUpdateStatus(shipment)}
+                              >
+                                <ArrowRight className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleCancelShipment(shipment)}
+                              >
+                                <X className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </AdminTableCell>
+                    </AdminTableRow>
+                  ))}
+                </AdminTableBody>
+              </AdminTable>
             )}
-          </Card>
+          </AdminDataCard>
         </TabsContent>
       </Tabs>
 
@@ -478,15 +480,11 @@ export function ShipmentsPage() {
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Status</Label>
-                  <Badge className={statusColors[shipmentDetails.shipment.status as ShipmentStatus]}>
-                    {shipmentDetails.shipment.status}
-                  </Badge>
+                  <div className="mt-1">{getStatusBadge(shipmentDetails.shipment.status as ShipmentStatus)}</div>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Type</Label>
-                  <Badge className={typeColors[shipmentDetails.shipment.type as ShipmentType]}>
-                    {shipmentDetails.shipment.type}
-                  </Badge>
+                  <div className="mt-1">{getTypeBadge(shipmentDetails.shipment.type as ShipmentType)}</div>
                 </div>
                 {shipmentDetails.shipment.trackingNumber && (
                   <div>
@@ -505,7 +503,7 @@ export function ShipmentsPage() {
               {/* Items */}
               <div>
                 <Label className="text-muted-foreground mb-2 block">Items</Label>
-                <div className="border rounded-lg divide-y">
+                <Card className="divide-y">
                   {shipmentDetails.shipment.items.map((item: ShipmentItem) => (
                     <div key={item.id} className="p-3 flex justify-between items-center">
                       <div>
@@ -517,14 +515,12 @@ export function ShipmentsPage() {
                       <div className="text-right">
                         <p className="font-medium">x{item.quantity}</p>
                         {item.availabilityStatus && (
-                          <Badge variant="outline" className="text-xs">
-                            {item.availabilityStatus}
-                          </Badge>
+                          <AdminBadge variant="outline">{item.availabilityStatus}</AdminBadge>
                         )}
                       </div>
                     </div>
                   ))}
-                </div>
+                </Card>
               </div>
 
               {/* Status History */}
@@ -534,7 +530,7 @@ export function ShipmentsPage() {
                   <div className="space-y-2">
                     {shipmentDetails.shipment.statusHistory.map((history: { id: string; status: ShipmentStatus; location?: string; notes?: string; createdAt: string }) => (
                       <div key={history.id} className="flex items-start gap-3 text-sm">
-                        <div className={`mt-0.5 h-2 w-2 rounded-full ${statusColors[history.status].split(" ")[0]}`} />
+                        <div className="mt-1.5 h-2 w-2 rounded-full bg-primary" />
                         <div className="flex-1">
                           <div className="flex justify-between">
                             <span className="font-medium">{history.status}</span>

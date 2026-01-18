@@ -3,15 +3,25 @@
 import { useState, useMemo } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from "recharts"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Download, TrendingUp, TrendingDown, DollarSign, ShoppingCart, Users, Package, FileSpreadsheet, FileText, Calendar, Award, UserPlus, UserCheck, Heart, AlertTriangle, Crown, Boxes, AlertCircle, PackageX, Zap, Clock } from "lucide-react"
 import { useSalesReport, useCustomerReport, useInventoryReport } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
+import {
+  AdminPageHeader,
+  AdminLoading,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminEmptyState,
+} from "@/components/admin"
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316"]
 const SEGMENT_COLORS: Record<string, string> = {
@@ -109,20 +119,11 @@ export function ReportsPage() {
   const formatKhr = (value: number) => `៛${value.toLocaleString()}`
 
   const renderLoadingState = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="p-6">
-            <Skeleton className="h-4 w-24 mb-2" />
-            <Skeleton className="h-8 w-32" />
-          </Card>
-        ))}
-      </div>
-      <Card className="p-6">
-        <Skeleton className="h-6 w-32 mb-4" />
-        <Skeleton className="h-[300px] w-full" />
-      </Card>
-    </div>
+    <AdminLoading
+      title="Reports"
+      subtitle="Comprehensive analytics and business insights"
+      rows={4}
+    />
   )
 
   const renderSalesReport = () => {
@@ -229,9 +230,7 @@ export function ReportsPage() {
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                No revenue data available
-              </div>
+              <AdminEmptyState message="No revenue data available" />
             )}
           </Card>
 
@@ -249,9 +248,7 @@ export function ReportsPage() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                No order data available
-              </div>
+              <AdminEmptyState message="No order data available" />
             )}
           </Card>
         </div>
@@ -296,9 +293,7 @@ export function ReportsPage() {
                 </div>
               </div>
             ) : (
-              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-                No category data available
-              </div>
+              <AdminEmptyState message="No category data available" />
             )}
           </Card>
 
@@ -340,9 +335,7 @@ export function ReportsPage() {
                 </div>
               </div>
             ) : (
-              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-                No channel data available
-              </div>
+              <AdminEmptyState message="No channel data available" />
             )}
           </Card>
         </div>
@@ -357,20 +350,20 @@ export function ReportsPage() {
             </div>
             {topProducts.length > 0 ? (
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-b border-border">
-                      <TableHead className="text-foreground font-semibold w-10">#</TableHead>
-                      <TableHead className="text-foreground font-semibold">Product</TableHead>
-                      <TableHead className="text-foreground font-semibold text-right">Qty</TableHead>
-                      <TableHead className="text-foreground font-semibold text-right">Revenue</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <AdminTable>
+                  <AdminTableHeader>
+                    <AdminTableHeadRow>
+                      <AdminTableHead className="w-10">#</AdminTableHead>
+                      <AdminTableHead>Product</AdminTableHead>
+                      <AdminTableHead className="text-right">Qty</AdminTableHead>
+                      <AdminTableHead className="text-right">Revenue</AdminTableHead>
+                    </AdminTableHeadRow>
+                  </AdminTableHeader>
+                  <AdminTableBody>
                     {topProducts.slice(0, 5).map((product) => (
-                      <TableRow key={product.id} className="border-b border-border hover:bg-muted/50">
-                        <TableCell className="text-muted-foreground">{product.rank}</TableCell>
-                        <TableCell>
+                      <AdminTableRow key={product.id}>
+                        <AdminTableCell className="text-muted-foreground">{product.rank}</AdminTableCell>
+                        <AdminTableCell>
                           <div className="flex items-center gap-2">
                             {product.imageUrl ? (
                               <img
@@ -388,18 +381,16 @@ export function ReportsPage() {
                               <p className="text-xs text-muted-foreground truncate">{product.category?.nameEn || "No category"}</p>
                             </div>
                           </div>
-                        </TableCell>
-                        <TableCell className="text-right text-foreground">{product.quantity}</TableCell>
-                        <TableCell className="text-right font-medium text-foreground">{formatCurrency(product.revenue)}</TableCell>
-                      </TableRow>
+                        </AdminTableCell>
+                        <AdminTableCell className="text-right">{product.quantity}</AdminTableCell>
+                        <AdminTableCell className="text-right font-medium">{formatCurrency(product.revenue)}</AdminTableCell>
+                      </AdminTableRow>
                     ))}
-                  </TableBody>
-                </Table>
+                  </AdminTableBody>
+                </AdminTable>
               </div>
             ) : (
-              <div className="py-8 text-center text-muted-foreground">
-                No product sales data available
-              </div>
+              <AdminEmptyState message="No product sales data available" />
             )}
           </Card>
 
@@ -411,38 +402,36 @@ export function ReportsPage() {
             </div>
             {topCustomers.length > 0 ? (
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-b border-border">
-                      <TableHead className="text-foreground font-semibold w-10">#</TableHead>
-                      <TableHead className="text-foreground font-semibold">Customer</TableHead>
-                      <TableHead className="text-foreground font-semibold text-right">Orders</TableHead>
-                      <TableHead className="text-foreground font-semibold text-right">Revenue</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <AdminTable>
+                  <AdminTableHeader>
+                    <AdminTableHeadRow>
+                      <AdminTableHead className="w-10">#</AdminTableHead>
+                      <AdminTableHead>Customer</AdminTableHead>
+                      <AdminTableHead className="text-right">Orders</AdminTableHead>
+                      <AdminTableHead className="text-right">Revenue</AdminTableHead>
+                    </AdminTableHeadRow>
+                  </AdminTableHeader>
+                  <AdminTableBody>
                     {topCustomers.slice(0, 5).map((customer) => (
-                      <TableRow key={customer.id} className="border-b border-border hover:bg-muted/50">
-                        <TableCell className="text-muted-foreground">{customer.rank}</TableCell>
-                        <TableCell>
+                      <AdminTableRow key={customer.id}>
+                        <AdminTableCell className="text-muted-foreground">{customer.rank}</AdminTableCell>
+                        <AdminTableCell>
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-foreground truncate">{customer.name}</p>
                             <p className="text-xs text-muted-foreground">
                               AOV: {formatCurrency(customer.averageOrderValue)}
                             </p>
                           </div>
-                        </TableCell>
-                        <TableCell className="text-right text-foreground">{customer.orderCount}</TableCell>
-                        <TableCell className="text-right font-medium text-foreground">{formatCurrency(customer.revenue)}</TableCell>
-                      </TableRow>
+                        </AdminTableCell>
+                        <AdminTableCell className="text-right">{customer.orderCount}</AdminTableCell>
+                        <AdminTableCell className="text-right font-medium">{formatCurrency(customer.revenue)}</AdminTableCell>
+                      </AdminTableRow>
                     ))}
-                  </TableBody>
-                </Table>
+                  </AdminTableBody>
+                </AdminTable>
               </div>
             ) : (
-              <div className="py-8 text-center text-muted-foreground">
-                No customer data available
-              </div>
+              <AdminEmptyState message="No customer data available" />
             )}
           </Card>
         </div>
@@ -461,9 +450,7 @@ export function ReportsPage() {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-              No data available for selected period
-            </div>
+            <AdminEmptyState message="No data available for selected period" />
           )}
         </Card>
       </div>
@@ -628,9 +615,7 @@ export function ReportsPage() {
                 </div>
               </div>
             ) : (
-              <div className="h-[220px] flex items-center justify-center text-muted-foreground">
-                No segment data available
-              </div>
+              <AdminEmptyState message="No segment data available" />
             )}
           </Card>
         </div>
@@ -670,9 +655,7 @@ export function ReportsPage() {
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-              No customer growth data available
-            </div>
+            <AdminEmptyState message="No customer growth data available" />
           )}
         </Card>
 
@@ -684,22 +667,22 @@ export function ReportsPage() {
           </div>
           {topCustomers.length > 0 ? (
             <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-b border-border">
-                    <TableHead className="text-foreground font-semibold w-10">#</TableHead>
-                    <TableHead className="text-foreground font-semibold">Customer</TableHead>
-                    <TableHead className="text-foreground font-semibold text-right">Orders</TableHead>
-                    <TableHead className="text-foreground font-semibold text-right">Avg Order</TableHead>
-                    <TableHead className="text-foreground font-semibold text-right">Last Order</TableHead>
-                    <TableHead className="text-foreground font-semibold text-right">Total Spent</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <AdminTable>
+                <AdminTableHeader>
+                  <AdminTableHeadRow>
+                    <AdminTableHead className="w-10">#</AdminTableHead>
+                    <AdminTableHead>Customer</AdminTableHead>
+                    <AdminTableHead className="text-right">Orders</AdminTableHead>
+                    <AdminTableHead className="text-right">Avg Order</AdminTableHead>
+                    <AdminTableHead className="text-right">Last Order</AdminTableHead>
+                    <AdminTableHead className="text-right">Total Spent</AdminTableHead>
+                  </AdminTableHeadRow>
+                </AdminTableHeader>
+                <AdminTableBody>
                   {topCustomers.map((customer) => (
-                    <TableRow key={customer.id} className="border-b border-border hover:bg-muted/50">
-                      <TableCell className="text-muted-foreground">{customer.rank}</TableCell>
-                      <TableCell>
+                    <AdminTableRow key={customer.id}>
+                      <AdminTableCell className="text-muted-foreground">{customer.rank}</AdminTableCell>
+                      <AdminTableCell>
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                             <span className="text-sm font-medium text-primary">
@@ -708,22 +691,20 @@ export function ReportsPage() {
                           </div>
                           <p className="text-sm font-medium text-foreground">{customer.name}</p>
                         </div>
-                      </TableCell>
-                      <TableCell className="text-right text-foreground">{customer.orderCount}</TableCell>
-                      <TableCell className="text-right text-foreground">{formatCurrency(customer.avgOrderValue)}</TableCell>
-                      <TableCell className="text-right text-muted-foreground">
+                      </AdminTableCell>
+                      <AdminTableCell className="text-right">{customer.orderCount}</AdminTableCell>
+                      <AdminTableCell className="text-right">{formatCurrency(customer.avgOrderValue)}</AdminTableCell>
+                      <AdminTableCell className="text-right text-muted-foreground">
                         {customer.lastOrderDate || "Never"}
-                      </TableCell>
-                      <TableCell className="text-right font-medium text-foreground">{formatCurrency(customer.totalSpent)}</TableCell>
-                    </TableRow>
+                      </AdminTableCell>
+                      <AdminTableCell className="text-right font-medium">{formatCurrency(customer.totalSpent)}</AdminTableCell>
+                    </AdminTableRow>
                   ))}
-                </TableBody>
-              </Table>
+                </AdminTableBody>
+              </AdminTable>
             </div>
           ) : (
-            <div className="py-8 text-center text-muted-foreground">
-              No customer data available
-            </div>
+            <AdminEmptyState message="No customer data available" />
           )}
         </Card>
       </div>
@@ -857,9 +838,7 @@ export function ReportsPage() {
                 </div>
               </div>
             ) : (
-              <div className="h-[220px] flex items-center justify-center text-muted-foreground">
-                No inventory data available
-              </div>
+              <AdminEmptyState message="No inventory data available" />
             )}
           </Card>
 
@@ -877,9 +856,7 @@ export function ReportsPage() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[220px] flex items-center justify-center text-muted-foreground">
-                No category data available
-              </div>
+              <AdminEmptyState message="No category data available" />
             )}
           </Card>
         </div>
@@ -895,19 +872,19 @@ export function ReportsPage() {
             </div>
             {lowStockProducts.length > 0 ? (
               <div className="overflow-x-auto max-h-[350px] overflow-y-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-b border-border">
-                      <TableHead className="text-foreground font-semibold">Product</TableHead>
-                      <TableHead className="text-foreground font-semibold text-right">Stock</TableHead>
-                      <TableHead className="text-foreground font-semibold text-right">Min Level</TableHead>
-                      <TableHead className="text-foreground font-semibold text-right">Value</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <AdminTable>
+                  <AdminTableHeader>
+                    <AdminTableHeadRow>
+                      <AdminTableHead>Product</AdminTableHead>
+                      <AdminTableHead className="text-right">Stock</AdminTableHead>
+                      <AdminTableHead className="text-right">Min Level</AdminTableHead>
+                      <AdminTableHead className="text-right">Value</AdminTableHead>
+                    </AdminTableHeadRow>
+                  </AdminTableHeader>
+                  <AdminTableBody>
                     {lowStockProducts.map((product) => (
-                      <TableRow key={product.id} className="border-b border-border hover:bg-muted/50">
-                        <TableCell>
+                      <AdminTableRow key={product.id}>
+                        <AdminTableCell>
                           <div className="flex items-center gap-2">
                             {product.imageUrl ? (
                               <img
@@ -930,16 +907,16 @@ export function ReportsPage() {
                               </div>
                             </div>
                           </div>
-                        </TableCell>
-                        <TableCell className={`text-right font-medium ${product.status === "critical" ? "text-destructive" : "text-warning"}`}>
+                        </AdminTableCell>
+                        <AdminTableCell className={`text-right font-medium ${product.status === "critical" ? "text-destructive" : "text-warning"}`}>
                           {product.currentStock}
-                        </TableCell>
-                        <TableCell className="text-right text-muted-foreground">{product.minLevel}</TableCell>
-                        <TableCell className="text-right text-foreground">{formatCurrency(product.stockValue)}</TableCell>
-                      </TableRow>
+                        </AdminTableCell>
+                        <AdminTableCell className="text-right text-muted-foreground">{product.minLevel}</AdminTableCell>
+                        <AdminTableCell className="text-right">{formatCurrency(product.stockValue)}</AdminTableCell>
+                      </AdminTableRow>
                     ))}
-                  </TableBody>
-                </Table>
+                  </AdminTableBody>
+                </AdminTable>
               </div>
             ) : (
               <div className="py-8 text-center text-muted-foreground flex flex-col items-center gap-2">
@@ -958,18 +935,18 @@ export function ReportsPage() {
             </div>
             {outOfStockProducts.length > 0 ? (
               <div className="overflow-x-auto max-h-[350px] overflow-y-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-b border-border">
-                      <TableHead className="text-foreground font-semibold">Product</TableHead>
-                      <TableHead className="text-foreground font-semibold">Category</TableHead>
-                      <TableHead className="text-foreground font-semibold text-right">Price</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <AdminTable>
+                  <AdminTableHeader>
+                    <AdminTableHeadRow>
+                      <AdminTableHead>Product</AdminTableHead>
+                      <AdminTableHead>Category</AdminTableHead>
+                      <AdminTableHead className="text-right">Price</AdminTableHead>
+                    </AdminTableHeadRow>
+                  </AdminTableHeader>
+                  <AdminTableBody>
                     {outOfStockProducts.map((product) => (
-                      <TableRow key={product.id} className="border-b border-border hover:bg-muted/50">
-                        <TableCell>
+                      <AdminTableRow key={product.id}>
+                        <AdminTableCell>
                           <div className="flex items-center gap-2">
                             {product.imageUrl ? (
                               <img
@@ -987,15 +964,15 @@ export function ReportsPage() {
                               <p className="text-xs text-muted-foreground">{product.sku}</p>
                             </div>
                           </div>
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        </AdminTableCell>
+                        <AdminTableCell className="text-sm text-muted-foreground">
                           {product.category?.nameEn || "Uncategorized"}
-                        </TableCell>
-                        <TableCell className="text-right text-foreground">{formatCurrency(product.priceUsd)}</TableCell>
-                      </TableRow>
+                        </AdminTableCell>
+                        <AdminTableCell className="text-right">{formatCurrency(product.priceUsd)}</AdminTableCell>
+                      </AdminTableRow>
                     ))}
-                  </TableBody>
-                </Table>
+                  </AdminTableBody>
+                </AdminTable>
               </div>
             ) : (
               <div className="py-8 text-center text-muted-foreground flex flex-col items-center gap-2">
@@ -1017,27 +994,27 @@ export function ReportsPage() {
             <p className="text-sm text-muted-foreground mb-4">Products with high sales velocity - watch for stockouts</p>
             {fastMovingProducts.length > 0 ? (
               <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-b border-border">
-                      <TableHead className="text-foreground font-semibold">Product</TableHead>
-                      <TableHead className="text-foreground font-semibold text-right">Stock</TableHead>
-                      <TableHead className="text-foreground font-semibold text-right">Sold (30d)</TableHead>
-                      <TableHead className="text-foreground font-semibold text-right">Days Left</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <AdminTable>
+                  <AdminTableHeader>
+                    <AdminTableHeadRow>
+                      <AdminTableHead>Product</AdminTableHead>
+                      <AdminTableHead className="text-right">Stock</AdminTableHead>
+                      <AdminTableHead className="text-right">Sold (30d)</AdminTableHead>
+                      <AdminTableHead className="text-right">Days Left</AdminTableHead>
+                    </AdminTableHeadRow>
+                  </AdminTableHeader>
+                  <AdminTableBody>
                     {fastMovingProducts.map((product) => (
-                      <TableRow key={product.id} className="border-b border-border hover:bg-muted/50">
-                        <TableCell>
+                      <AdminTableRow key={product.id}>
+                        <AdminTableCell>
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-foreground truncate">{product.nameEn}</p>
                             <p className="text-xs text-muted-foreground">{product.sku}</p>
                           </div>
-                        </TableCell>
-                        <TableCell className="text-right text-foreground">{product.currentStock}</TableCell>
-                        <TableCell className="text-right text-foreground">{product.soldLast30Days}</TableCell>
-                        <TableCell className={`text-right font-medium ${
+                        </AdminTableCell>
+                        <AdminTableCell className="text-right">{product.currentStock}</AdminTableCell>
+                        <AdminTableCell className="text-right">{product.soldLast30Days}</AdminTableCell>
+                        <AdminTableCell className={`text-right font-medium ${
                           product.daysUntilStockout !== null && product.daysUntilStockout <= 7
                             ? "text-destructive"
                             : product.daysUntilStockout !== null && product.daysUntilStockout <= 14
@@ -1050,16 +1027,14 @@ export function ReportsPage() {
                               {product.daysUntilStockout}
                             </span>
                           ) : "—"}
-                        </TableCell>
-                      </TableRow>
+                        </AdminTableCell>
+                      </AdminTableRow>
                     ))}
-                  </TableBody>
-                </Table>
+                  </AdminTableBody>
+                </AdminTable>
               </div>
             ) : (
-              <div className="py-8 text-center text-muted-foreground">
-                No fast-moving products identified
-              </div>
+              <AdminEmptyState message="No fast-moving products identified" />
             )}
           </Card>
 
@@ -1072,34 +1047,32 @@ export function ReportsPage() {
             <p className="text-sm text-muted-foreground mb-4">Products with no sales in the last 30 days</p>
             {slowMovingProducts.length > 0 ? (
               <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-b border-border">
-                      <TableHead className="text-foreground font-semibold">Product</TableHead>
-                      <TableHead className="text-foreground font-semibold text-right">Stock</TableHead>
-                      <TableHead className="text-foreground font-semibold text-right">Tied Up Value</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <AdminTable>
+                  <AdminTableHeader>
+                    <AdminTableHeadRow>
+                      <AdminTableHead>Product</AdminTableHead>
+                      <AdminTableHead className="text-right">Stock</AdminTableHead>
+                      <AdminTableHead className="text-right">Tied Up Value</AdminTableHead>
+                    </AdminTableHeadRow>
+                  </AdminTableHeader>
+                  <AdminTableBody>
                     {slowMovingProducts.map((product) => (
-                      <TableRow key={product.id} className="border-b border-border hover:bg-muted/50">
-                        <TableCell>
+                      <AdminTableRow key={product.id}>
+                        <AdminTableCell>
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-foreground truncate">{product.nameEn}</p>
                             <p className="text-xs text-muted-foreground">{product.sku}</p>
                           </div>
-                        </TableCell>
-                        <TableCell className="text-right text-foreground">{product.currentStock}</TableCell>
-                        <TableCell className="text-right text-muted-foreground">{formatCurrency(product.stockValue)}</TableCell>
-                      </TableRow>
+                        </AdminTableCell>
+                        <AdminTableCell className="text-right">{product.currentStock}</AdminTableCell>
+                        <AdminTableCell className="text-right text-muted-foreground">{formatCurrency(product.stockValue)}</AdminTableCell>
+                      </AdminTableRow>
                     ))}
-                  </TableBody>
-                </Table>
+                  </AdminTableBody>
+                </AdminTable>
               </div>
             ) : (
-              <div className="py-8 text-center text-muted-foreground">
-                All products are selling well!
-              </div>
+              <AdminEmptyState message="All products are selling well!" />
             )}
           </Card>
         </div>
@@ -1110,64 +1083,59 @@ export function ReportsPage() {
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Reports</h1>
-          <p className="text-muted-foreground mt-2">
-            Comprehensive analytics and business insights
-          </p>
-          <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            {startDate} to {endDate}
-          </p>
-        </div>
-        <div className="flex gap-4">
-          <Select value={dateRange} onValueChange={setDateRange}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7d">Last 7 Days</SelectItem>
-              <SelectItem value="30d">Last 30 Days</SelectItem>
-              <SelectItem value="90d">Last 90 Days</SelectItem>
-              <SelectItem value="365d">Last Year</SelectItem>
-            </SelectContent>
-          </Select>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button disabled={isExporting} className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-                <Download size={16} /> {isExporting ? "Exporting..." : "Export"}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => handleExport("sales", "csv")}>
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
-                Sales Report (CSV)
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("customers", "csv")}>
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
-                Customers (CSV)
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("orders", "csv")}>
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
-                Orders (CSV)
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("products", "csv")}>
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
-                Products (CSV)
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("inventory", "csv")}>
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
-                Inventory (CSV)
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("sales", "json")}>
-                <FileText className="mr-2 h-4 w-4" />
-                Sales Report (JSON)
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Reports"
+        subtitle="Comprehensive analytics and business insights"
+      >
+        <p className="text-sm text-muted-foreground flex items-center gap-1 mr-4">
+          <Calendar className="h-3 w-3" />
+          {startDate} to {endDate}
+        </p>
+        <Select value={dateRange} onValueChange={setDateRange}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="7d">Last 7 Days</SelectItem>
+            <SelectItem value="30d">Last 30 Days</SelectItem>
+            <SelectItem value="90d">Last 90 Days</SelectItem>
+            <SelectItem value="365d">Last Year</SelectItem>
+          </SelectContent>
+        </Select>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button disabled={isExporting} className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+              <Download size={16} /> {isExporting ? "Exporting..." : "Export"}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={() => handleExport("sales", "csv")}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              Sales Report (CSV)
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport("customers", "csv")}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              Customers (CSV)
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport("orders", "csv")}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              Orders (CSV)
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport("products", "csv")}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              Products (CSV)
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport("inventory", "csv")}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              Inventory (CSV)
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport("sales", "json")}>
+              <FileText className="mr-2 h-4 w-4" />
+              Sales Report (JSON)
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </AdminPageHeader>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>

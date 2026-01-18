@@ -3,8 +3,6 @@
 import { useState, useMemo } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
@@ -31,15 +29,12 @@ import {
   useUpdateRole,
   useCreateRole,
   useSeedRoles,
-  useSeedPermissions,
   Role,
 } from "@/lib/api-hooks"
 import {
   Resources,
-  Actions,
   resourceDisplayNames,
   actionDisplayNames,
-  permissionName,
   defaultRolePermissions,
   SystemRoles,
   type Resource,
@@ -47,6 +42,12 @@ import {
 } from "@/lib/rbac"
 import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
+import {
+  AdminPageHeader,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 const roleColors: Record<string, string> = {
   super_admin: "bg-primary/10 text-primary border-primary/20",
@@ -76,7 +77,6 @@ export function RolePermissionsPage() {
   const updateRoleMutation = useUpdateRole()
   const createRoleMutation = useCreateRole()
   const seedRolesMutation = useSeedRoles()
-  const seedPermissionsMutation = useSeedPermissions()
 
   const roles = rolesData?.roles || []
   const isLoading = rolesLoading || permissionsLoading
@@ -272,47 +272,28 @@ export function RolePermissionsPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Role Permissions</h1>
-            <p className="text-muted-foreground mt-2">Manage role-based access control (RBAC)</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <Card className="p-4">
-            <Skeleton className="h-8 w-full mb-4" />
-            <div className="space-y-2">
-              {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
-            </div>
-          </Card>
-          <Card className="lg:col-span-3 p-4">
-            <Skeleton className="h-[500px] w-full" />
-          </Card>
-        </div>
-      </div>
+      <AdminLoading
+        title="Role Permissions"
+        subtitle="Manage role-based access control (RBAC)"
+        rows={5}
+      />
     )
   }
 
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Role Permissions</h1>
-          <p className="text-muted-foreground mt-2">Manage role-based access control (RBAC)</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleSeedRoles} disabled={seedRolesMutation.isPending}>
-            {seedRolesMutation.isPending ? "Seeding..." : "Seed System Roles"}
-          </Button>
-          <Button onClick={() => setIsCreateDialogOpen(true)} className="flex items-center gap-2">
-            <Plus size={16} /> Create Role
-          </Button>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Role Permissions"
+        subtitle="Manage role-based access control (RBAC)"
+      >
+        <Button variant="outline" onClick={handleSeedRoles} disabled={seedRolesMutation.isPending}>
+          {seedRolesMutation.isPending ? "Seeding..." : "Seed System Roles"}
+        </Button>
+        <Button onClick={() => setIsCreateDialogOpen(true)} className="flex items-center gap-2">
+          <Plus size={16} /> Create Role
+        </Button>
+      </AdminPageHeader>
 
       {/* System Roles Info */}
       <Card className="p-4 bg-info/10 border-info/20">
@@ -352,9 +333,9 @@ export function RolePermissionsPage() {
                   {roleIcons[role.name] || <Shield className="w-4 h-4" />}
                   <span className="font-medium">{role.displayName || role.name}</span>
                   {role.isSystem && (
-                    <Badge variant="outline" className="text-xs ml-auto">
+                    <AdminBadge variant="outline">
                       System
-                    </Badge>
+                    </AdminBadge>
                   )}
                 </div>
                 {role.description && (
@@ -442,10 +423,10 @@ export function RolePermissionsPage() {
                                 <span className="font-medium">
                                   {resourceDisplayNames[resource as Resource] || resource}
                                 </span>
-                                <Badge variant="outline" className="text-xs">
+                                <AdminBadge variant="outline">
                                   {resourcePerms.filter((p) => editedPermissions.has(p.name)).length}/
                                   {resourcePerms.length}
-                                </Badge>
+                                </AdminBadge>
                               </div>
                               <div className="flex items-center gap-2">
                                 <Checkbox
@@ -520,9 +501,7 @@ export function RolePermissionsPage() {
                           </div>
                         ))}
                       {editedPermissions.size === 0 && (
-                        <p className="text-center text-muted-foreground py-8">
-                          No permissions enabled for this role
-                        </p>
+                        <AdminEmptyState message="No permissions enabled for this role" />
                       )}
                     </div>
                   </ScrollArea>

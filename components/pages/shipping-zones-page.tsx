@@ -14,7 +14,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Plus, Pencil, Trash, Truck, MapPin, Clock } from "lucide-react"
+import { Plus, MapPin, Clock } from "lucide-react"
+import {
+  AdminPageHeader,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminActionButtons,
+  AdminEditButton,
+  AdminDeleteButton,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 import {
   useShippingZones,
   useCreateShippingZone,
@@ -223,112 +240,92 @@ export function ShippingZonesPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-10 w-32" />
-        </div>
-        <Card className="p-6">
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <Skeleton key={i} className="h-16 w-full" />
-            ))}
-          </div>
-        </Card>
-      </div>
+      <AdminLoading
+        title="Shipping Zones"
+        subtitle="Configure shipping rates by region for Cambodia"
+        rows={5}
+      />
     )
   }
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-            <Truck className="h-7 w-7" />
-            Shipping Zones
-          </h1>
-          <p className="text-muted-foreground mt-2">Configure shipping rates by region for Cambodia</p>
-        </div>
+      <AdminPageHeader
+        title="Shipping Zones"
+        subtitle="Configure shipping rates by region for Cambodia"
+      >
         <Button onClick={openCreateDialog}>
           <Plus className="mr-2 h-4 w-4" />
           Add Zone
         </Button>
-      </div>
+      </AdminPageHeader>
 
-      <Card className="p-6">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Zone Name</TableHead>
-                <TableHead>Regions</TableHead>
-                <TableHead>Rate Type</TableHead>
-                <TableHead>Rate</TableHead>
-                <TableHead>Delivery Time</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {zones.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                    No shipping zones configured. Add your first zone to start.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                zones.map((zone) => (
-                  <TableRow key={zone.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{zone.nameEn}</div>
-                        <div className="text-sm text-muted-foreground">{zone.nameKh}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">
-                          {zone.regions.length} province{zone.regions.length !== 1 ? "s" : ""}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {zone.rateType.replace("_", " ")}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-medium">{formatRate(zone)}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Clock className="h-4 w-4" />
-                        {formatDeliveryTime(zone)}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={zone.isActive ? "success" : "secondary"}>
-                        {zone.isActive ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(zone)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => setDeleteZone(zone)}>
-                        <Trash className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </Card>
+      <AdminDataCard>
+        {zones.length === 0 ? (
+          <AdminEmptyState message="No shipping zones configured. Add your first zone to start." />
+        ) : (
+          <AdminTable>
+            <AdminTableHeader>
+              <AdminTableHeadRow>
+                <AdminTableHead>Zone Name</AdminTableHead>
+                <AdminTableHead>Regions</AdminTableHead>
+                <AdminTableHead>Rate Type</AdminTableHead>
+                <AdminTableHead>Rate</AdminTableHead>
+                <AdminTableHead>Delivery Time</AdminTableHead>
+                <AdminTableHead>Status</AdminTableHead>
+                <AdminTableHead>Actions</AdminTableHead>
+              </AdminTableHeadRow>
+            </AdminTableHeader>
+            <AdminTableBody>
+              {zones.map((zone) => (
+                <AdminTableRow key={zone.id}>
+                  <AdminTableCell>
+                    <div>
+                      <div className="font-medium">{zone.nameEn}</div>
+                      <div className="text-sm text-muted-foreground">{zone.nameKh}</div>
+                    </div>
+                  </AdminTableCell>
+                  <AdminTableCell>
+                    <div className="flex items-center gap-1">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">
+                        {zone.regions.length} province{zone.regions.length !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  </AdminTableCell>
+                  <AdminTableCell>
+                    <AdminBadge variant="outline">
+                      {zone.rateType.replace("_", " ")}
+                    </AdminBadge>
+                  </AdminTableCell>
+                  <AdminTableCell className="font-medium">{formatRate(zone)}</AdminTableCell>
+                  <AdminTableCell>
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <Clock className="h-4 w-4" />
+                      {formatDeliveryTime(zone)}
+                    </div>
+                  </AdminTableCell>
+                  <AdminTableCell>
+                    <AdminBadge variant={zone.isActive ? "default" : "secondary"}>
+                      {zone.isActive ? "Active" : "Inactive"}
+                    </AdminBadge>
+                  </AdminTableCell>
+                  <AdminTableCell>
+                    <AdminActionButtons>
+                      <AdminEditButton onClick={() => openEditDialog(zone)} />
+                      <AdminDeleteButton onClick={() => setDeleteZone(zone)} />
+                    </AdminActionButtons>
+                  </AdminTableCell>
+                </AdminTableRow>
+              ))}
+            </AdminTableBody>
+          </AdminTable>
+        )}
+      </AdminDataCard>
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingZone ? "Edit Shipping Zone" : "Create Shipping Zone"}</DialogTitle>
           </DialogHeader>

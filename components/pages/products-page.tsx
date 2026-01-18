@@ -1,24 +1,37 @@
 "use client"
 
 import { useState } from "react"
-import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { ImageUpload } from "@/components/ui/image-upload"
-import { Plus, Pencil, Trash, Upload, Download, Wand2, Printer, ScanLine } from "lucide-react"
+import { Plus, Upload, Wand2 } from "lucide-react"
 import { useProducts, useCategories, useCreateProduct, useUpdateProduct, useDeleteProduct, Product } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
 import { ProductImportDialog, ProductExportButton } from "@/components/product-import-export"
 import { PrintLabelButton } from "@/components/barcode-label"
-import { generateEAN13FromSKU } from "@/lib/sku-barcode-utils"
+import {
+  AdminPageHeader,
+  AdminFilterCardGrid,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminActionButtons,
+  AdminEditButton,
+  AdminDeleteButton,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 export function ProductsPage() {
   const { toast } = useToast()
@@ -198,32 +211,20 @@ export function ProductsPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Products</h1>
-            <p className="text-muted-foreground mt-2">Manage your shop products and inventory</p>
-          </div>
-        </div>
-        <Card className="p-6">
-          <div className="space-y-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-16 w-full" />
-            ))}
-          </div>
-        </Card>
-      </div>
+      <AdminLoading
+        title="Products"
+        subtitle="Manage your shop products and inventory"
+        rows={4}
+      />
     )
   }
 
   return (
     <div className="p-8 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Products</h1>
-          <p className="text-muted-foreground mt-2">Manage your shop products and inventory</p>
-        </div>
+      <AdminPageHeader
+        title="Products"
+        subtitle="Manage your shop products and inventory"
+      >
         <div className="flex items-center gap-2">
           <ProductExportButton
             categoryId={categoryFilter}
@@ -232,134 +233,107 @@ export function ProductsPage() {
           <Button
             variant="outline"
             onClick={() => setIsImportDialogOpen(true)}
-            className="flex items-center gap-2"
           >
-            <Upload size={16} /> Import
+            <Upload size={16} className="mr-2" /> Import
           </Button>
-          <Button onClick={openCreateDialog} className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-            <Plus size={16} /> Add Product
+          <Button onClick={openCreateDialog}>
+            <Plus size={16} className="mr-2" /> Add Product
           </Button>
         </div>
-      </div>
+      </AdminPageHeader>
 
-      {/* Filters */}
-      <Card className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Input
-            placeholder="Search by product name or SKU..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border-border"
-          />
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((cat) => (
-                <SelectItem key={cat.id} value={cat.id}>{cat.nameEn}</SelectItem>
+      <AdminFilterCardGrid columns={3}>
+        <Input
+          placeholder="Search by product name or SKU..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger>
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            {categories.map((cat) => (
+              <SelectItem key={cat.id} value={cat.id}>{cat.nameEn}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger>
+            <SelectValue placeholder="All Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+          </SelectContent>
+        </Select>
+      </AdminFilterCardGrid>
+
+      <AdminDataCard>
+        {products.length > 0 ? (
+          <AdminTable>
+            <AdminTableHeader>
+              <AdminTableHeadRow>
+                <AdminTableHead>Product Name</AdminTableHead>
+                <AdminTableHead>Khmer Name</AdminTableHead>
+                <AdminTableHead>Price</AdminTableHead>
+                <AdminTableHead>Stock</AdminTableHead>
+                <AdminTableHead>SKU</AdminTableHead>
+                <AdminTableHead>Status</AdminTableHead>
+                <AdminTableHead>Actions</AdminTableHead>
+              </AdminTableHeadRow>
+            </AdminTableHeader>
+            <AdminTableBody>
+              {products.map((product) => (
+                <AdminTableRow key={product.id}>
+                  <AdminTableCell className="font-medium">{product.nameEn}</AdminTableCell>
+                  <AdminTableCell>{product.nameKh}</AdminTableCell>
+                  <AdminTableCell>${Number(product.priceUsd).toFixed(2)}</AdminTableCell>
+                  <AdminTableCell>
+                    <AdminBadge
+                      variant={
+                        (product.inventory?.quantity || 0) === 0
+                          ? "destructive"
+                          : (product.inventory?.quantity || 0) < (product.inventory?.minLevel || 10)
+                          ? "secondary"
+                          : "default"
+                      }
+                    >
+                      {product.inventory?.quantity || 0} units
+                    </AdminBadge>
+                  </AdminTableCell>
+                  <AdminTableCell className="text-sm">{product.sku}</AdminTableCell>
+                  <AdminTableCell>
+                    <AdminBadge variant={product.isActive ? "default" : "secondary"}>
+                      {product.isActive ? "Active" : "Inactive"}
+                    </AdminBadge>
+                  </AdminTableCell>
+                  <AdminTableCell>
+                    <AdminActionButtons>
+                      <AdminEditButton onClick={() => openEditDialog(product)} />
+                      <PrintLabelButton
+                        product={{
+                          id: product.id,
+                          sku: product.sku,
+                          nameEn: product.nameEn,
+                          priceUsd: product.priceUsd,
+                          category: product.category,
+                        }}
+                        size="sm"
+                      />
+                      <AdminDeleteButton onClick={() => setDeleteProduct(product)} />
+                    </AdminActionButtons>
+                  </AdminTableCell>
+                </AdminTableRow>
               ))}
-            </SelectContent>
-          </Select>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </Card>
-
-      {/* Products Table */}
-      <Card className="p-6">
-        <div className="overflow-x-auto">
-          {products.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-border">
-                  <TableHead className="text-foreground font-semibold">Product Name</TableHead>
-                  <TableHead className="text-foreground font-semibold">Khmer Name</TableHead>
-                  <TableHead className="text-foreground font-semibold">Price</TableHead>
-                  <TableHead className="text-foreground font-semibold">Stock</TableHead>
-                  <TableHead className="text-foreground font-semibold">SKU</TableHead>
-                  <TableHead className="text-foreground font-semibold">Status</TableHead>
-                  <TableHead className="text-foreground font-semibold">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {products.map((product) => (
-                  <TableRow key={product.id} className="border-b border-border hover:bg-muted/50">
-                    <TableCell className="text-foreground font-medium">{product.nameEn}</TableCell>
-                    <TableCell className="text-foreground">{product.nameKh}</TableCell>
-                    <TableCell className="text-foreground">${Number(product.priceUsd).toFixed(2)}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          (product.inventory?.quantity || 0) === 0
-                            ? "destructive"
-                            : (product.inventory?.quantity || 0) < (product.inventory?.minLevel || 10)
-                            ? "secondary"
-                            : "default"
-                        }
-                        className="rounded-sm"
-                      >
-                        {product.inventory?.quantity || 0} units
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-foreground text-sm">{product.sku}</TableCell>
-                    <TableCell>
-                      <Badge variant={product.isActive ? "default" : "secondary"} className="rounded-sm">
-                        {product.isActive ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs bg-transparent"
-                          onClick={() => openEditDialog(product)}
-                          title="Edit product"
-                        >
-                          <Pencil size={14} />
-                        </Button>
-                        <PrintLabelButton
-                          product={{
-                            id: product.id,
-                            sku: product.sku,
-                            nameEn: product.nameEn,
-                            priceUsd: product.priceUsd,
-                            category: product.category,
-                          }}
-                          size="sm"
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs text-destructive hover:text-destructive bg-transparent"
-                          onClick={() => setDeleteProduct(product)}
-                          title="Delete product"
-                        >
-                          <Trash size={14} />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="py-8 text-center text-muted-foreground">
-              No products found
-            </div>
-          )}
-        </div>
-      </Card>
+            </AdminTableBody>
+          </AdminTable>
+        ) : (
+          <AdminEmptyState message="No products found" />
+        )}
+      </AdminDataCard>
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

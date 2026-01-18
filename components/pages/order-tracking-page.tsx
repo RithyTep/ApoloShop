@@ -1,17 +1,28 @@
 "use client"
 
 import { useState } from "react"
-import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  AdminPageHeader,
+  AdminFilterCardGrid,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 import {
   Package,
   Truck,
@@ -65,14 +76,15 @@ const statusIcons: Record<TrackingStatus, typeof Package> = {
   RETURNED: RotateCcw,
 }
 
-const statusColors: Record<TrackingStatus, string> = {
-  PENDING: "bg-yellow-100 text-yellow-800",
-  PICKED_UP: "bg-blue-100 text-blue-800",
-  IN_TRANSIT: "bg-purple-100 text-purple-800",
-  OUT_FOR_DELIVERY: "bg-orange-100 text-orange-800",
-  DELIVERED: "bg-green-100 text-green-800",
-  FAILED_DELIVERY: "bg-red-100 text-red-800",
-  RETURNED: "bg-gray-100 text-gray-800",
+// Map status to badge variant
+const statusBadgeVariant: Record<TrackingStatus, "default" | "secondary" | "destructive" | "outline"> = {
+  PENDING: "outline",
+  PICKED_UP: "secondary",
+  IN_TRANSIT: "secondary",
+  OUT_FOR_DELIVERY: "outline",
+  DELIVERED: "default",
+  FAILED_DELIVERY: "destructive",
+  RETURNED: "secondary",
 }
 
 interface CreateFormData {
@@ -263,135 +275,120 @@ export function OrderTrackingPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">Order Tracking</h1>
-            <p className="text-muted-foreground mt-2">Manage order shipments and tracking</p>
-          </div>
-        </div>
-        <Card className="p-6">
-          <div className="space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Skeleton key={i} className="h-16 w-full" />
-            ))}
-          </div>
-        </Card>
-      </div>
+      <AdminLoading
+        title="Order Tracking"
+        subtitle="Manage order shipments and tracking"
+        rows={5}
+      />
     )
   }
 
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Order Tracking</h1>
-          <p className="text-muted-foreground mt-2">Manage order shipments and tracking</p>
-        </div>
+      <AdminPageHeader
+        title="Order Tracking"
+        subtitle="Manage order shipments and tracking"
+      >
         <Button onClick={openCreateDialog} className="flex items-center gap-2">
           <Plus size={16} /> Add Tracking
         </Button>
-      </div>
+      </AdminPageHeader>
 
       {/* Filters */}
-      <Card className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by order # or tracking #..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <Select
-            value={statusFilter || "all"}
-            onValueChange={(v) => setStatusFilter(v === "all" ? "" : (v as TrackingStatus))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              {statusOptions.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
-                  {s.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="text-sm text-muted-foreground flex items-center">
-            {filteredTrackings.length} tracking records
-          </div>
+      <AdminFilterCardGrid columns={4}>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by order # or tracking #..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
         </div>
-      </Card>
+        <Select
+          value={statusFilter || "all"}
+          onValueChange={(v) => setStatusFilter(v === "all" ? "" : (v as TrackingStatus))}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="All Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            {statusOptions.map((s) => (
+              <SelectItem key={s.value} value={s.value}>
+                {s.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="text-sm text-muted-foreground flex items-center">
+          {filteredTrackings.length} tracking records
+        </div>
+      </AdminFilterCardGrid>
 
       {/* Tracking Table */}
-      <Card className="p-6">
-        <div className="overflow-x-auto">
-          {filteredTrackings.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order #</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Tracking #</TableHead>
-                  <TableHead>Courier</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Est. Delivery</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredTrackings.map((tracking) => {
-                  const StatusIcon = statusIcons[tracking.status]
-                  return (
-                    <TableRow key={tracking.id}>
-                      <TableCell className="font-mono font-medium">
-                        {tracking.order?.orderNumber || "-"}
-                      </TableCell>
-                      <TableCell>{tracking.order?.customer?.name || "-"}</TableCell>
-                      <TableCell className="font-mono">
-                        {tracking.trackingNumber || "-"}
-                      </TableCell>
-                      <TableCell>
-                        {tracking.courierName ||
-                          courierOptions.find((c) => c.value === tracking.courier)?.label ||
-                          tracking.courier}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={statusColors[tracking.status]}>
-                          <StatusIcon className="h-3 w-3 mr-1" />
-                          {statusOptions.find((s) => s.value === tracking.status)?.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {tracking.estimatedDeliveryDate
-                          ? formatDate(tracking.estimatedDeliveryDate)
-                          : "-"}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm" onClick={() => openViewDialog(tracking)}>
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => openUpdateDialog(tracking)}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="py-8 text-center text-muted-foreground">No tracking records found</div>
-          )}
-        </div>
-      </Card>
+      <AdminDataCard>
+        {filteredTrackings.length === 0 ? (
+          <AdminEmptyState message="No tracking records found" />
+        ) : (
+          <AdminTable>
+            <AdminTableHeader>
+              <AdminTableHeadRow>
+                <AdminTableHead>Order #</AdminTableHead>
+                <AdminTableHead>Customer</AdminTableHead>
+                <AdminTableHead>Tracking #</AdminTableHead>
+                <AdminTableHead>Courier</AdminTableHead>
+                <AdminTableHead>Status</AdminTableHead>
+                <AdminTableHead>Est. Delivery</AdminTableHead>
+                <AdminTableHead>Actions</AdminTableHead>
+              </AdminTableHeadRow>
+            </AdminTableHeader>
+            <AdminTableBody>
+              {filteredTrackings.map((tracking) => {
+                const StatusIcon = statusIcons[tracking.status]
+                return (
+                  <AdminTableRow key={tracking.id}>
+                    <AdminTableCell className="font-mono font-medium">
+                      {tracking.order?.orderNumber || "-"}
+                    </AdminTableCell>
+                    <AdminTableCell>{tracking.order?.customer?.name || "-"}</AdminTableCell>
+                    <AdminTableCell className="font-mono">
+                      {tracking.trackingNumber || "-"}
+                    </AdminTableCell>
+                    <AdminTableCell>
+                      {tracking.courierName ||
+                        courierOptions.find((c) => c.value === tracking.courier)?.label ||
+                        tracking.courier}
+                    </AdminTableCell>
+                    <AdminTableCell>
+                      <AdminBadge variant={statusBadgeVariant[tracking.status]}>
+                        <StatusIcon className="h-3 w-3 mr-1" />
+                        {statusOptions.find((s) => s.value === tracking.status)?.label}
+                      </AdminBadge>
+                    </AdminTableCell>
+                    <AdminTableCell>
+                      {tracking.estimatedDeliveryDate
+                        ? formatDate(tracking.estimatedDeliveryDate)
+                        : "-"}
+                    </AdminTableCell>
+                    <AdminTableCell>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => openViewDialog(tracking)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => openUpdateDialog(tracking)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </AdminTableCell>
+                  </AdminTableRow>
+                )
+              })}
+            </AdminTableBody>
+          </AdminTable>
+        )}
+      </AdminDataCard>
 
       {/* Create Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -654,9 +651,9 @@ export function OrderTrackingPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Current Status</p>
-                  <Badge className={statusColors[selectedTracking.status]}>
+                  <AdminBadge variant={statusBadgeVariant[selectedTracking.status]}>
                     {statusOptions.find((s) => s.value === selectedTracking.status)?.label}
-                  </Badge>
+                  </AdminBadge>
                 </div>
                 {selectedTracking.trackingNumber && (
                   <div className="text-right">

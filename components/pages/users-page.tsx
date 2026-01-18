@@ -5,16 +5,30 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Plus, Pencil, Trash, Shield } from "lucide-react"
-import { useUsers, useRoles, useCreateUser, useUpdateUser, useDeleteUser, User, Role } from "@/lib/api-hooks"
+import { Plus, Shield } from "lucide-react"
+import { useUsers, useRoles, useCreateUser, useUpdateUser, useDeleteUser, User } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
+import {
+  AdminPageHeader,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminActionButtons,
+  AdminEditButton,
+  AdminDeleteButton,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 export function UsersPage() {
   const { toast } = useToast()
@@ -121,35 +135,24 @@ export function UsersPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Users & Roles</h1>
-            <p className="text-muted-foreground mt-2">Manage users and permission settings</p>
-          </div>
-        </div>
-        <Card className="p-6">
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-16 w-full" />
-            ))}
-          </div>
-        </Card>
-      </div>
+      <AdminLoading
+        title="Users & Roles"
+        subtitle="Manage users and permission settings"
+        rows={3}
+      />
     )
   }
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Users & Roles</h1>
-          <p className="text-muted-foreground mt-2">Manage users and permission settings</p>
-        </div>
-        <Button onClick={openCreateDialog} className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-          <Plus size={16} /> Add User
+      <AdminPageHeader
+        title="Users & Roles"
+        subtitle="Manage users and permission settings"
+      >
+        <Button onClick={openCreateDialog}>
+          <Plus size={16} className="mr-2" /> Add User
         </Button>
-      </div>
+      </AdminPageHeader>
 
       {/* Roles Summary */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -168,69 +171,51 @@ export function UsersPage() {
         ))}
       </div>
 
-      <Card className="p-6">
-        <div className="overflow-x-auto">
-          {users.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-border">
-                  <TableHead className="text-foreground font-semibold">Name</TableHead>
-                  <TableHead className="text-foreground font-semibold">Email</TableHead>
-                  <TableHead className="text-foreground font-semibold">Role</TableHead>
-                  <TableHead className="text-foreground font-semibold">Status</TableHead>
-                  <TableHead className="text-foreground font-semibold">Last Login</TableHead>
-                  <TableHead className="text-foreground font-semibold">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id} className="border-b border-border hover:bg-muted/50">
-                    <TableCell className="text-foreground font-medium">{user.name}</TableCell>
-                    <TableCell className="text-foreground">{user.email}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="rounded-sm">
-                        {user.role?.name || "No Role"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={user.isActive ? "default" : "secondary"} className="rounded-sm">
-                        {user.isActive ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-foreground text-sm">
-                      {user.lastLoginAt ? formatDate(user.lastLoginAt) : "Never"}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs bg-transparent"
-                          onClick={() => openEditDialog(user)}
-                        >
-                          <Pencil size={14} />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs text-destructive hover:text-destructive bg-transparent"
-                          onClick={() => setDeleteUser(user)}
-                        >
-                          <Trash size={14} />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="py-8 text-center text-muted-foreground">
-              No users found. Add your first user!
-            </div>
-          )}
-        </div>
-      </Card>
+      <AdminDataCard>
+        {users.length > 0 ? (
+          <AdminTable>
+            <AdminTableHeader>
+              <AdminTableHeadRow>
+                <AdminTableHead>Name</AdminTableHead>
+                <AdminTableHead>Email</AdminTableHead>
+                <AdminTableHead>Role</AdminTableHead>
+                <AdminTableHead>Status</AdminTableHead>
+                <AdminTableHead>Last Login</AdminTableHead>
+                <AdminTableHead>Actions</AdminTableHead>
+              </AdminTableHeadRow>
+            </AdminTableHeader>
+            <AdminTableBody>
+              {users.map((user) => (
+                <AdminTableRow key={user.id}>
+                  <AdminTableCell className="font-medium">{user.name}</AdminTableCell>
+                  <AdminTableCell>{user.email}</AdminTableCell>
+                  <AdminTableCell>
+                    <AdminBadge variant="secondary">
+                      {user.role?.name || "No Role"}
+                    </AdminBadge>
+                  </AdminTableCell>
+                  <AdminTableCell>
+                    <AdminBadge variant={user.isActive ? "default" : "secondary"}>
+                      {user.isActive ? "Active" : "Inactive"}
+                    </AdminBadge>
+                  </AdminTableCell>
+                  <AdminTableCell className="text-sm">
+                    {user.lastLoginAt ? formatDate(user.lastLoginAt) : "Never"}
+                  </AdminTableCell>
+                  <AdminTableCell>
+                    <AdminActionButtons>
+                      <AdminEditButton onClick={() => openEditDialog(user)} />
+                      <AdminDeleteButton onClick={() => setDeleteUser(user)} />
+                    </AdminActionButtons>
+                  </AdminTableCell>
+                </AdminTableRow>
+              ))}
+            </AdminTableBody>
+          </AdminTable>
+        ) : (
+          <AdminEmptyState message="No users found. Add your first user!" />
+        )}
+      </AdminDataCard>
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

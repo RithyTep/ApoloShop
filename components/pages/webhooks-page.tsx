@@ -5,8 +5,6 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -43,7 +41,6 @@ import {
 } from "@/lib/api-hooks"
 import { translations, type Language } from "@/lib/i18n"
 import {
-  Webhook as WebhookIcon,
   Plus,
   Pencil,
   Trash2,
@@ -61,6 +58,13 @@ import {
   Key,
   Settings,
 } from "lucide-react"
+import {
+  AdminPageHeader,
+  AdminDataCard,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 // Webhook events with labels
 const WEBHOOK_EVENTS: { value: WebhookEventType; labelKey: keyof typeof translations.en.webhooks }[] = [
@@ -70,20 +74,12 @@ const WEBHOOK_EVENTS: { value: WebhookEventType; labelKey: keyof typeof translat
   { value: "CUSTOMER_CREATED", labelKey: "customerCreated" },
 ]
 
-// Status badge colors
-const statusColors: Record<string, string> = {
-  SUCCESS: "bg-success/10 text-success border-success/20",
-  FAILED: "bg-destructive/10 text-destructive border-destructive/20",
-  PENDING: "bg-warning/10 text-warning border-warning/20",
-  RETRYING: "bg-info/10 text-info border-info/20",
-}
-
 // Status icons
 const statusIcons: Record<string, React.ReactNode> = {
-  SUCCESS: <CheckCircle2 className="h-4 w-4 text-success" />,
-  FAILED: <XCircle className="h-4 w-4 text-destructive" />,
-  PENDING: <Clock className="h-4 w-4 text-warning" />,
-  RETRYING: <RefreshCw className="h-4 w-4 text-info animate-spin" />,
+  SUCCESS: <CheckCircle2 className="h-4 w-4 text-green-600" />,
+  FAILED: <XCircle className="h-4 w-4 text-red-600" />,
+  PENDING: <Clock className="h-4 w-4 text-yellow-600" />,
+  RETRYING: <RefreshCw className="h-4 w-4 text-blue-600 animate-spin" />,
 }
 
 interface WebhooksPageProps {
@@ -219,20 +215,30 @@ export function WebhooksPage({ language = "en" }: WebhooksPageProps) {
     return new Date(dateString).toLocaleString(language === "en" ? "en-US" : "km-KH")
   }
 
+  // Get badge variant for status
+  const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (status) {
+      case "SUCCESS":
+        return "default"
+      case "FAILED":
+        return "destructive"
+      case "PENDING":
+        return "outline"
+      case "RETRYING":
+        return "secondary"
+      default:
+        return "secondary"
+    }
+  }
+
   // Render loading state
   if (isLoading) {
     return (
-      <div className="space-y-6 p-6">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-32" />
-          <Skeleton className="h-10 w-40" />
-        </div>
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-24 w-full" />
-          ))}
-        </div>
-      </div>
+      <AdminLoading
+        title={t.title}
+        subtitle={t.description}
+        rows={3}
+      />
     )
   }
 
@@ -253,31 +259,27 @@ export function WebhooksPage({ language = "en" }: WebhooksPageProps) {
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-            <WebhookIcon className="h-7 w-7" />
-            {t.title}
-          </h1>
-          <p className="text-muted-foreground mt-2">{t.description}</p>
-        </div>
+      <AdminPageHeader
+        title={t.title}
+        subtitle={t.description}
+      >
         <Button onClick={handleCreate}>
           <Plus className="h-4 w-4 mr-2" />
           {t.createWebhook}
         </Button>
-      </div>
+      </AdminPageHeader>
 
       {/* Webhooks List */}
       {webhooks.length === 0 ? (
-        <Card className="p-12 text-center">
-          <WebhookIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium">{t.noWebhooks}</h3>
-          <p className="text-muted-foreground mb-4">{t.description}</p>
-          <Button onClick={handleCreate}>
-            <Plus className="h-4 w-4 mr-2" />
-            {t.createWebhook}
-          </Button>
-        </Card>
+        <AdminDataCard>
+          <AdminEmptyState message={t.noWebhooks} />
+          <div className="text-center pb-6">
+            <Button onClick={handleCreate}>
+              <Plus className="h-4 w-4 mr-2" />
+              {t.createWebhook}
+            </Button>
+          </div>
+        </AdminDataCard>
       ) : (
         <div className="space-y-4">
           {webhooks.map((webhook) => (
@@ -286,9 +288,9 @@ export function WebhooksPage({ language = "en" }: WebhooksPageProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
                     <h3 className="font-medium truncate">{webhook.name}</h3>
-                    <Badge variant={webhook.isActive ? "default" : "secondary"}>
+                    <AdminBadge variant={webhook.isActive ? "default" : "secondary"}>
                       {webhook.isActive ? t.active : t.inactive}
-                    </Badge>
+                    </AdminBadge>
                   </div>
                   <p className="text-sm text-muted-foreground truncate flex items-center gap-1">
                     <ExternalLink className="h-3 w-3" />
@@ -298,9 +300,9 @@ export function WebhooksPage({ language = "en" }: WebhooksPageProps) {
                     {webhook.events.map((event) => {
                       const eventConfig = WEBHOOK_EVENTS.find((e) => e.value === event)
                       return (
-                        <Badge key={event} variant="outline" className="text-xs">
+                        <AdminBadge key={event} variant="outline">
                           {eventConfig ? t[eventConfig.labelKey] : event}
-                        </Badge>
+                        </AdminBadge>
                       )
                     })}
                   </div>
@@ -529,8 +531,8 @@ export function WebhooksPage({ language = "en" }: WebhooksPageProps) {
           </DialogHeader>
           {detailLoading ? (
             <div className="space-y-4">
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-40 w-full" />
+              <div className="h-20 bg-muted animate-pulse rounded" />
+              <div className="h-40 bg-muted animate-pulse rounded" />
             </div>
           ) : detailData ? (
             <div className="space-y-6">
@@ -541,11 +543,11 @@ export function WebhooksPage({ language = "en" }: WebhooksPageProps) {
                   <div className="text-xs text-muted-foreground">{t.totalDeliveries}</div>
                 </Card>
                 <Card className="p-3 text-center">
-                  <div className="text-2xl font-bold text-success">{detailData.stats.successCount}</div>
+                  <div className="text-2xl font-bold">{detailData.stats.successCount}</div>
                   <div className="text-xs text-muted-foreground">{t.successCount}</div>
                 </Card>
                 <Card className="p-3 text-center">
-                  <div className="text-2xl font-bold text-destructive">{detailData.stats.failureCount}</div>
+                  <div className="text-2xl font-bold">{detailData.stats.failureCount}</div>
                   <div className="text-xs text-muted-foreground">{t.failureCount}</div>
                 </Card>
                 <Card className="p-3 text-center">
@@ -582,10 +584,10 @@ export function WebhooksPage({ language = "en" }: WebhooksPageProps) {
                           <div className="flex items-start justify-between">
                             <div className="flex items-center gap-2">
                               {statusIcons[log.status]}
-                              <Badge className={statusColors[log.status]} variant="secondary">
+                              <AdminBadge variant={getStatusBadgeVariant(log.status)}>
                                 {t[log.status.toLowerCase() as keyof typeof t] || log.status}
-                              </Badge>
-                              <Badge variant="outline">{log.event}</Badge>
+                              </AdminBadge>
+                              <AdminBadge variant="outline">{log.event}</AdminBadge>
                               {log.httpStatus && (
                                 <span className="text-sm text-muted-foreground">
                                   HTTP {log.httpStatus}

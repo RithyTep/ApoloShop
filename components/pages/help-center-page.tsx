@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Card } from "@/components/ui/card"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,6 +15,25 @@ import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { Plus, Pencil, Trash, Eye, FolderOpen, FileText, Star, TrendingUp } from "lucide-react"
+import {
+  AdminPageHeader,
+  AdminFilterCard,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminActionButtons,
+  AdminViewButton,
+  AdminEditButton,
+  AdminDeleteButton,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 import {
   useHelpCategories,
   useCreateHelpCategory,
@@ -263,10 +282,10 @@ export function HelpCenterPage() {
     })
   }
 
-  const getStatusVariant = (status: string): "success" | "warning" | "secondary" | "outline" => {
+  const getStatusVariant = (status: string): "default" | "outline" | "secondary" | "destructive" => {
     switch (status) {
-      case "PUBLISHED": return "success"
-      case "DRAFT": return "warning"
+      case "PUBLISHED": return "default"
+      case "DRAFT": return "outline"
       case "ARCHIVED": return "secondary"
       default: return "secondary"
     }
@@ -274,49 +293,58 @@ export function HelpCenterPage() {
 
   if (categoriesLoading || articlesLoading) {
     return (
-      <div className="p-8 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Help Center</h1>
-            <p className="text-muted-foreground mt-2">Manage FAQ articles and help categories</p>
-          </div>
-        </div>
-        <Card className="p-6">
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-16 w-full" />
-            ))}
-          </div>
-        </Card>
-      </div>
+      <AdminLoading
+        title="Help Center"
+        subtitle="Manage FAQ articles and help categories"
+        rows={4}
+      />
     )
   }
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="p-8 space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Help Center</h1>
-          <p className="text-muted-foreground mt-2">Manage FAQ articles and help categories</p>
+          <h1 className="text-3xl font-bold tracking-tight">Help Center</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage FAQ articles and help documentation
+          </p>
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="articles" className="flex items-center gap-2">
-            <FileText size={16} /> Articles
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
+          <TabsTrigger
+            value="articles"
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm gap-2"
+          >
+            <FileText size={16} />
+            Articles
+            <Badge variant="secondary" className="ml-1 rounded-full px-2 py-0 text-xs">
+              {articles.length}
+            </Badge>
           </TabsTrigger>
-          <TabsTrigger value="categories" className="flex items-center gap-2">
-            <FolderOpen size={16} /> Categories
+          <TabsTrigger
+            value="categories"
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm gap-2"
+          >
+            <FolderOpen size={16} />
+            Categories
+            <Badge variant="secondary" className="ml-1 rounded-full px-2 py-0 text-xs">
+              {categories.length}
+            </Badge>
           </TabsTrigger>
         </TabsList>
 
         {/* Articles Tab */}
-        <TabsContent value="articles" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <div className="flex gap-4 items-center">
+        <TabsContent value="articles" className="space-y-6">
+          {/* Toolbar */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-1 items-center gap-3">
               <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v as HelpArticleStatus)}>
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-[140px] h-9">
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -327,7 +355,7 @@ export function HelpCenterPage() {
                 </SelectContent>
               </Select>
               <Select value={categoryFilter || "all"} onValueChange={(v) => setCategoryFilter(v === "all" ? "" : v)}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[160px] h-9">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
@@ -337,101 +365,98 @@ export function HelpCenterPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <div className="text-sm text-muted-foreground">
-                {articles.length} articles
-              </div>
             </div>
-            <Button onClick={openCreateArticleDialog} className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-              <Plus size={16} /> Add Article
+            <Button onClick={openCreateArticleDialog} size="sm" className="h-9">
+              <Plus size={16} className="mr-2" />
+              Add Article
             </Button>
           </div>
 
-          <Card className="p-6">
-            <div className="overflow-x-auto">
+          {/* Articles Table */}
+          <Card>
+            <div className="rounded-md">
               {articles.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-b border-border">
-                      <TableHead className="text-foreground font-semibold">Title</TableHead>
-                      <TableHead className="text-foreground font-semibold">Category</TableHead>
-                      <TableHead className="text-foreground font-semibold">Status</TableHead>
-                      <TableHead className="text-foreground font-semibold">Views</TableHead>
-                      <TableHead className="text-foreground font-semibold">Helpful</TableHead>
-                      <TableHead className="text-foreground font-semibold">Updated</TableHead>
-                      <TableHead className="text-foreground font-semibold">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <AdminTable>
+                  <AdminTableHeader>
+                    <AdminTableHeadRow>
+                      <AdminTableHead>Title</AdminTableHead>
+                      <AdminTableHead>Category</AdminTableHead>
+                      <AdminTableHead>Status</AdminTableHead>
+                      <AdminTableHead>Views</AdminTableHead>
+                      <AdminTableHead>Helpful</AdminTableHead>
+                      <AdminTableHead>Updated</AdminTableHead>
+                      <AdminTableHead className="text-right">Actions</AdminTableHead>
+                    </AdminTableHeadRow>
+                  </AdminTableHeader>
+                  <AdminTableBody>
                     {articles.map((article) => (
-                      <TableRow key={article.id} className="border-b border-border hover:bg-muted/50">
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {article.isFeatured && <Star size={14} className="text-warning fill-warning" />}
-                            <div>
-                              <p className="text-foreground font-medium">{article.titleEn}</p>
-                              <p className="text-sm text-muted-foreground">{article.titleKh}</p>
+                      <AdminTableRow key={article.id}>
+                        <AdminTableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                              <FileText size={18} className="text-muted-foreground" />
+                            </div>
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{article.titleEn}</span>
+                                {article.isFeatured && (
+                                  <Star size={14} className="text-yellow-500 fill-yellow-500" />
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground">{article.titleKh}</p>
                             </div>
                           </div>
-                        </TableCell>
-                        <TableCell className="text-foreground text-sm">
-                          {article.category?.nameEn || "-"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={getStatusVariant(article.status)} className="rounded-sm">
+                        </AdminTableCell>
+                        <AdminTableCell>
+                          <span className="text-sm">{article.category?.nameEn || "-"}</span>
+                        </AdminTableCell>
+                        <AdminTableCell>
+                          <AdminBadge variant={getStatusVariant(article.status)}>
                             {article.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-foreground text-sm">
-                          <div className="flex items-center gap-1">
+                          </AdminBadge>
+                        </AdminTableCell>
+                        <AdminTableCell>
+                          <div className="flex items-center gap-1.5 text-sm">
                             <TrendingUp size={14} className="text-muted-foreground" />
-                            {article.viewCount}
+                            <span>{article.viewCount}</span>
                           </div>
-                        </TableCell>
-                        <TableCell className="text-foreground text-sm">
-                          <span className="text-success">{article.helpfulYes}</span>
-                          {" / "}
-                          <span className="text-destructive">{article.helpfulNo}</span>
-                        </TableCell>
-                        <TableCell className="text-foreground text-sm">
-                          {formatDate(article.updatedAt)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
+                        </AdminTableCell>
+                        <AdminTableCell>
+                          <div className="flex items-center gap-1 text-sm">
+                            <span className="text-green-600 font-medium">{article.helpfulYes}</span>
+                            <span className="text-muted-foreground">/</span>
+                            <span className="text-red-600 font-medium">{article.helpfulNo}</span>
+                          </div>
+                        </AdminTableCell>
+                        <AdminTableCell>
+                          <span className="text-sm text-muted-foreground">{formatDate(article.updatedAt)}</span>
+                        </AdminTableCell>
+                        <AdminTableCell className="text-right">
+                          <AdminActionButtons>
                             {article.status === "PUBLISHED" && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-xs bg-transparent"
-                                onClick={() => window.open(`/help/${article.slug}`, "_blank")}
-                              >
-                                <Eye size={14} />
-                              </Button>
+                              <AdminViewButton onClick={() => window.open(`/help/${article.slug}`, "_blank")} />
                             )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-xs bg-transparent"
-                              onClick={() => openEditArticleDialog(article)}
-                            >
-                              <Pencil size={14} />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-xs text-destructive hover:text-destructive bg-transparent"
-                              onClick={() => setDeleteArticle(article)}
-                            >
-                              <Trash size={14} />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                            <AdminEditButton onClick={() => openEditArticleDialog(article)} />
+                            <AdminDeleteButton onClick={() => setDeleteArticle(article)} />
+                          </AdminActionButtons>
+                        </AdminTableCell>
+                      </AdminTableRow>
                     ))}
-                  </TableBody>
-                </Table>
+                  </AdminTableBody>
+                </AdminTable>
               ) : (
-                <div className="py-8 text-center text-muted-foreground">
-                  No articles found. Create your first help article!
+                <div className="flex flex-col items-center justify-center py-16 px-4">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4">
+                    <FileText size={24} className="text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-1">No articles yet</h3>
+                  <p className="text-sm text-muted-foreground text-center mb-4">
+                    Get started by creating your first help article.
+                  </p>
+                  <Button onClick={openCreateArticleDialog} size="sm">
+                    <Plus size={16} className="mr-2" />
+                    Create Article
+                  </Button>
                 </div>
               )}
             </div>
@@ -439,80 +464,86 @@ export function HelpCenterPage() {
         </TabsContent>
 
         {/* Categories Tab */}
-        <TabsContent value="categories" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-muted-foreground">
-              {categories.length} categories
-            </div>
-            <Button onClick={openCreateCategoryDialog} className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-              <Plus size={16} /> Add Category
+        <TabsContent value="categories" className="space-y-6">
+          {/* Toolbar */}
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Organize your articles into categories for better navigation.
+            </p>
+            <Button onClick={openCreateCategoryDialog} size="sm" className="h-9">
+              <Plus size={16} className="mr-2" />
+              Add Category
             </Button>
           </div>
 
-          <Card className="p-6">
-            <div className="overflow-x-auto">
+          {/* Categories Table */}
+          <Card>
+            <div className="rounded-md">
               {categories.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-b border-border">
-                      <TableHead className="text-foreground font-semibold">Name</TableHead>
-                      <TableHead className="text-foreground font-semibold">Slug</TableHead>
-                      <TableHead className="text-foreground font-semibold">Articles</TableHead>
-                      <TableHead className="text-foreground font-semibold">Order</TableHead>
-                      <TableHead className="text-foreground font-semibold">Status</TableHead>
-                      <TableHead className="text-foreground font-semibold">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <AdminTable>
+                  <AdminTableHeader>
+                    <AdminTableHeadRow>
+                      <AdminTableHead>Category</AdminTableHead>
+                      <AdminTableHead>Slug</AdminTableHead>
+                      <AdminTableHead>Articles</AdminTableHead>
+                      <AdminTableHead>Order</AdminTableHead>
+                      <AdminTableHead>Status</AdminTableHead>
+                      <AdminTableHead className="text-right">Actions</AdminTableHead>
+                    </AdminTableHeadRow>
+                  </AdminTableHeader>
+                  <AdminTableBody>
                     {categories.map((category) => (
-                      <TableRow key={category.id} className="border-b border-border hover:bg-muted/50">
-                        <TableCell>
-                          <div>
-                            <p className="text-foreground font-medium">{category.nameEn}</p>
-                            <p className="text-sm text-muted-foreground">{category.nameKh}</p>
+                      <AdminTableRow key={category.id}>
+                        <AdminTableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                              <FolderOpen size={18} className="text-muted-foreground" />
+                            </div>
+                            <div className="space-y-1">
+                              <span className="font-medium">{category.nameEn}</span>
+                              <p className="text-xs text-muted-foreground">{category.nameKh}</p>
+                            </div>
                           </div>
-                        </TableCell>
-                        <TableCell className="text-foreground text-sm font-mono">
-                          /{category.slug}
-                        </TableCell>
-                        <TableCell className="text-foreground text-sm">
-                          {category._count?.articles || 0}
-                        </TableCell>
-                        <TableCell className="text-foreground text-sm">
-                          {category.sortOrder}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={category.isActive ? "success" : "secondary"} className="rounded-sm">
-                            {category.isActive ? "Active" : "Inactive"}
+                        </AdminTableCell>
+                        <AdminTableCell>
+                          <code className="text-xs bg-muted px-2 py-1 rounded">/{category.slug}</code>
+                        </AdminTableCell>
+                        <AdminTableCell>
+                          <Badge variant="secondary" className="rounded-full">
+                            {category._count?.articles || 0} articles
                           </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-xs bg-transparent"
-                              onClick={() => openEditCategoryDialog(category)}
-                            >
-                              <Pencil size={14} />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-xs text-destructive hover:text-destructive bg-transparent"
-                              onClick={() => setDeleteCategory(category)}
-                            >
-                              <Trash size={14} />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                        </AdminTableCell>
+                        <AdminTableCell>
+                          <span className="text-sm">{category.sortOrder}</span>
+                        </AdminTableCell>
+                        <AdminTableCell>
+                          <AdminBadge variant={category.isActive ? "default" : "secondary"}>
+                            {category.isActive ? "Active" : "Inactive"}
+                          </AdminBadge>
+                        </AdminTableCell>
+                        <AdminTableCell className="text-right">
+                          <AdminActionButtons>
+                            <AdminEditButton onClick={() => openEditCategoryDialog(category)} />
+                            <AdminDeleteButton onClick={() => setDeleteCategory(category)} />
+                          </AdminActionButtons>
+                        </AdminTableCell>
+                      </AdminTableRow>
                     ))}
-                  </TableBody>
-                </Table>
+                  </AdminTableBody>
+                </AdminTable>
               ) : (
-                <div className="py-8 text-center text-muted-foreground">
-                  No categories found. Create your first help category!
+                <div className="flex flex-col items-center justify-center py-16 px-4">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4">
+                    <FolderOpen size={24} className="text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-1">No categories yet</h3>
+                  <p className="text-sm text-muted-foreground text-center mb-4">
+                    Create categories to organize your help articles.
+                  </p>
+                  <Button onClick={openCreateCategoryDialog} size="sm">
+                    <Plus size={16} className="mr-2" />
+                    Create Category
+                  </Button>
                 </div>
               )}
             </div>
@@ -522,7 +553,7 @@ export function HelpCenterPage() {
 
       {/* Category Dialog */}
       <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[450px]">
           <DialogHeader>
             <DialogTitle>{editingCategory ? "Edit Category" : "Add New Category"}</DialogTitle>
           </DialogHeader>
@@ -613,7 +644,7 @@ export function HelpCenterPage() {
 
       {/* Article Dialog */}
       <Dialog open={isArticleDialogOpen} onOpenChange={setIsArticleDialogOpen}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingArticle ? "Edit Article" : "Add New Article"}</DialogTitle>
           </DialogHeader>

@@ -6,16 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Progress } from "@/components/ui/progress"
 import {
   Dialog,
@@ -42,9 +32,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Plus,
-  Pencil,
   Trash,
   Play,
   Pause,
@@ -67,6 +57,21 @@ import {
   CreateExperimentInput,
 } from "@/lib/api-hooks"
 import { useToast } from "@/components/ui/use-toast"
+import {
+  AdminPageHeader,
+  AdminFilterCard,
+  AdminDataCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableHeadRow,
+  AdminTableHead,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableCell,
+  AdminBadge,
+  AdminEmptyState,
+  AdminLoading,
+} from "@/components/admin"
 
 const experimentTypes: { value: ExperimentType; label: string }[] = [
   { value: "PRODUCT_PAGE", label: "Product Page" },
@@ -243,18 +248,14 @@ export function ABTestingPage() {
     }
   }
 
-  const getStatusBadge = (status: ExperimentStatus) => {
+  const getStatusBadgeVariant = (status: ExperimentStatus): "default" | "secondary" | "outline" | "destructive" => {
     const variants: Record<ExperimentStatus, "default" | "secondary" | "outline" | "destructive"> = {
       DRAFT: "secondary",
       RUNNING: "default",
       PAUSED: "outline",
       COMPLETED: "secondary",
     }
-    return (
-      <Badge variant={variants[status]} className="rounded-sm">
-        {status}
-      </Badge>
-    )
+    return variants[status]
   }
 
   const formatDate = (dateStr?: string) => {
@@ -270,188 +271,171 @@ export function ABTestingPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">A/B Testing</h1>
-            <p className="text-muted-foreground mt-2">
-              Create and manage experiments to optimize conversions
-            </p>
-          </div>
-        </div>
-        <Card className="p-6">
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-16 w-full" />
-            ))}
-          </div>
-        </Card>
-      </div>
+      <AdminLoading
+        title="A/B Testing"
+        subtitle="Create and manage experiments to optimize conversions"
+        rows={3}
+      />
     )
   }
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">A/B Testing</h1>
-          <p className="text-muted-foreground mt-2">
-            Create and manage experiments to optimize conversions
-          </p>
-        </div>
+      <AdminPageHeader
+        title="A/B Testing"
+        subtitle="Create and manage experiments to optimize conversions"
+      >
         <Button
           onClick={openCreateDialog}
           className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
         >
           <Plus size={16} /> New Experiment
         </Button>
-      </div>
+      </AdminPageHeader>
 
       {/* Filter */}
-      <Card className="p-4">
-        <div className="flex gap-4 items-center">
-          <Select
-            value={statusFilter || "all"}
-            onValueChange={(v) => setStatusFilter(v === "all" ? "" : (v as ExperimentStatus))}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="DRAFT">Draft</SelectItem>
-              <SelectItem value="RUNNING">Running</SelectItem>
-              <SelectItem value="PAUSED">Paused</SelectItem>
-              <SelectItem value="COMPLETED">Completed</SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="text-sm text-muted-foreground">{experiments.length} experiments</div>
-        </div>
-      </Card>
+      <AdminFilterCard>
+        <Select
+          value={statusFilter || "all"}
+          onValueChange={(v) => setStatusFilter(v === "all" ? "" : (v as ExperimentStatus))}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="All Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="DRAFT">Draft</SelectItem>
+            <SelectItem value="RUNNING">Running</SelectItem>
+            <SelectItem value="PAUSED">Paused</SelectItem>
+            <SelectItem value="COMPLETED">Completed</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="text-sm text-muted-foreground">{experiments.length} experiments</div>
+      </AdminFilterCard>
 
       {/* Experiments Table */}
-      <Card className="p-6">
-        <div className="overflow-x-auto">
-          {experiments.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-border">
-                  <TableHead className="text-foreground font-semibold">Name</TableHead>
-                  <TableHead className="text-foreground font-semibold">Type</TableHead>
-                  <TableHead className="text-foreground font-semibold">Status</TableHead>
-                  <TableHead className="text-foreground font-semibold">Variants</TableHead>
-                  <TableHead className="text-foreground font-semibold">Visitors</TableHead>
-                  <TableHead className="text-foreground font-semibold">Conversions</TableHead>
-                  <TableHead className="text-foreground font-semibold">Created</TableHead>
-                  <TableHead className="text-foreground font-semibold">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {experiments.map((exp) => {
-                  const totalVisitors = exp.variants.reduce((sum, v) => sum + v.visitors, 0)
-                  const totalConversions = exp.variants.reduce((sum, v) => sum + v.conversions, 0)
-                  return (
-                    <TableRow key={exp.id} className="border-b border-border hover:bg-muted/50">
-                      <TableCell className="text-foreground font-medium">
-                        <div>
-                          {exp.name}
-                          {exp.isSignificant && (
-                            <Trophy className="inline ml-2 text-yellow-500" size={14} />
-                          )}
+      <AdminDataCard>
+        {experiments.length > 0 ? (
+          <AdminTable>
+            <AdminTableHeader>
+              <AdminTableHeadRow>
+                <AdminTableHead>Name</AdminTableHead>
+                <AdminTableHead>Type</AdminTableHead>
+                <AdminTableHead>Status</AdminTableHead>
+                <AdminTableHead>Variants</AdminTableHead>
+                <AdminTableHead>Visitors</AdminTableHead>
+                <AdminTableHead>Conversions</AdminTableHead>
+                <AdminTableHead>Created</AdminTableHead>
+                <AdminTableHead>Actions</AdminTableHead>
+              </AdminTableHeadRow>
+            </AdminTableHeader>
+            <AdminTableBody>
+              {experiments.map((exp) => {
+                const totalVisitors = exp.variants.reduce((sum, v) => sum + v.visitors, 0)
+                const totalConversions = exp.variants.reduce((sum, v) => sum + v.conversions, 0)
+                return (
+                  <AdminTableRow key={exp.id}>
+                    <AdminTableCell className="font-medium">
+                      <div>
+                        {exp.name}
+                        {exp.isSignificant && (
+                          <Trophy className="inline ml-2 text-yellow-500" size={14} />
+                        )}
+                      </div>
+                      {exp.description && (
+                        <div className="text-xs text-muted-foreground truncate max-w-[200px]">
+                          {exp.description}
                         </div>
-                        {exp.description && (
-                          <div className="text-xs text-muted-foreground truncate max-w-[200px]">
-                            {exp.description}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-foreground text-sm">
-                        {exp.type.replace("_", " ")}
-                      </TableCell>
-                      <TableCell>{getStatusBadge(exp.status)}</TableCell>
-                      <TableCell className="text-foreground text-sm">
-                        {exp.variants.length}
-                      </TableCell>
-                      <TableCell className="text-foreground text-sm">
-                        {totalVisitors.toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-foreground text-sm">
-                        {totalConversions.toLocaleString()}
-                        {totalVisitors > 0 && (
-                          <span className="text-muted-foreground ml-1">
-                            ({((totalConversions / totalVisitors) * 100).toFixed(1)}%)
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-foreground text-sm">
-                        {formatDate(exp.createdAt)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          {exp.status === "DRAFT" && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-xs bg-transparent"
-                              onClick={() => handleStatusChange(exp, "RUNNING")}
-                              title="Start experiment"
-                            >
-                              <Play size={14} />
-                            </Button>
-                          )}
-                          {exp.status === "RUNNING" && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-xs bg-transparent"
-                              onClick={() => handleStatusChange(exp, "PAUSED")}
-                              title="Pause experiment"
-                            >
-                              <Pause size={14} />
-                            </Button>
-                          )}
-                          {exp.status === "PAUSED" && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-xs bg-transparent"
-                              onClick={() => handleStatusChange(exp, "RUNNING")}
-                              title="Resume experiment"
-                            >
-                              <Play size={14} />
-                            </Button>
-                          )}
+                      )}
+                    </AdminTableCell>
+                    <AdminTableCell className="text-sm">
+                      {exp.type.replace("_", " ")}
+                    </AdminTableCell>
+                    <AdminTableCell>
+                      <AdminBadge variant={getStatusBadgeVariant(exp.status)}>
+                        {exp.status}
+                      </AdminBadge>
+                    </AdminTableCell>
+                    <AdminTableCell className="text-sm">
+                      {exp.variants.length}
+                    </AdminTableCell>
+                    <AdminTableCell className="text-sm">
+                      {totalVisitors.toLocaleString()}
+                    </AdminTableCell>
+                    <AdminTableCell className="text-sm">
+                      {totalConversions.toLocaleString()}
+                      {totalVisitors > 0 && (
+                        <span className="text-muted-foreground ml-1">
+                          ({((totalConversions / totalVisitors) * 100).toFixed(1)}%)
+                        </span>
+                      )}
+                    </AdminTableCell>
+                    <AdminTableCell className="text-sm">
+                      {formatDate(exp.createdAt)}
+                    </AdminTableCell>
+                    <AdminTableCell>
+                      <div className="flex gap-2">
+                        {exp.status === "DRAFT" && (
                           <Button
                             variant="outline"
                             size="sm"
                             className="text-xs bg-transparent"
-                            onClick={() => setStatsDialogId(exp.id)}
-                            title="View statistics"
+                            onClick={() => handleStatusChange(exp, "RUNNING")}
+                            title="Start experiment"
                           >
-                            <BarChart3 size={14} />
+                            <Play size={14} />
                           </Button>
+                        )}
+                        {exp.status === "RUNNING" && (
                           <Button
                             variant="outline"
                             size="sm"
-                            className="text-xs text-destructive hover:text-destructive bg-transparent"
-                            onClick={() => setDeleteExperiment(exp)}
+                            className="text-xs bg-transparent"
+                            onClick={() => handleStatusChange(exp, "PAUSED")}
+                            title="Pause experiment"
                           >
-                            <Trash size={14} />
+                            <Pause size={14} />
                           </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="py-8 text-center text-muted-foreground">
-              No experiments found. Create your first A/B test!
-            </div>
-          )}
-        </div>
-      </Card>
+                        )}
+                        {exp.status === "PAUSED" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs bg-transparent"
+                            onClick={() => handleStatusChange(exp, "RUNNING")}
+                            title="Resume experiment"
+                          >
+                            <Play size={14} />
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs bg-transparent"
+                          onClick={() => setStatsDialogId(exp.id)}
+                          title="View statistics"
+                        >
+                          <BarChart3 size={14} />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs text-destructive hover:text-destructive bg-transparent"
+                          onClick={() => setDeleteExperiment(exp)}
+                        >
+                          <Trash size={14} />
+                        </Button>
+                      </div>
+                    </AdminTableCell>
+                  </AdminTableRow>
+                )
+              })}
+            </AdminTableBody>
+          </AdminTable>
+        ) : (
+          <AdminEmptyState message="No experiments found. Create your first A/B test!" />
+        )}
+      </AdminDataCard>
 
       {/* Create Experiment Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -641,9 +625,7 @@ export function ABTestingPage() {
                     </div>
                     <div className="text-sm text-muted-foreground w-8">{variant.trafficWeight}%</div>
                     {variant.isControl ? (
-                      <Badge variant="outline" className="text-xs">
-                        Control
-                      </Badge>
+                      <AdminBadge variant="outline">Control</AdminBadge>
                     ) : (
                       <Button
                         type="button"
@@ -765,38 +747,36 @@ export function ABTestingPage() {
               {/* Variants Table */}
               <Card className="p-4">
                 <h3 className="font-semibold mb-4">Variant Performance</h3>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Variant</TableHead>
-                      <TableHead className="text-right">Visitors</TableHead>
-                      <TableHead className="text-right">Conversions</TableHead>
-                      <TableHead className="text-right">Conv. Rate</TableHead>
-                      <TableHead className="text-right">Improvement</TableHead>
-                      <TableHead className="text-right">Confidence</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <AdminTable>
+                  <AdminTableHeader>
+                    <AdminTableHeadRow>
+                      <AdminTableHead>Variant</AdminTableHead>
+                      <AdminTableHead className="text-right">Visitors</AdminTableHead>
+                      <AdminTableHead className="text-right">Conversions</AdminTableHead>
+                      <AdminTableHead className="text-right">Conv. Rate</AdminTableHead>
+                      <AdminTableHead className="text-right">Improvement</AdminTableHead>
+                      <AdminTableHead className="text-right">Confidence</AdminTableHead>
+                    </AdminTableHeadRow>
+                  </AdminTableHeader>
+                  <AdminTableBody>
                     {statsData.variants.map((variant) => (
-                      <TableRow key={variant.id}>
-                        <TableCell className="font-medium">
+                      <AdminTableRow key={variant.id}>
+                        <AdminTableCell className="font-medium">
                           {variant.name}
                           {variant.isControl && (
-                            <Badge variant="outline" className="ml-2 text-xs">
-                              Control
-                            </Badge>
+                            <AdminBadge variant="outline">Control</AdminBadge>
                           )}
-                        </TableCell>
-                        <TableCell className="text-right">
+                        </AdminTableCell>
+                        <AdminTableCell className="text-right">
                           {variant.visitors.toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-right">
+                        </AdminTableCell>
+                        <AdminTableCell className="text-right">
                           {variant.conversions.toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-right">
+                        </AdminTableCell>
+                        <AdminTableCell className="text-right">
                           {formatPercent(variant.conversionRate)}
-                        </TableCell>
-                        <TableCell className="text-right">
+                        </AdminTableCell>
+                        <AdminTableCell className="text-right">
                           {variant.significance ? (
                             <span
                               className={
@@ -811,8 +791,8 @@ export function ABTestingPage() {
                           ) : (
                             "-"
                           )}
-                        </TableCell>
-                        <TableCell className="text-right">
+                        </AdminTableCell>
+                        <AdminTableCell className="text-right">
                           {variant.significance ? (
                             <span
                               className={
@@ -826,11 +806,11 @@ export function ABTestingPage() {
                           ) : (
                             "-"
                           )}
-                        </TableCell>
-                      </TableRow>
+                        </AdminTableCell>
+                      </AdminTableRow>
                     ))}
-                  </TableBody>
-                </Table>
+                  </AdminTableBody>
+                </AdminTable>
               </Card>
 
               {/* Recommendation */}
@@ -844,9 +824,7 @@ export function ABTestingPage() {
               )}
             </div>
           ) : (
-            <div className="py-8 text-center text-muted-foreground">
-              Failed to load statistics
-            </div>
+            <AdminEmptyState message="Failed to load statistics" />
           )}
         </DialogContent>
       </Dialog>
